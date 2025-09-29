@@ -1,0 +1,427 @@
+:root {
+  /* Ravi */
+  /* Header */
+  --logo-heading-text: #111827;
+  --header-gray-bg: #e5e7eb;
+  --header-text-orange: #f97316;
+  --header-icon-color: #44506a;
+  --header-placeholder: #6b7280;
+  --header-border-dropdown: #e5e7eb;
+  --header-tranding-textheaded: #bababa;
+  --dropdown-text-color: #44506a;
+  --dropdown-hover: #e5e7eb;
+  --dropdown-dark-text: #111827;
+  --dropdown-mmenu-text: #6b7280;
+
+  --footer-copyright: #6b7280;
+
+  --canvas-main-heading: #0a0e17;
+
+  --bg-category: #111827;
+  --canvas-dark-text: #111827;
+  --canvas-light-text: #44506a;
+  --cart-can-bg: #f9fafb;
+
+  --profile-bg: #f9fafb;
+  /* --profile-bg: #4d68831c; */
+  --profile-dark-text: #111827;
+  --profile-gray-text: #bababa;
+  --profile-light-text: #44506a;
+  --profile-border: #44506a33;
+  --profile-darkgray-text: #6b7280;
+  --trackOrder-text: #2563eb;
+
+  --bg-white: #fff;
+  --text-white: #fff;
+  --bg-black: #000;
+  --text-black: #000;
+  --bg-orange: #f97316;
+  --text-orange: #f97316;
+  --text-red: #dc2626;
+
+  /* Milan */
+  --shop-now-btn: #f97316;
+
+  /* Shweta */
+  --bg-red: #dc2626;
+  --bg-blue: #2563eb;
+  --bg-yellow: #f59e0b;
+  --bg-gray: #44506a;
+  --bg-dark: #0a0e17;
+  --bg-light: #f9fafb;
+  --bg-light-gray: #e7e7e7;
+  --text-gray: #6b7280;
+  --bg-light-green: #d0eddb;
+  --text-green: #16a34a;
+}
+
+
+/* >>>>>>>>>>>>>>>>>>>> custome container >>>>>>>>>>>>>>>>>>>>>> */
+
+@media (min-width:1280px) {
+
+  .main_container {
+    box-sizing: border-box !important;
+    max-width: 1280px !important;
+    padding: 0px 32px 0px 32px !important;
+    margin: 0px auto !important;
+  }
+}
+
+@media (max-width:1279px) {
+  .main_container {
+    padding: 0px 20px 0px 20px !important;
+  }
+}
+
+
+/* ========================= Home Page ( Milan ) ========================= */
+
+/* ***** 1. Banner Section ***** */
+
+/*  Image Slider 16-09 */
+
+/* Custom slider dots styles */
+.custom-dots .slick-dots {
+  position: static !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin-top: 16px !important;
+  padding: 0 !important;
+  list-style: none !important;
+}
+
+.custom-dots .slick-dots li {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.custom-dots .slick-dots li div {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #d1d5db;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.custom-dots .slick-dots li.slick-active div {
+  background-color: #f97316;
+  transform: scale(1.2);
+}
+
+.custom-dots .slick-dots li:hover div {
+  transform: scale(1.1);
+}
+
+/* Optional: Add some spacing around the dots container */
+.custom-dots {
+  margin: 20px 0;
+}
+
+.slick-dots {
+  bottom: 10px !important;
+  gap: 0 !important;
+}
+
+/* Normal dot */
+.slick-dots li button:before {
+  font-size: 12px;
+  color: gray;
+  opacity: 1;
+}
+
+/* Active dot */
+.slick-dots li.slick-active button:before {
+  color: #f97316 !important;
+}
+
+/* hover effect */
+.slick-dots li button:hover:before {
+  color: #f97316;
+}
+
+/* Dots container */
+.slick-dots {
+  display: flex !important;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 15px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Equal slot for each dot */
+.slick-dots li {
+  width: 30px;
+  height: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Default inactive circle */
+.slick-dots li button {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #bbb;
+  border: none;
+  padding: 0;
+  transition: all 0.3s ease;
+  margin: auto;
+}
+
+.slick-dots li button:before {
+  content: "";
+}
+
+/* Active pill (centered in slot) */
+.slick-dots li.slick-active button {
+  width: 20px;
+  height: 8px;
+  border-radius: 20px;
+  background: #ff6600;
+}
+
+.slick-dots li button:before {
+  line-height: 12px !important;
+}
+
+
+/* ***** Right: Banner + Text ***** */
+
+.mb-right-banner-img {
+  top: 57%;
+}
+
+.mb-right-banner-img1 {
+  top: 39%;
+}
+
+@media (max-width: 1440px) {
+  .mb-right-banner-img {
+    top: 53%;
+  }
+
+  .mb-right-banner-img1 {
+    top: 39%;
+  }
+}
+
+@media (max-width: 1024px) {
+  .mb-right-banner-img {
+    top: 55%;
+  }
+
+  .mb-right-banner-img1 {
+    top: 40%;
+  }
+}
+
+@media (max-width: 768px) {
+  .mb-right-banner-img {
+    top: 53%;
+  }
+
+  .mb-right-banner-img1 {
+    top: 40%;
+  }
+}
+
+@media (max-width: 425px) {
+  .mb-right-banner-img {
+    top: 58%;
+  }
+
+  .mb-right-banner-img1 {
+    top: 42%;
+  }
+}
+
+@media (max-width: 320px) {
+  .mb-right-banner-img {
+    top: 63%;
+  }
+
+  .mb-right-banner-img1 {
+    top: 51%;
+  }
+}
+
+
+/* ***** 5. Hurry, Ends Tonight! Section ***** */
+
+@media (max-width: 1440px) {
+  .mb-left-s5 {
+    padding: 0px 15px;
+  }
+}
+
+@media (max-width: 375px) {
+  /* .offer-right1 {
+    font-size: 10px;
+  } */
+
+  .offer-right2 {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 320px) {
+  /* .offer-right1 {
+    font-size: 8px;
+  } */
+
+  .offer-right2 {
+    font-size: 10px;
+  }
+}
+
+/* ***** 6. Trending Items Section ***** */
+
+@media (max-width: 425px) {
+  .offer-card-1 {
+    /* flex-direction: column !important;
+    text-align: center !important; */
+  }
+
+  .offer-card-1 img {
+    /* margin-bottom: 1rem !important; */
+  }
+
+  .offer-card-1-content {
+    /* width: 100% !important; */
+    /* padding-left: 0 !important; */
+  }
+
+  .offer-card-1-content button {
+    /* width: 100% !important; */
+  }
+}
+
+/* ***** 7. Offer Section ***** */
+
+/* @media only screen and (max-width: 425px) {
+  .offer-card {
+    flex-direction: column !important;
+    text-align: center !important;
+    padding: 1rem !important;
+  }
+
+  .offer-card img {
+    width: 8rem !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .offer-card-content {
+    padding-left: 0 !important;
+    width: 100% !important;
+  }
+
+  .offer-card button {
+    width: 100% !important;
+  }
+} */
+
+
+/* ***** 12. Subscribe Section ***** */
+
+@media (max-width: 375px) {
+  .title1 {
+    font-size: 20px;
+  }
+
+  .title2 {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 320px) {
+  .title1 {
+    font-size: 16px;
+  }
+}
+
+
+/* ========================= Career Page ( Milan ) ========================= */
+
+/* ***** 5. Benefits & Perks Section Section ***** */
+
+/* global.css */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Header Scrolbar - Category */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 1px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: transparent;
+}
+
+/* Modal Scrolbar - Address */
+.custom-scrollbar-modal::-webkit-scrollbar {
+  /* height: 1px; */
+  width: 2px;
+}
+
+.custom-scrollbar-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-modal::-webkit-scrollbar-thumb {
+  background-color: rgba(211, 209, 209, 0.616);
+}
+
+/* size guide scroll bar */
+.size-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.size-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #111827;
+  border-radius: 9999px;
+}
+
+.size-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+
+
+/* ========================= Our Brand Page ( Milan ) ========================= */
+
+/* ***** 6. Why You Can Trust Us Section ***** */
+
+@media (max-width: 320px) {
+  .trust-title {
+    font-size: 26px;
+  }
+}
+
+
+/*  */
+
+
+@media (min-width: 1024px) {
+  .lg\:h-96 {
+      height: 25rem;
+  }
+}
+
+
