@@ -5,7 +5,7 @@ import { createCategory, deleteCategoryById, getAllCategory, getCategoryById, up
 import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdatecontroller, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
-import { createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductAll, getProductById, getProductBySubCategory, getProductsByBrand, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
+import { createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductAll, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
 import { getMyCartController, toggleCartItemController } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
@@ -54,10 +54,10 @@ indexRouter.post("/seller/reset/password", sellerPasswordResetController);
 
 
 // MainCategory
-indexRouter.post("/createMainCategory", UserAuth, isAdmin, createMainCategory)
+indexRouter.post("/createMainCategory", UserAuth, isAdmin, upload.fields([{ name: "mainCategoryImage", maxCount: 1 }]), createMainCategory)
 indexRouter.get("/getAllMainCategory", getAllMainCategory)
 indexRouter.get("/getMainCategoryById/:id", getMainCategoryById)
-indexRouter.patch("/updateMainCategoryById/:id", UserAuth, isAdmin, updateMainCategoryById)
+indexRouter.patch("/updateMainCategoryById/:id", UserAuth, isAdmin, upload.fields([{ name: "mainCategoryImage", maxCount: 1 }]), updateMainCategoryById)
 indexRouter.delete("/deleteMainCategoryById/:id", UserAuth, isAdmin, deleteMainCategoryById)
 
 // Category
@@ -102,6 +102,7 @@ indexRouter.get("/getProductAll", getProductAll);
 indexRouter.get("/getSimilarProducts/:productId", getSimilarProducts);
 indexRouter.get("/getMostWishlistedProducts", getMostWishlistedProducts);
 indexRouter.get("/getTrendingProducts", getTrendingProducts);
+indexRouter.get("/getSalesAnalytics", getSalesAnalytics);
 
 // discover new product
 indexRouter.get("/discover/product", UserAuth, discoverProductController)
@@ -196,7 +197,7 @@ indexRouter.patch("/order/status/:orderId", sellerAuth, updateOrderStatusControl
 indexRouter.post("/cancel/my/order/:orderId", UserAuth, cancelMyOrderController);
 indexRouter.get("/order/summery", UserAuth, orderSummeryController)
 //Order special instructions
-indexRouter.post("/order/instructions/:orderId", UserAuth,addOrderInstructionsController);
+indexRouter.post("/order/instructions/:orderId", UserAuth, addOrderInstructionsController);
 
 //payment.routes.js
 indexRouter.post("/new/payment", UserAuth, makeNewPaymentController);

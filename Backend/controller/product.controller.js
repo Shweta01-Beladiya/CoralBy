@@ -219,23 +219,38 @@ export const getAllProduct = async (req, res) => {
 
 export const getProductById = async (req, res) => {
     try {
-        const { id } = req.params
+        const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return sendBadRequestResponse(res, "Invalid ProductId!!!!")
+            return sendBadRequestResponse(res, "Invalid ProductId!!!!");
         }
 
-        const exitsProduct = await Product.findById(id)
-        if (!exitsProduct) {
-            return sendNotFoundResponse(res, "No any Product found!!!")
+        // ✅ Fetch product
+        const product = await Product.findById(id);
+        if (!product) {
+            return sendNotFoundResponse(res, "No Product found!!!");
         }
 
-        return sendSuccessResponse(res, "Product fetched Successfully...", exitsProduct)
+        // ✅ Increment views
+        product.view = (product.view || 0) + 1;
+        await product.save();
+
+        // ✅ Build custom response (include sold, rating, etc.)
+        const result = {
+            ...product.toObject(),
+            rating: {
+                average: product.rating?.average || 0,
+                totalReviews: product.rating?.totalReviews || 0
+            },
+            sold: product.sold || 0  // ensure sold is returned
+        };
+
+        return sendSuccessResponse(res, "Product fetched Successfully...", result);
 
     } catch (error) {
-        return ThrowError(res, 500, error.message)
+        return ThrowError(res, 500, error.message);
     }
-}
+};
 
 export const updateProduct = async (req, res) => {
     try {
@@ -909,5 +924,65 @@ export const getTrendingProducts = async (req, res) => {
             success: false,
             message: error.message || "Server error"
         });
+    }
+};
+
+export const getSalesAnalytics = async (req, res) => {
+    try {
+        const { period = "24" } = req.query;
+
+        const hours = parseInt(period);
+        if (![12, 24].includes(hours)) {
+            return sendErrorResponse(res, 400, "Period must be 12 or 24 hours");
+        }
+
+        const timeAgo = new Date(Date.now() - hours * 60 * 60 * 1000);
+
+        const result = await paymentModel.aggregate([
+            {
+                $match: {
+                    paymentStatus: "completed",
+                    paymentDate: { $gte: timeAgo }
+                }
+            },
+            {
+                $lookup: {
+                    from: "orders",
+                    localField: "orderId",
+                    foreignField: "_id",
+                    as: "order"
+                }
+            },
+            {
+                $unwind: "$order"
+            },
+            {
+                $unwind: "$order.items"
+            },
+            {
+                $group: {
+                    _id: null,
+                    totalProductsSold: { $sum: "$order.items.quantity" },
+                    totalOrders: { $sum: 1 },
+                    totalRevenue: { $sum: "$amount" },
+                    averageOrderValue: { $avg: "$amount" }
+                }
+            }
+        ]);
+
+        const salesData = result[0] || {
+            totalProductsSold: 0,
+            totalOrders: 0,
+            totalRevenue: 0,
+            averageOrderValue: 0
+        };
+
+        return sendSuccessResponse(res, `Sales analytics for last ${hours} hours fetched successfully`, {
+            period: `${hours} hours`,
+            ...salesData
+        });
+
+    } catch (error) {
+        return sendErrorResponse(res, 500, error.message);
     }
 };
