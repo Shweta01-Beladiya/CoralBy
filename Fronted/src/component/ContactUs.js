@@ -1,7 +1,9 @@
 
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux';
-import { createContactUs, resetState } from '../Store/Slices/contactusSlice';
+import { createContactUs } from '../Store/Slices/contactusSlice';
+import { contactUsSchema } from '../schemas';
+import { useFormik } from 'formik';
 
 // icons
 import { MdOutlineLocationOn, MdOutlineCall } from "react-icons/md";
@@ -14,14 +16,6 @@ function ContactUs() {
     const dispatch = useDispatch();
     const { loading, success, error } = useSelector((state) => state.contactUs);
 
-    const [form, setForm] = useState({
-        firstName: "",
-        lastName: "",
-        email: "",
-        subject: "",
-        comments: "",
-    });
-
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
     const subjects = [
@@ -33,23 +27,25 @@ function ContactUs() {
         "Other",
     ];
 
-    const handleChange = (e) => {
-        setForm({ ...form, [e.target.name]: e.target.value });
+    const initialValues = {
+        firstName: "",
+        lastName: "",
+        email: "",
+        subject: "",
+        comments: "",
     };
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        dispatch(createContactUs(form));
-    };
+    const formik = useFormik({
+        initialValues,
+        validationSchema: contactUsSchema,
+        onSubmit: (values, { resetForm }) => {
+            dispatch(createContactUs(values));
+            resetForm();
+        },
+    });
 
-    // Reset form on success
-    useEffect(() => {
-        if (success) {
-            setForm({ firstName: "", lastName: "", email: "", subject: "", comments: "" });
-            setDropdownOpen(false);
-            setTimeout(() => dispatch(resetState()), 3000); // clear success message after 3s
-        }
-    }, [success, dispatch]);
+    const { values, errors, touched, handleBlur, handleChange, handleSubmit, setFieldValue } = formik;
+
 
     return (
         <>
@@ -94,6 +90,7 @@ function ContactUs() {
                             <form className="space-y-5" onSubmit={handleSubmit}>
                                 {/* Name */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* First Name */}
                                     <div>
                                         <label htmlFor="" className='text-[#44506A] text-[16px] font-semibold'>
                                             First Name
@@ -103,11 +100,16 @@ function ContactUs() {
                                             type="text"
                                             name="firstName"
                                             placeholder='Enter first name'
-                                            value={form.firstName}
+                                            value={values.firstName}
                                             onChange={handleChange}
+                                            onBlur={handleBlur}
                                             className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none'
                                         />
+                                        {errors.firstName && touched.firstName && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+                                        )}
                                     </div>
+                                    {/* Last Name */}
                                     <div>
                                         <label htmlFor="" className='text-[#44506A] text-[16px] font-semibold'>
                                             Last Name
@@ -117,10 +119,14 @@ function ContactUs() {
                                             type="text"
                                             name="lastName"
                                             placeholder='Enter last name'
-                                            value={form.lastName}
+                                            value={values.lastName}
                                             onChange={handleChange}
+                                            onBlur={handleBlur}
                                             className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none'
                                         />
+                                        {errors.lastName && touched.lastName && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -133,10 +139,14 @@ function ContactUs() {
                                         type="email"
                                         name="email"
                                         placeholder='Enter your email address'
-                                        value={form.email}
+                                        value={values.email}
                                         onChange={handleChange}
+                                        onBlur={handleBlur}
                                         className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none'
                                     />
+                                    {errors.email && touched.email && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                                    )}
                                 </div>
 
                                 {/* Subject */}
@@ -153,23 +163,14 @@ function ContactUs() {
                                             className="w-full border border-[#44506A33] rounded-lg px-3 py-2 flex items-center justify-between cursor-pointer bg-[var(--bg-white)] text-base"
                                             onClick={() => setDropdownOpen(!dropdownOpen)}
                                         >
-                                            {/* <span
-                                                className={
-                                                    form.subject
-                                                        ? "text-[#44506A] font-medium"
-                                                        : "text-[#6B7280] font-medium"
-                                                }
-                                            >
-                                                {state || "Select a subject"}
-                                            </span> */}
                                             <span
                                                 className={
-                                                    form.subject
+                                                    values.subject
                                                         ? "text-[#44506A] font-medium"
                                                         : "text-[#6B7280] font-medium"
                                                 }
                                             >
-                                                {form.subject || "Select a subject"}
+                                                {values.subject || "Select a subject"}
                                             </span>
                                             <MdOutlineKeyboardArrowDown
                                                 className={`text-[#6B7280] text-2xl transition-transform ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
@@ -182,13 +183,9 @@ function ContactUs() {
                                                 {subjects.map((item, idx) => (
                                                     <li
                                                         key={idx}
-                                                        className={`px-3 py-2 cursor-pointer text-[#44506A] hover:bg-[var(--cart-can-bg)]
-                                                            form.subject === item
-                                                            ? "font-semibold bg-[var(--cart-can-bg)]"
-                                                            : ""
-                                                            }`}
+                                                        className="px-3 py-2 cursor-pointer text-[#44506A] hover:bg-gray-100"
                                                         onClick={() => {
-                                                            setForm({ ...form, subject: item });
+                                                            setFieldValue("subject", item);
                                                             setDropdownOpen(false);
                                                         }}
                                                     >
@@ -196,6 +193,9 @@ function ContactUs() {
                                                     </li>
                                                 ))}
                                             </ul>
+                                        )}
+                                        {errors.subject && touched.subject && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.subject}</p>
                                         )}
                                     </div>
                                 </div>
@@ -209,11 +209,15 @@ function ContactUs() {
                                         <textarea
                                             name="comments"
                                             placeholder='Enter your comments'
-                                            value={form.comments}
+                                            value={values.comments}
                                             onChange={handleChange}
+                                            onBlur={handleBlur}
                                             className='text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none resize-none'
                                             rows={3}
                                         />
+                                        {errors.comments && touched.comments && (
+                                            <p className="text-red-500 text-sm mt-1">{errors.comments}</p>
+                                        )}
                                     </div>
                                 </div>
 
@@ -221,16 +225,11 @@ function ContactUs() {
                                 <div className="mt-5">
                                     <button
                                         type="submit"
-                                        disabled={loading}
                                         className="bg-[#F97316] text-white text-lg rounded-lg py-3 font-medium w-full disabled:opacity-50"
                                     >
-                                        {loading ? "Sending..." : "Send Message"}
+                                        Send Message
                                     </button>
                                 </div>
-
-                                {/* Status */}
-                                {success && <p className="text-green-600 mt-2">Message sent successfully!</p>}
-                                {error && <p className="text-red-600 mt-2">{error}</p>}
                             </form>
                         </div>
                     </div>

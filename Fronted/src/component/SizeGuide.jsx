@@ -2,8 +2,8 @@ const SizeGuide = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[1000]">
-      <div className="bg-white p-6 rounded-lg w-[600px] max-h-[80vh] shadow-lg relative">
+    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-[11111]">
+      <div className="bg-white p-4 sm:p-6 rounded-lg w-min sm:w-[600px] max-h-[80vh] shadow-lg relative">
         {/* Close button */}
         <button
           onClick={onClose}

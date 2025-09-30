@@ -9,6 +9,7 @@ import { IoMdSearch } from "react-icons/io";
 import { FaAngleDown, FaAngleUp } from "react-icons/fa";
 import Pagination from "../component/Pagination";
 import { Link } from "react-router-dom";
+import QuickView from "../component/QuickView";
 
 const Fashion = () => {
 	const [showFilter, setShowFilter] = useState(false);
@@ -26,7 +27,19 @@ const Fashion = () => {
 		Brands: [],
 	});
 	const [focusedSection, setFocusedSection] = useState(null);
+const [quickViewProduct, setQuickViewProduct] = useState(null);
+const [showQuickView, setShowQuickView] = useState(false);
 
+// QuickView handlers
+const openQuickView = (product) => {
+    setQuickViewProduct(product);
+    setShowQuickView(true);
+};
+
+const closeQuickView = () => {
+    setShowQuickView(false);
+    setQuickViewProduct(null);
+};
 	const handleSearch = (section, value) =>
 		setSearchTerms({ ...searchTerms, [section]: value });
 
@@ -285,8 +298,7 @@ const Fashion = () => {
 						{/* Product grid */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 							{currentProducts.map((product) => (
-								<SingleProduct key={product.id} product={product} />
-							))}
+<SingleProduct key={product.id} product={product} onQuickView={openQuickView} />							))}
 						</div>
 
 						{/* Pagination */}
@@ -449,6 +461,10 @@ const Fashion = () => {
 					onClick={toggleFilter}
 				></div>
 			)}
+			{/* Global QuickView Modal */}
+{showQuickView && quickViewProduct && (
+    <QuickView product={quickViewProduct} onClose={closeQuickView} />
+)}
 		</>
 	);
 };
