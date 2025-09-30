@@ -2,15 +2,13 @@ import React, { useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { MdOutlineShoppingBag, MdStar } from "react-icons/md";
 import { IoEyeOutline } from "react-icons/io5";
-import ProductModal from "../component/ProductModal"; // import modal
 
-export const SingleProduct = ({ product }) => {
+export const SingleProduct = ({ product, onQuickView }) => {
 	const [activeColor, setActiveColor] = useState(
 		product.defaultColorIndex || 0
 	);
 	const [inCart, setInCart] = useState(false);
 	const [inWishlist, setInWishlist] = useState(false);
-	const [showModal, setShowModal] = useState(false);
 
 	return (
 		<>
@@ -71,7 +69,7 @@ export const SingleProduct = ({ product }) => {
 						<div
 							className="absolute bottom-0 left-0 right-0 h-[50px] border-t-[1px] border-[#D1D5DB]
 							translate-y-[100%] group-hover:translate-y-0 
-							opacity-0 group-hover:opacity-100 
+							opacity-0 group-hover:opacity-100
 							bg-[#E5E7EB] transition-all duration-500 ease-in-out 
 							flex justify-center divide-x divide-[#D1D5DB]"
 						>
@@ -87,7 +85,7 @@ export const SingleProduct = ({ product }) => {
 							<button
 								className="text-black w-1/2 text-[13px] font-semibold flex items-center justify-center gap-1 
 								hover:bg-[#111827] hover:text-white transition-all duration-300 ease-in-out"
-								onClick={() => setShowModal(true)}
+								onClick={() => onQuickView && onQuickView(product)}
 							>
 								<IoEyeOutline className="text-[18px]" /> QUICK VIEW
 							</button>
@@ -132,8 +130,6 @@ export const SingleProduct = ({ product }) => {
 					</div>
 				</div>
 			</div>
-
-			{showModal && <ProductModal product={product} onClose={() => setShowModal(false)} />}
 		</>
 	);
 };

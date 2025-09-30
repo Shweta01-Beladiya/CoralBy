@@ -387,7 +387,7 @@ const products = [
 		badgeImage: null,
 		defaultColorIndex: 0,
 		variants: [
-			{ color: "#", image: alcohol },
+			{ color: "#", image: alcohol, colorName: "Black" },
 		],
 	},
 	{
@@ -410,7 +410,7 @@ const products = [
 		badgeImage: null,
 		defaultColorIndex: 0,
 		variants: [
-			{ color: "#", image: flowerpot },
+			{ color: "#", image: flowerpot, colorName: "Beige" },
 		],
 	},
 	{
@@ -459,10 +459,10 @@ const products = [
 		badgeImage: null,
 		defaultColorIndex: 1,
 		variants: [
-			{ color: "#B000B9", image: bag_2 },
-			{ color: "#F59E0B", image: bag_1 },
-			{ color: "#00FFE1", image: bag_3 },
-			{ color: "#FF6565", image: bag_4 },
+			{ color: "#B000B9", image: bag_2, colorName: "Purple" },
+			{ color: "#F59E0B", image: bag_1, colorName: "Yellow" },
+			{ color: "#00FFE1", image: bag_3, colorName: "Sky blue" },
+			{ color: "#FF6565", image: bag_4, colorName: "Pink" },
 		],
 	},
 	{
