@@ -35,7 +35,7 @@ import {
 } from "@headlessui/react";
 import { IoMdClose } from "react-icons/io";
 import { useDispatch, useSelector } from 'react-redux';
-import { getMainCategory, getCategory, getSubCategory } from '../Store/Slices/categorySlice';
+import { getMainCategory, getCategory, getSubCategory, getInsideSubCategory } from '../Store/Slices/categorySlice';
 
 
 export default function Header() {
@@ -220,13 +220,15 @@ export default function Header() {
         dispatch(getMainCategory())
         dispatch(getCategory());
         dispatch(getSubCategory());
+        dispatch(getInsideSubCategory())
     }, [dispatch])
 
     const mainCategory = useSelector((state) => state.category.mainCategory.data);
     const category = useSelector((state) => state.category.category.data);
     const subCategory = useSelector((state) => state.category.subCategory.data);
+    const insideSubCategory = useSelector((state) => state.category.inSubCategory.data);
 
-    console.log("Category", mainCategory?.result)
+    console.log("insideSubCategory :: ", insideSubCategory)
 
     const toggleMenu = (id) => {
         // alert(id)
@@ -1267,20 +1269,24 @@ export default function Header() {
                                             {main.mainCategoryName}
 
 
-                                            { hasCategories && (
+                                            {hasCategories && (
                                                 openMenu === main._id ? (
                                                     <FaAngleUp className="text-sm text-[var(--header-text-orange)]" />
                                                 ) : (
                                                     <FaAngleDown className="text-sm" />
-                                                    )
                                                 )
-                                             }
-                                          
+                                            )
+                                            }
+
 
 
                                             {openMenu === main._id && (
                                                 <div className="absolute left-0 top-full w-full bg-[var(--bg-white)] shadow-lg z-[90]">
-                                                    <div className="max-w-7xl min-w-full px-6 py-6 bg-white [column-count:5] [column-fill:auto] [column-gap:1.5rem] max-h-[500px] xl:max-h-[450px] overflow-y-auto cursor-auto">
+
+                                                    <div className="max-w-7xl min-w-full px-6 py-6 bg-white 
+                                                        [column-count:5] [column-fill:balance] [column-gap:1.5rem] 
+                                                        max-h-[500px] xl:max-h-[550px] 
+                                                        overflow-auto cursor-auto break-words">
                                                         {category
                                                             .filter((cat) => cat.mainCategoryId === main._id)
                                                             .map((cat) => (
@@ -1291,17 +1297,42 @@ export default function Header() {
                                                                     </h3>
 
                                                                     {/* Subcategories */}
-                                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal cursor-pointer">
+                                                                    <ul className="space-y-2 mb-2 text-sm text-[var(--dropdown-mmenu-text)] font-normal cursor-pointer">
                                                                         {subCategory
                                                                             .filter((sub) => sub.categoryId === cat._id)
-                                                                            .map((sub) => (
-                                                                                <li key={sub._id}  >{sub.subCategoryName}</li>
-                                                                            ))}
-                                                                    </ul>
+                                                                            .map((sub) => {
+                                                                                const insideSubs = insideSubCategory.filter(
+                                                                                    (inside) => inside.subCategoryId?._id === sub._id
+                                                                                );
 
+                                                                                return (
+                                                                                    <li key={sub._id}>
+                                                                                        {insideSubs.length > 0 ? (
+                                                                                            <>
+                                                                                                {/* Subcategory as heading */}
+                                                                                                <h4 className="text-base font-semibold text-[var(--dropdown-dark-text)] mb-1 cursor-pointer">
+                                                                                                    {sub.subCategoryName}
+                                                                                                </h4>
+                                                                                                <ul className="space-y-2 text-sm text-[var(--dropdown-mmenu-text)] cursor-pointer">
+                                                                                                    {insideSubs.map((inside) => (
+                                                                                                        <li key={inside._id}>{inside.insideSubCategoryName}</li>
+                                                                                                    ))}
+                                                                                                </ul>
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            // Normal subcategory - no insideSubCategory
+                                                                                            <h4 className='space-y-2 text-sm text-[var(--dropdown-mmenu-text)] font-normal'>
+                                                                                                {sub.subCategoryName}
+                                                                                            </h4>
+                                                                                        )}
+                                                                                    </li>
+                                                                                );
+                                                                            })}
+                                                                    </ul>
                                                                 </div>
                                                             ))}
                                                     </div>
+
 
                                                 </div>
                                             )}
