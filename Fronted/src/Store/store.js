@@ -6,7 +6,7 @@ import contactusReducer from '../Store/Slices/contactusSlice';
 export const store = configureStore({
     reducer: {
         // Add your reducers here
-        category: categoryReducer
+        category: categoryReducer,
         users: userSlice,
         contactUs: contactusReducer,
     },
