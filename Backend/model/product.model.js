@@ -1,26 +1,18 @@
 import mongoose from "mongoose";
-
 const productSchema = new mongoose.Schema({
   sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "seller", required: true },
-
   brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand", required: true },
   title: { type: String, required: true },
-
   mainCategory: { type: mongoose.Schema.Types.ObjectId, ref: "MainCategory", required: true },
   category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
   subCategory: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory", required: true },
-
   description: { type: String },
   badge: {
     type: String,
     enum: ["NEW", "TRENDING", "BEST SELLER", "BEST DEAL", "TOP RATED", "CORALBAY CHOICE", null],
     default: null
   },
-  rating: {
-    average: { type: Number, default: 0 },
-    totalReviews: { type: Number, default: 0 }
-  },
-
+  rating: { average: { type: Number, default: 0 }, totalReviews: { type: Number, default: 0 } },
   productDetails: {
     material: { type: String },
     fit: { type: String },
@@ -30,7 +22,6 @@ const productSchema = new mongoose.Schema({
     origin: { type: String },
     additionalFeatures: [{ type: String }],
   },
-
   shippingReturn: {
     freeShipping: { type: String },
     returnPolicy: { type: String },
@@ -39,7 +30,6 @@ const productSchema = new mongoose.Schema({
     deliveryTracking: { type: String },
     orderProcessing: { type: String }
   },
-
   warrantySupport: {
     warranty: { type: String },
     careTips: { type: String },
@@ -50,27 +40,23 @@ const productSchema = new mongoose.Schema({
     },
     faqs: [{ type: String }]
   },
-
   love_about: [
     {
       point: String,
       ratings: [
-        {
-          userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-          rate: Number
-        }
+        { userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" }, rate: Number }
       ]
     }
   ],
-  view: {
-    type: Number,
-  },
-  sold: {
-    type:Number,
-    default:0
-  },
+  varientId: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ProductVariant'
+    }
+  ],
+  view: { type: Number, default: 0 },
+  sold: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true }
-
 }, { timestamps: true });
 
 export default mongoose.model("Product", productSchema);
