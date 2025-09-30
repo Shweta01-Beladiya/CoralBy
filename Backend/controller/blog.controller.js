@@ -224,7 +224,6 @@ export const deleteBlogController = async (req, res) => {
             await deleteS3File(key);
         }
 
-        // 4. Delete section images from S3
         if (blog.section?.length) {
             for (const sec of blog.section) {
                 if (sec.sectionImg?.length) {
