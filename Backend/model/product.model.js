@@ -6,6 +6,7 @@ const productSchema = new mongoose.Schema({
   mainCategory: { type: mongoose.Schema.Types.ObjectId, ref: "MainCategory", required: true },
   category: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
   subCategory: { type: mongoose.Schema.Types.ObjectId, ref: "SubCategory", required: true },
+  insideSubCategory: { type: mongoose.Schema.Types.ObjectId, ref: "insideSubCategory" },
   description: { type: String },
   badge: {
     type: String,
