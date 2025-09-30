@@ -67,7 +67,7 @@ export const addNewBlogController = async (req, res) => {
 
 
 
-;
+    ;
 
 export const getAllBlogsController = async (req, res) => {
     try {
@@ -254,6 +254,17 @@ export const getBlogWithCategoryController = async (req, res) => {
         const filter = categoryId && mongoose.Types.ObjectId.isValid(categoryId)
             ? { blogCategoryId: categoryId }
             : {};
+
+        if (categoryId === "68dba9693f29e2eef1ceee93") {
+            const products = await blogModel.find({})
+                .populate({
+                    path: "blogCategoryId",
+                    select: "blogCategoryName slug isFeatureBlog"
+                })
+                .sort({ createdAt: -1 });
+
+            return sendSuccessResponse(res, "All blogs fetched successfully", products);
+        }
 
         const blogs = await blogModel.find(filter)
             .populate({
