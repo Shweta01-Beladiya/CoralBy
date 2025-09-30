@@ -514,7 +514,7 @@ export default function CareerPage() {
                                     <h1 className="text-[#111827] font-semibold text-lg sm:text-[20px] ">
                                         {data.title}
                                     </h1>
-                                    <p className="text-[#6B7280] font-medium text-base my-3">
+                                    <p className="text-[#6B7280] font-medium text-[15px] mt-3 mb-4">
                                         {data.description}
                                     </p>
 
