@@ -141,3 +141,30 @@ export const deleteCategoryById = async (req, res) => {
         return ThrowError(res, 500, error.message)
     }
 }
+
+export const getCategoriesByMainCategoryId = async (req, res) => {
+    try {
+        const { mainCategoryId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(mainCategoryId)) {
+            return sendBadRequestResponse(res, "Invalid mainCategoryId!!!")
+        }
+
+        const checkMainCategory = await MainCategoryModel.findById(mainCategoryId);
+        if (!checkMainCategory) {
+            return sendNotFoundResponse(res, "MainCategory not found...")
+        }
+
+        const categories = await CategoryModel.find({ mainCategoryId })
+            .populate("mainCategoryId")
+
+        if (!categories || categories.length === 0) {
+            return sendNotFoundResponse(res, "No categories found for this Category!!!")
+        }
+
+        return sendSuccessResponse(res, "categories fetched successfully...", categories)
+
+    } catch (error) {
+        return ThrowError(res, 500, error.message)
+    }
+}

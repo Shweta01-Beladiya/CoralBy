@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
-import ProductModal from "../component/ProductModal";
 import Cmn_product_slider from "../component/Cmn_product_slider";
 import Slider from "react-slick";
 import Newsletter from "../component/Newsletter";
+import QuickView from "../component/QuickView";
 
 // images
 import Sider1 from '../images/Banner.png'
@@ -102,6 +102,21 @@ export default function Home() {
 
 	// 2. Welcome back modal ( After Login Popup )
 	const [openWelcomeback, setOpenWelcomeback] = useState(false)
+
+	// 3. QuickView modal (Global)
+	const [quickViewProduct, setQuickViewProduct] = useState(null)
+	const [showQuickView, setShowQuickView] = useState(false)
+
+	// QuickView handlers
+	const openQuickView = (product) => {
+		setQuickViewProduct(product)
+		setShowQuickView(true)
+	}
+
+	const closeQuickView = () => {
+		setShowQuickView(false)
+		setQuickViewProduct(null)
+	}
 
 	// Responsive check for mobile view
 	const [isMobile, setIsMobile] = useState(false);
@@ -671,7 +686,7 @@ export default function Home() {
 
 						{/* image */}
 						<div className='py-6'>
-							<Cmn_product_slider ref={productSliderRef1} initialSlideProductId={1} />
+							<Cmn_product_slider ref={productSliderRef1} initialSlideProductId={1} onQuickView={openQuickView} />
 						</div>
 					</section>
 				</div>
@@ -859,7 +874,7 @@ export default function Home() {
 
 						{/* image */}
 						<div className='mt-6'>
-							<Cmn_product_slider ref={productSliderRef2} initialSlideProductId={5} />
+							<Cmn_product_slider ref={productSliderRef2} initialSlideProductId={5} onQuickView={openQuickView} />
 						</div>
 					</div>
 				</section>
@@ -1082,7 +1097,7 @@ export default function Home() {
 
 						{/* image */}
 						<div className='mt-6'>
-							<Cmn_product_slider ref={productSliderRef3} initialSlideProductId={9} />
+							<Cmn_product_slider ref={productSliderRef3} initialSlideProductId={9} onQuickView={openQuickView} />
 						</div>
 					</div>
 				</section>
@@ -1167,7 +1182,7 @@ export default function Home() {
 
 						{/* image */}
 						<div className='mt-6'>
-							<Cmn_product_slider ref={productSliderRef4} initialSlideProductId={13} />
+							<Cmn_product_slider ref={productSliderRef4} initialSlideProductId={13} onQuickView={openQuickView} />
 						</div>
 					</div>
 				</section>
@@ -1316,6 +1331,11 @@ export default function Home() {
 						</DialogPanel>
 					</div>
 				</Dialog>
+
+				{/* ******* 3. Global QuickView Modal ****** */}
+				{showQuickView && quickViewProduct && (
+					<QuickView product={quickViewProduct} onClose={closeQuickView} />
+				)}
 
 			</div>
 		</>

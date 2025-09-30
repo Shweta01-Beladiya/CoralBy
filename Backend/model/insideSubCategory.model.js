@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const subCategorySchema = mongoose.Schema({
+const insideSubCategorySchema = mongoose.Schema({
     mainCategoryId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "MainCategory"
@@ -9,10 +9,13 @@ const subCategorySchema = mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Category"
     },
-    subCategoryName: {
+    subCategoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "SubCategory"
+    },
+    insideSubCategoryName: {
         type: String,
-        default: null
     }
 }, { timestamps: true })
 
-export default mongoose.model("SubCategory", subCategorySchema)
+export default mongoose.model("insideSubCategory", insideSubCategorySchema)
