@@ -103,6 +103,16 @@ export const createProductVariant = async (req, res) => {
             weight
         });
 
+        // ✅ NEW CODE: Update product with variantId
+        await Product.findByIdAndUpdate(
+            productId,
+            { 
+                $push: { 
+                    varientId: newVariant._id 
+                } 
+            }
+        );
+
         return sendSuccessResponse(res, "✅ Product variant created successfully!", newVariant);
 
     } catch (error) {
@@ -336,6 +346,3 @@ export const getProductWiseProductVarientdata = async (req, res) => {
         return sendErrorResponse(res, 500, error.message);
     }
 };
-
-
-
