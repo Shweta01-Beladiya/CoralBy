@@ -5,6 +5,7 @@ const jobSchema = new mongoose.Schema({
     description: { type: String, required: true },
     jobType: { type: String, required: true }, // Full-time / Part-time etc
     location: { type: String, required: true },
+    isActive:{type: Boolean, default:true},
     salary: { type: String },
     createdAt: { type: Date, default: Date.now },
     applications: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Application' }],

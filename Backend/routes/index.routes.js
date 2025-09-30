@@ -224,7 +224,7 @@ indexRouter.patch("/update/job/:jobId", UserAuth, isAdmin, updateJobController);
 indexRouter.delete("/delete/job/:jobId", UserAuth, isAdmin, deleteJobController);
 
 //job application route
-indexRouter.get("/current/jobs", UserAuth, currentJobController);
+indexRouter.get("/current/jobs", currentJobController);
 indexRouter.get("/current/job/:jobId", UserAuth, getCurrentJobByIdController);
 indexRouter.post("/apply/job/:jobId", UserAuth, upload.single("resume"), applyJobController);
 indexRouter.get("/my/applications", UserAuth, getMyJobapplicationsController);

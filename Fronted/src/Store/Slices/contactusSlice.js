@@ -26,14 +26,7 @@ const contactusSlice = createSlice({
         error: null,
         success: false,
     },
-    reducers: {
-        resetState: (state) => {
-            state.loading = false;
-            state.data = [];
-            state.error = null;
-            state.success = false;
-        },
-    },
+    reducers: {},
     extraReducers: (builder) => {
         builder
             .addCase(createContactUs.pending, (state) => {
@@ -54,5 +47,4 @@ const contactusSlice = createSlice({
     }
 });
 
-export const { resetState } = contactusSlice.actions;
 export default contactusSlice.reducer;
