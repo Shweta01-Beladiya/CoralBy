@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { uploadFile } from "../middleware/imageupload.js";
 import blogModel from "../model/blog.model.js";
-import { sendErrorResponse } from "../utils/Response.utils.js";
+import { sendErrorResponse, sendSuccessResponse } from "../utils/Response.utils.js";
 import { deleteS3File } from "../utils/aws.config.js";
 
 export const addNewBlogController = async (req, res) => {
@@ -241,3 +241,28 @@ export const deleteBlogController = async (req, res) => {
         return res.status(500).json({ success: false, message: error.message });
     }
 };
+
+export const getBlogWithCategoryController = async (req, res) => {
+    try {
+        const { categoryId } = req.query;
+
+
+        const filter = categoryId && mongoose.Types.ObjectId.isValid(categoryId)
+            ? { blogCategoryId: categoryId }
+            : {};
+
+        const blogs = await blogModel.find(filter)
+            .populate({
+                path: "blogCategoryId",
+                select: "blogCategoryName slug isFeatureBlog"
+            })
+            .sort({ createdAt: -1 });
+
+        return sendSuccessResponse(res, "Blogs with catgory fetched Successfull", blogs);
+
+    } catch (error) {
+        console.error("Error fetching blogs with category:", error.message);
+        res.status(500).json({ success: false, message: error.message });
+    }
+
+}
