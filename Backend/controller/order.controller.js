@@ -8,6 +8,7 @@ import orderModel from "../model/order.model.js";
 import UserModel from "../model/user.model.js";
 import sellerModel from "../model/seller.model.js";
 import couponModel from "../model/coupon.model.js";
+import axios from "axios";
 
 const roundToTwo = (num) => Math.round(num * 100) / 100;
 
@@ -407,3 +408,101 @@ export const addOrderInstructionsController = async (req, res) => {
         return sendErrorResponse(res, 500, "Error during Add order instruction", error)
     }
 }
+
+
+//verify post code
+
+export const verifyAUPostCodeController = async (req, res) => {
+    try {
+        const { postcode } = req?.query;
+
+        if (!postcode || typeof postcode !== 'string') {
+            return sendBadRequestResponse(res, "Please provide a valid 'postcode' as a query parameter.");
+        }
+
+
+        const cleanedPostcode = postcode.trim();
+        if (!/^\d{4}$/.test(cleanedPostcode)) {
+            return sendBadRequestResponse(res, "Postcode must be a 4-digit number (e.g., 0800, 3000).");
+        }
+
+        const apiUrl = `https://australiansuburbs.au/api/lookup_postcode?postcode=${cleanedPostcode}`;
+        const response = await axios.get(apiUrl);
+
+        if (!response || !response.data) {
+            return sendNotFoundResponse(res, "No response received from postcode lookup service.");
+        }
+
+        const data = response.data;
+
+        if (data.postcode && Array.isArray(data.suburbs)) {
+            return sendSuccessResponse(res, "Postcode verified successfully", {
+                postcode: data.postcode,
+                suburbs: data.suburbs,
+                state: data.state
+            });
+        }
+
+        if (data.error) {
+            return sendNotFoundResponse(res, "This postcode does not exist in Australia.", {
+                input: cleanedPostcode,
+                apiError: data.error
+            });
+        }
+
+        return sendErrorResponse(res, 500, "Unexpected response structure from API", data);
+
+    } catch (error) {
+        console.error("Error verifying postcode:", error.message);
+        return sendErrorResponse(res, 500, "Internal error verifying postcode", error);
+    }
+};
+
+export const getShippingEstimates = async (req, res) => {
+    try {
+        const { postcode } = req.body;
+
+        if (!postcode || typeof postcode !== 'string' || !/^\d{4}$/.test(postcode.trim())) {
+            return sendBadRequestResponse(res, "Please provide a valid 4-digit 'postcode' in the request body.");
+        }
+
+        const API_KEY = '92944ac9-842b-46e1-b527-766ddaa48d20'; 
+
+        const fromPostcode = '2000'; 
+        const toPostcode = postcode.trim(); 
+        const length = 22;
+        const width = 16;
+        const height = 7.7;
+        const weight = 1.5;
+        const serviceCode = 'AUS_PARCEL_REGULAR';
+
+        const queryParams = new URLSearchParams({
+            from_postcode: fromPostcode,
+            to_postcode: toPostcode,
+            length: length.toString(),
+            width: width.toString(),
+            height: height.toString(),
+            weight: weight.toString(),
+            service_code: serviceCode
+        }).toString();
+
+        const url = `https://digitalapi.auspost.com.au/postage/parcel/domestic/calculate.json?${queryParams}`;
+
+        const response = await axios.get(url, {
+            headers: {
+                'AUTH-KEY': API_KEY
+            }
+        });
+
+        if (response.data && response.data.postage_result) {
+            return sendSuccessResponse(res, "Shipping estimate retrieved successfully.", response.data.postage_result);
+        } else {
+            return sendErrorResponse(res, 502, "Unexpected response from Australia Post API", response.data);
+        }
+
+    } catch (error) {
+        console.error("Shipping Estimate Error:", error.message);
+        return sendErrorResponse(res, 500, "Error retrieving shipping estimates", error);
+    }
+};
+

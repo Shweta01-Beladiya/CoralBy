@@ -27,12 +27,12 @@ import BlogPage from './pages/Blogs';
 
 import TrackOrder from './pages/TrackOrder';
 import TermsAndCondition from './pages/TermsAndCondition';
-import ContactUs from './pages/ContactUs';
 import Privacy_policy from './pages/PrivacyPolicy';
 import ReturnPolicy from './pages/ReturnPolicy';
 import ProductSafety from './pages/ProductSafety';
 import ScamWarning from './pages/ScamWarning';
 import BlogDetailsPage from './pages/Blogdetails';
+import ContactInfo from './pages/ContactInfo';
 
 
 function App() {
@@ -59,7 +59,7 @@ function App() {
 
             <Route path='/blogs' element={<BlogPage />} />
             <Route path="/blog/:id" element={<BlogDetailsPage />} />
-            <Route path='/contactus' element={<ContactUs />} />
+            <Route path='/contactInfo' element={<ContactInfo />} />
             <Route path='/scamwarning' element={<ScamWarning />} />
 
 

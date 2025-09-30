@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom';
 
+import { useDispatch, useSelector } from 'react-redux';
+import { createCareerJob } from '../Store/Slices/careerjobSlice';
+
 // images
 import JoinOurGrowingTeam from '../images/group-people-working-out-business-plan-office 1.png'
 import colleaguesdetails from '../images/colleagues-working-project-discussing-details 1.png'
@@ -15,13 +18,10 @@ import HealthInsurance from '../images/All Icons (3).png'
 import FlexibleWorkEnvironment from '../images/All Icons (4).png'
 import PerformanceBonuses from '../images/All Icons (5).png'
 
-
 // icons
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import { IoMdClose } from "react-icons/io";
 import { FaCloudArrowUp } from "react-icons/fa6";
-
-
 
 // modal
 import {
@@ -126,40 +126,49 @@ export default function CareerPage() {
     // *************** 6. Current Job Openings Section ***************
 
     // Job listings data
-    const jobs = [
-        {
-            title: "Product Manager",
-            description: "Manage product listings, optimize descriptions, ensure accurate stock availability.",
-        },
-        {
-            title: "Customer Support Executive",
-            description: "Provide high-quality support to customers via email, chat, and phone.",
-        },
-        {
-            title: "Web Developer",
-            description: "Develop and maintain website features, optimize performance, and implement functionality.",
-        },
-        {
-            title: "Digital Marketing Specialist",
-            description: "Plan and execute online marketing campaigns, analyze data for growth.",
-        },
-        {
-            title: "Warehouse Operations Manager",
-            description: "Oversee inventory management, and warehouse staff to ensure smooth logistics.",
-        },
-        {
-            title: "Supply Chain Coordinator",
-            description: "Coordinate with suppliers and ensure efficient supply chain operations.",
-        },
-        {
-            title: "Finance & Accounts Executive",
-            description: "Handle billing, payments and assist in preparing financial reports and budgets.",
-        },
-        {
-            title: "Social Media Manager",
-            description: "Manage social media accounts, create engaging posts and run paid social campaigns.",
-        },
-    ];
+    // const jobs = [
+    //     {
+    //         title: "Product Manager",
+    //         description: "Manage product listings, optimize descriptions, ensure accurate stock availability.",
+    //     },
+    //     {
+    //         title: "Customer Support Executive",
+    //         description: "Provide high-quality support to customers via email, chat, and phone.",
+    //     },
+    //     {
+    //         title: "Web Developer",
+    //         description: "Develop and maintain website features, optimize performance, and implement functionality.",
+    //     },
+    //     {
+    //         title: "Digital Marketing Specialist",
+    //         description: "Plan and execute online marketing campaigns, analyze data for growth.",
+    //     },
+    //     {
+    //         title: "Warehouse Operations Manager",
+    //         description: "Oversee inventory management, and warehouse staff to ensure smooth logistics.",
+    //     },
+    //     {
+    //         title: "Supply Chain Coordinator",
+    //         description: "Coordinate with suppliers and ensure efficient supply chain operations.",
+    //     },
+    //     {
+    //         title: "Finance & Accounts Executive",
+    //         description: "Handle billing, payments and assist in preparing financial reports and budgets.",
+    //     },
+    //     {
+    //         title: "Social Media Manager",
+    //         description: "Manage social media accounts, create engaging posts and run paid social campaigns.",
+    //     },
+    // ];
+
+    const dipatch = useDispatch();
+    const { data } = useSelector((state) => state.careerJob);
+    console.log("Career Job Data:", data);
+
+
+    useEffect(() => {
+        dipatch(createCareerJob());
+    }, [dipatch]);
 
 
     // Job Openings Modal State
@@ -209,6 +218,8 @@ export default function CareerPage() {
 
                 {/* 1.  Heading */}
                 <section className='bg-[var(--profile-bg)] py-7'>
+
+                    {/* Main Container */}
                     <div className='main_container'>
                         <h3 className=' text-2xl md:text-4xl text-[var(--profile-dark-text)] font-semibold '>Career</h3>
                         <div className="flex items-center text-[var(--profile-gray-text)] font-medium text-sm md:text-base mt-3">
@@ -288,50 +299,51 @@ export default function CareerPage() {
 
                         {/* main */}
                         <div className="flex flex-col lg:flex-row gap-6 md:gap-10">
-  {/* Left Side (Content) */}
-  <div className="w-full lg:w-2/4 xl:w-[62%] bg-[#F9FAFB] p-4 md:p-8 rounded-xl">
-    {/* title */}
-    <h1 className="text-2xl md:text-3xl lg:text-[42px] font-bold text-[#111827]">
-      Why Work With Us
-    </h1>
-    <p className="text-lg lg:text-[20px] text-[#44506A] font-semibold mt-2">
-      Delivering Australia’s best online shopping with innovation and care.
-    </p>
+                            {/* Left Side (Content) */}
+                            <div className="w-full lg:w-2/4 xl:w-[62%] bg-[#F9FAFB] p-4 md:p-8 rounded-xl">
+                                {/* title */}
+                                <h1 className="text-2xl md:text-3xl lg:text-[42px] font-bold text-[#111827]">
+                                    Why Work With Us
+                                </h1>
+                                <p className="text-lg lg:text-[20px] text-[#44506A] font-semibold mt-2">
+                                    Delivering Australia’s best online shopping with innovation and care.
+                                </p>
 
-    {/* list */}
-    <div className="mt-8 space-y-3">
-      {[
-        "Innovation-driven culture",
-        "Career growth opportunities",
-        "Inclusive & supportive environment", 
-        "Flexible working hours",
-        "Work remotely or in-office",
-      ].map((text, i) => (
-        <div key={i} className="flex items-start gap-3">
-          <FaChevronRight className="text-[#F97316] text-lg mt-1 flex-shrink-0" />
-          <p className="text-[#6B7280] text-base md:text-lg">{text}</p>
-        </div>
-      ))}
-    </div>
-  </div>
+                                {/* list */}
+                                <div className="mt-8 space-y-3">
+                                    {[
+                                        "Innovation-driven culture",
+                                        "Career growth opportunities",
+                                        "Inclusive & supportive environment",
+                                        "Flexible working hours",
+                                        "Work remotely or in-office",
+                                    ].map((text, i) => (
+                                        <div key={i} className="flex items-start gap-3">
+                                            <FaChevronRight className="text-[#F97316] text-lg mt-1 flex-shrink-0" />
+                                            <p className="text-[#6B7280] text-base md:text-lg">{text}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
 
-  {/* Right Side (Image) */}
-  <div className="w-full lg:w-2/4 xl:w-[38%]">
-    <div className="h-full rounded-xl overflow-hidden">
-      <img
-        src={colleaguesdetails}
-        alt="Our Promise"
-        className="w-full h-full object-contain rounded-xl"
-      />
-    </div>
-  </div>
-</div>
+                            {/* Right Side (Image) */}
+                            <div className="w-full lg:w-2/4 xl:w-[38%]">
+                                <div className="h-full rounded-xl overflow-hidden">
+                                    <img
+                                        src={colleaguesdetails}
+                                        alt="Our Promise"
+                                        className="w-full h-full object-contain rounded-xl"
+                                    />
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                 </section>
 
                 {/* 4. Meet Our Team Section */}
                 <section className="bg-[var(--profile-bg)] my-14">
+
                     {/* Main Container */}
                     <div className="main_container mx-auto px-4">
                         {/* Grid Layout */}
@@ -420,7 +432,6 @@ export default function CareerPage() {
                     </div>
                 </section>
 
-
                 {/* 5. Benefits & Perks Section */}
                 <section className='bg-[#FFFFFF] '>
 
@@ -486,7 +497,7 @@ export default function CareerPage() {
                         {/* Title */}
                         <div className="flex items-center justify-between ">
                             {/* Title */}
-                            <h1 className="text-2xl lg:text-[42px] font-bold  text-[#0A0E17]">
+                            <h1 className="text-2xl lg:text-[42px] font-bold over text-[#0A0E17]">
                                 Current Job Openings
                             </h1>
                         </div>
@@ -495,16 +506,16 @@ export default function CareerPage() {
                         <div className="gap-10 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4  mt-8">
 
                             {/* Job card */}
-                            {jobs.map((job, index) => (
+                            {data?.map((data, index) => (
                                 <div
                                     key={index}
                                     className="group bg-[#F9FAFB] rounded-xl flex flex-col p-6 col-span-1 h-full hover:bg-white hover:shadow-[0_0_10px_0_#75757533] transition-all duration-200 ease-in-out "
                                 >
                                     <h1 className="text-[#111827] font-semibold text-lg sm:text-[20px] ">
-                                        {job.title}
+                                        {data.title}
                                     </h1>
                                     <p className="text-[#6B7280] font-medium text-base my-3">
-                                        {job.description}
+                                        {data.description}
                                     </p>
 
                                     <div className="mt-auto flex justify-center">

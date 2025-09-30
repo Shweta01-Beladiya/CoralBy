@@ -20,6 +20,7 @@ export const createJobController = async (req, res) => {
         description: req.body.description,
         location: req.body.location,
         jobType: req.body.jobType,
+        isActive: req.body.isActive || true,
     });
     try {
         try {
