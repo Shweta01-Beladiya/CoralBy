@@ -4,42 +4,38 @@ import axios from "axios";
 const BaseUrl = "http://localhost:9000";
 
 
-export const getMainCategory = createAsyncThunk('subscribe/post', async (Email) => {
-    const response = await axios.post(`${BaseUrl}/api/getAllMainCategory`);
+export const subscribe = createAsyncThunk('subscribe/post', async (Email) => {
+
+    console.log("response", Email)
+    const response =  await axios.post(`${BaseUrl}/api/createSubcribe`,Email);
     return response.data.result;
 })
 
 
 
-const categorySlice = createSlice({
+const subscribeSlice = createSlice({
     name: "subscribe",
     initialState: {
         isLoading: false, 
-        data: [], 
+        subscribeData: [], 
         isError: false
     },
     reducers: {},
     extraReducers: (builder) => {
-
         builder
-
-            .addCase(getMainCategory.pending, (state) => {
-                state.mainCategory.isLoading = true;
+            .addCase(subscribe.pending, (state) => {
+                state.isLoading = true;
             })
-            .addCase(getMainCategory.fulfilled, (state, action) => {
-                state.mainCategory.isLoading = false;
-                state.mainCategory.data = action.payload;
-        
+            .addCase(subscribe.fulfilled, (state, action) => {
+                state.isLoading = false;
+                state.subscribeData = action.payload;
             })
-            .addCase(getMainCategory.rejected, (state) => {
-                state.mainCategory.isLoading = false;
-                state.mainCategory.isError = true;
+            .addCase(subscribe.rejected, (state) => {
+                state.isLoading = false;
+                state.isError = true;
             })
-
-          
-
     },
 });
 
 
-export default categorySlice.reducer;
+export default subscribeSlice.reducer;
