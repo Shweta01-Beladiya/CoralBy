@@ -1,5 +1,7 @@
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
+import { useDispatch, useSelector } from 'react-redux';
+import { createContactUs, resetState } from '../Store/Slices/contactusSlice';
 
 // icons
 import { MdOutlineLocationOn, MdOutlineCall } from "react-icons/md";
@@ -9,21 +11,58 @@ import { MdOutlineKeyboardArrowDown } from "react-icons/md";
 
 function ContactUs() {
 
-    const [stateDropdownOpen, setStateDropdownOpen] = useState(false);
-    const [state, setState] = useState("");
+    const dispatch = useDispatch();
+    const { loading, success, error } = useSelector((state) => state.contactUs);
 
-    const Subject = ["General Inquiry", "Order Tracking", "Payment Issues", "Returns & Exchanges", "Product Information", "Other"];
+    const [form, setForm] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        subject: "",
+        comments: "",
+    });
+
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+
+    const subjects = [
+        "General Inquiry",
+        "Order Tracking",
+        "Payment Issues",
+        "Returns & Exchanges",
+        "Product Information",
+        "Other",
+    ];
+
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        dispatch(createContactUs(form));
+    };
+
+    // Reset form on success
+    useEffect(() => {
+        if (success) {
+            setForm({ firstName: "", lastName: "", email: "", subject: "", comments: "" });
+            setDropdownOpen(false);
+            setTimeout(() => dispatch(resetState()), 3000); // clear success message after 3s
+        }
+    }, [success, dispatch]);
 
     return (
         <>
-        
+
             {/* Contact Us Section */}
             <section className='bg-[#F9FAFB] py-10 md:py-14'>
 
                 {/* Main Container */}
                 <div className="main_container flex items-center justify-center">
+
                     {/* main */}
                     <div className="w-full flex flex-col md:flex-row md:gap-0 gap-8 overflow-hidden">
+
                         {/* Left Side - Contact Info */}
                         <div className="w-full md:w-1/2 border-gray-200">
                             {/* left side */}
@@ -49,9 +88,10 @@ function ContactUs() {
                                 </div>
                             </div>
                         </div>
+
                         {/* Right Side - Form */}
                         <div className="w-full md:w-1/2 bg-gray-50">
-                            <form className="space-y-5">
+                            <form className="space-y-5" onSubmit={handleSubmit}>
                                 {/* Name */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
@@ -59,14 +99,28 @@ function ContactUs() {
                                             First Name
                                             <span className='text-[#DC2626] font-medium ml-1'>*</span>
                                         </label>
-                                        <input type="text" name="First Name" placeholder='Enter first name' className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none' id="" />
+                                        <input
+                                            type="text"
+                                            name="firstName"
+                                            placeholder='Enter first name'
+                                            value={form.firstName}
+                                            onChange={handleChange}
+                                            className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none'
+                                        />
                                     </div>
                                     <div>
                                         <label htmlFor="" className='text-[#44506A] text-[16px] font-semibold'>
                                             Last Name
                                             <span className='text-[#DC2626] font-medium ml-1'>*</span>
                                         </label>
-                                        <input type="text" name="Last Name" placeholder='Enter last name' className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none' id="" />
+                                        <input
+                                            type="text"
+                                            name="lastName"
+                                            placeholder='Enter last name'
+                                            value={form.lastName}
+                                            onChange={handleChange}
+                                            className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none'
+                                        />
                                     </div>
                                 </div>
 
@@ -75,7 +129,14 @@ function ContactUs() {
                                     <label htmlFor="" className='text-[#44506A] text-[16px] font-semibold'>
                                         Email
                                         <span className='text-[#DC2626] font-medium ml-1'>*</span></label>
-                                    <input type="text" name="Email" placeholder='Enter your email address' className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none' id="" />
+                                    <input
+                                        type="email"
+                                        name="email"
+                                        placeholder='Enter your email address'
+                                        value={form.email}
+                                        onChange={handleChange}
+                                        className='w-full text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none'
+                                    />
                                 </div>
 
                                 {/* Subject */}
@@ -90,34 +151,48 @@ function ContactUs() {
                                         {/* Dropdown */}
                                         <div
                                             className="w-full border border-[#44506A33] rounded-lg px-3 py-2 flex items-center justify-between cursor-pointer bg-[var(--bg-white)] text-base"
-                                            onClick={() => setStateDropdownOpen(!stateDropdownOpen)}
+                                            onClick={() => setDropdownOpen(!dropdownOpen)}
                                         >
-                                            <span
+                                            {/* <span
                                                 className={
-                                                    state ? "text-[#44506A] font-medium" : "text-[#6B7280] font-medium"
+                                                    form.subject
+                                                        ? "text-[#44506A] font-medium"
+                                                        : "text-[#6B7280] font-medium"
                                                 }
                                             >
-                                                {state || "What can we help you with?"}
+                                                {state || "Select a subject"}
+                                            </span> */}
+                                            <span
+                                                className={
+                                                    form.subject
+                                                        ? "text-[#44506A] font-medium"
+                                                        : "text-[#6B7280] font-medium"
+                                                }
+                                            >
+                                                {form.subject || "Select a subject"}
                                             </span>
                                             <MdOutlineKeyboardArrowDown
-                                                className={`text-[#6B7280] text-2xl transition-transform ${stateDropdownOpen ? "rotate-180" : "rotate-0"}`}
+                                                className={`text-[#6B7280] text-2xl transition-transform ${dropdownOpen ? "rotate-180" : "rotate-0"}`}
                                             />
                                         </div>
 
                                         {/* Dropdown Menu */}
-                                        {stateDropdownOpen && (
+                                        {dropdownOpen && (
                                             <ul className="absolute top-full mt-1 w-full bg-white border border-[#44506A33] rounded-md shadow-md max-h-48 overflow-y-auto z-50 text-base">
-                                                {Subject.map((prov, id) => (
+                                                {subjects.map((item, idx) => (
                                                     <li
-                                                        key={id}
-                                                        className={`px-3 py-2 cursor-pointer text-[#44506A] hover:bg-[var(--cart-can-bg)] ${state === prov ? "font-semibold bg-[var(--cart-can-bg)]" : ""
+                                                        key={idx}
+                                                        className={`px-3 py-2 cursor-pointer text-[#44506A] hover:bg-[var(--cart-can-bg)]
+                                                            form.subject === item
+                                                            ? "font-semibold bg-[var(--cart-can-bg)]"
+                                                            : ""
                                                             }`}
                                                         onClick={() => {
-                                                            setState(prov);
-                                                            setStateDropdownOpen(false);
+                                                            setForm({ ...form, subject: item });
+                                                            setDropdownOpen(false);
                                                         }}
                                                     >
-                                                        {prov}
+                                                        {item}
                                                     </li>
                                                 ))}
                                             </ul>
@@ -131,20 +206,37 @@ function ContactUs() {
                                         <label htmlFor="" className='text-[#44506A] text-[16px] font-semibold'>
                                             Comments
                                             <span className='text-[#DC2626] font-medium ml-1'>*</span></label>
-                                        <textarea type="text" name="Comments" placeholder='Enter your comments' className='text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none resize-none' id="" rows={3} />
+                                        <textarea
+                                            name="comments"
+                                            placeholder='Enter your comments'
+                                            value={form.comments}
+                                            onChange={handleChange}
+                                            className='text-[#6B7280] py-3 px-4 mt-2 font-medium border border-[#44506A33] rounded-lg outline-none resize-none'
+                                            rows={3}
+                                        />
                                     </div>
                                 </div>
 
                                 {/* Submit Button */}
-                                <div className='mt-5'>
-                                    <button className='bg-[#F97316] text-white text-lg rounded-lg py-3 font-medium w-full'>Send Message</button>
+                                <div className="mt-5">
+                                    <button
+                                        type="submit"
+                                        disabled={loading}
+                                        className="bg-[#F97316] text-white text-lg rounded-lg py-3 font-medium w-full disabled:opacity-50"
+                                    >
+                                        {loading ? "Sending..." : "Send Message"}
+                                    </button>
                                 </div>
+
+                                {/* Status */}
+                                {success && <p className="text-green-600 mt-2">Message sent successfully!</p>}
+                                {error && <p className="text-red-600 mt-2">{error}</p>}
                             </form>
                         </div>
                     </div>
-                </div>
+                </div >
 
-            </section>
+            </section >
         </>
     )
 }
