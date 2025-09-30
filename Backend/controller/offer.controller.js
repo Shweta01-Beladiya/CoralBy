@@ -2,51 +2,89 @@ import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { uploadFile } from "../middleware/imageupload.js";
 import offerModel from "../model/offer.model.js";
 import { s3 } from "../utils/aws.config.js";
+import { sendBadRequestResponse, sendErrorResponse } from "../utils/Response.utils.js";
 
 export const createOfferController = async (req, res) => {
     try {
         const {
+            section,
             offerTitle,
             offerDesc,
             category,
+            isSpecialOffer,
+            discountPercent,
+            headline,
+            subText,
+            countdown,
         } = req.body;
 
+        // Basic validation
         if (!offerTitle || !offerDesc || !category) {
-            return res.status(400).json({ success: false, message: "All fields are required" });
+            return res.status(400).json({ success: false, message: "offerTitle, offerDesc, and category are required" });
         }
 
         if (!req.file) {
             return res.status(400).json({ success: false, message: "Offer image is required" });
         }
 
-        // Upload image to S3
-        const result = await uploadFile(req.file);
+        // Upload image to S3 or cloud
+        const uploadedImage = await uploadFile(req.file); // returns { url: 'full_url' }
 
-        const countdownData = req.body.countdown
-            ? JSON.parse(req.body.countdown)
-            : undefined;
+        // Parse countdown if exists
+        let countdownData;
+        if (countdown) {
+            try {
+                countdownData = JSON.parse(countdown);
+            } catch (err) {
+                return res.status(400).json({ success: false, message: "Invalid countdown JSON" });
+            }
+        }
 
-
-        // Create Offer
+        // Create new offer
         const newOffer = await offerModel.create({
+            section: section ? Number(section) : 0, // default 0 if not provided
             offerTitle,
             offerDesc,
-            offerImage: result.url,
+            offerImage: uploadedImage.url,
             category,
-            isSpecialOffer: req.body.isSpecialOffer === "true" || false,
-            discountPercent: req.body.discountPercent || 0,
-            headline: req.body.headline || "",
-            subText: req.body.subText || "",
+            isSpecialOffer: isSpecialOffer === "true" || false,
+            discountPercent: discountPercent ? Number(discountPercent) : 0,
+            headline: headline || "",
+            subText: subText || "",
             countdown: countdownData,
         });
 
+        res.status(201).json({ success: true, message: "Offer created successfully", data: newOffer });
 
-        res.status(201).json({ success: true, data: newOffer });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ success: false, message: error.message });
+        res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
-}
+};
+
+
+export const getOffersBySection = async (req, res) => {
+    try {
+        const { section } = req.params;
+        if (!section) {
+            return sendBadRequestResponse(res, "section params not found")
+        }
+        const offers = await offerModel.find({ section: Number(section) });
+
+        return res.status(200).json({
+            success: true,
+            section: Number(section),
+            data: offers,
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching offers",
+            error: error.message,
+        });
+    }
+};
+
 
 export const deleteOfferController = async (req, res) => {
     try {
@@ -91,3 +129,4 @@ export const deleteOfferController = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
+

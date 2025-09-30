@@ -19,7 +19,7 @@ import { createReview, deleteReview, dislikeReview, getProductReviews, likeRevie
 import { addProductBannerController, deleteProductBannerController, getProductBannerController, updateProductBannerController } from '../controller/product.banner.controller.js';
 import { applyJobController, currentJobController, deleteJobApplicationController, getCurrentJobByIdController, getMyJobapplicationsController } from '../controller/job.application.controller.js';
 import { adminJobsController, createJobController, deleteJobController, updateJobController } from '../controller/jobs.controller.js';
-import { createOfferController, deleteOfferController } from '../controller/offer.controller.js';
+import { createOfferController, deleteOfferController, getOffersBySection } from '../controller/offer.controller.js';
 import { downloadInvoiceController, getSellerPaymentsController, makeNewPaymentController, myPaymentController, paymentStatusChangeController } from '../controller/payment.controller.js';
 import { createProductVariant, deleteProductVariant, getAllProductVariant, getProductVarientById, getProductWiseProductVarientdata, updateProductVariant } from '../controller/productVarient.controler.js';
 import { createfaqCategory, deletefaqCategoryById, getAllfaqCategory, getfaqCategoryById, updatefaqCategoryById } from '../controller/faqCategory.controller.js';
@@ -136,7 +136,12 @@ indexRouter.delete("/seller/delete/product/banner/:productId", sellerAuth, delet
 
 //offer.routes.js
 indexRouter.post("/create/offer", UserAuth, isAdmin, upload.single("offerImage"), createOfferController);
+indexRouter.get("/get/offer/:section", getOffersBySection)
 indexRouter.delete("/delete/offer/:offerId", UserAuth, isAdmin, deleteOfferController)
+
+
+
+
 
 // Coupon
 indexRouter.post("/seller/createCoupon", sellerAuth, createCoupon);
