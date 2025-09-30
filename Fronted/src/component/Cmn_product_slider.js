@@ -3,7 +3,7 @@ import Slider from "react-slick";
 import products from "../pages/ProductList";
 import { SingleProduct } from "../component/Single_product_card";
 
-const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12 }, ref) => {
+const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12, onQuickView }, ref) => {
 	const sliderRef = useRef(null);
 
 	useImperativeHandle(ref, () => ({
@@ -53,7 +53,7 @@ const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12
 			<Slider ref={sliderRef} {...settings}>
 				{products.map((product) => (
 					<div key={product.id} className="py-2 px-2">
-						<SingleProduct product={product} />
+						<SingleProduct product={product} onQuickView={onQuickView} />
 					</div>
 				))}
 			</Slider>
