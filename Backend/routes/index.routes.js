@@ -14,7 +14,7 @@ import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCate
 import { brandFilterController, createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand } from '../controller/brand.controller.js';
 import { addToWishlist, getWishlist, removeFromWishlist } from '../controller/wishlist.controller.js';
 import { createCoupon, deleteCoupon, getAllCoupon, getCouponById, updateCoupon } from '../controller/coupon.controller.js';
-import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, myOrderController, newOrderController, orderSummeryController, updateOrderStatusController } from '../controller/order.controller.js';
+import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, getShippingEstimates, myOrderController, newOrderController, orderSummeryController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
 import { createReview, deleteReview, dislikeReview, getProductReviews, likeReview, updateReview } from '../controller/review.controller.js';
 import { addProductBannerController, deleteProductBannerController, getProductBannerController, updateProductBannerController } from '../controller/product.banner.controller.js';
 import { applyJobController, currentJobController, deleteJobApplicationController, getCurrentJobByIdController, getMyJobapplicationsController } from '../controller/job.application.controller.js';
@@ -26,7 +26,7 @@ import { createfaqCategory, deletefaqCategoryById, getAllfaqCategory, getfaqCate
 import { createFAQQuestion, deleteFAQQuestion, getAllFAQQuestions, getFAQQuestionById, getFAQQuestionsByCategory, updateFAQQuestion } from '../controller/faqQuestion.controller.js';
 import { addRecentlyView, getRecentlyView } from '../controller/recentlyView.controller.js';
 import { addNewBlogCategoryController, deleteBlogCategoryController, getAllBlogCategoryController, getBlogCategoryByIdController, updateBlogCategoryController } from '../controller/blog.category.controller.js';
-import { addNewBlogController, deleteBlogController, getAllBlogsController, getBlogByIdController, updateBlogController } from '../controller/blog.controller.js';
+import { addNewBlogController, deleteBlogController, getAllBlogsController, getBlogByIdController, getBlogWithCategoryController, updateBlogController } from '../controller/blog.controller.js';
 import { createContactUs, deleteContactUs, getAllContactUs, getContactUsById, updateContactUs } from '../controller/contactUs.controller.js';
 import { createorderfaqCategory, deleteorderfaqCategoryById, getAllorderfaqCategory, getorderfaqCategoryById, updateorderfaqCategoryById } from '../controller/orderfaqCategory.controller.js';
 import { createorderFAQQuestion, deleteorderFAQQuestion, getAllorderFAQQuestions, getorderFAQQuestionById, getorderFAQQuestionsByCategory, updateorderFAQQuestion } from '../controller/orderfaqQuestion.controller.js';
@@ -199,6 +199,11 @@ indexRouter.get("/order/summery", UserAuth, orderSummeryController)
 //Order special instructions
 indexRouter.post("/order/instructions/:orderId", UserAuth, addOrderInstructionsController);
 
+//Get shipping estimates
+indexRouter.get("/verify/postCode", verifyAUPostCodeController)
+//get exsitmated cost of shipping
+indexRouter.post("/GetShippingEstimates", getShippingEstimates)
+
 //payment.routes.js
 indexRouter.post("/new/payment", UserAuth, makeNewPaymentController);
 indexRouter.get("/my/payments", UserAuth, myPaymentController);
@@ -255,6 +260,9 @@ indexRouter.get("/all/category", getAllBlogCategoryController);
 indexRouter.get("/categoryById/:categoryId", getBlogCategoryByIdController);
 indexRouter.patch("/update/blogCategory/:categoryId", UserAuth, isAdmin, updateBlogCategoryController);
 indexRouter.delete("/delete/blogCategory/:categoryId", UserAuth, isAdmin, deleteBlogCategoryController);
+
+//find all blog with category Id
+indexRouter.get("/blogs/with-category", getBlogWithCategoryController)
 
 //blog.content*.route.js
 
