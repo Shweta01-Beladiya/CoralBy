@@ -391,86 +391,91 @@ export const downloadInvoiceController = async (req, res) => {
 };
 
 export const paymentStatusChangeController = async (req, res) => {
-    try {
-        const { paymentId } = req.params;
-        const { paymentStatus } = req.body;
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-        // ✅ Validate paymentId
-        if (!paymentId || !mongoose.Types.ObjectId.isValid(paymentId)) {
-            return res.status(400).json({
-                success: false,
-                message: "Valid payment ID is required"
-            });
-        }
+  try {
+    const { paymentId } = req.params;
+    const { paymentStatus } = req.body;
 
-        // ✅ Validate paymentStatus
-        const allowedStatuses = ["pending", "completed", "failed", "refunded"];
-        if (!paymentStatus || !allowedStatuses.includes(paymentStatus)) {
-            return res.status(400).json({
-                success: false,
-                message: `Payment status must be one of: ${allowedStatuses.join(", ")}`
-            });
-        }
-
-        // ✅ Find payment
-        const payment = await paymentModel.findById(paymentId);
-        if (!payment) {
-            return res.status(404).json({
-                success: false,
-                message: "Payment not found"
-            });
-        }
-        // if(paymentStatus === "completed"){
-        //     await productModel        }
-        // ✅ Update payment status
-        payment.paymentStatus = paymentStatus;
-        await payment.save();
-
-        // ✅ Update linked order status
-        const order = await orderModel.findById(payment.orderId);
-        if (order) {
-            if (paymentStatus === "completed") {
-                order.status = "completed";
-                order.paymentStatus = "completed";
-
-                // ✅ Update sold count for each product
-                if (order.items && order.items.length > 0) {
-                    for (const item of order.items) {
-                        await Product.findByIdAndUpdate(
-                            item.productId,
-                            { $inc: { sold: item.quantity || 1 } },
-                            { new: true }
-                        );
-                        console.log(`✅ Sold count updated for product: ${item.productId}`);
-                    }
-                }
-            } else if (paymentStatus === "failed") {
-                order.status = "cancelled";
-                order.paymentStatus = "failed";
-            } else if (paymentStatus === "refunded") {
-                order.status = "refunded";
-                order.paymentStatus = "refunded";
-            } else {
-                order.status = "pending";
-                order.paymentStatus = "pending";
-            }
-
-            await order.save();
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: `Payment status updated to ${paymentStatus}`,
-            payment,
-            order
-        });
-
-    } catch (error) {
-        console.error("Payment Status Change Error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Server error",
-            error: error.message
-        });
+    if (!paymentId || !mongoose.Types.ObjectId.isValid(paymentId)) {
+      return res.status(400).json({ success: false, message: "Valid payment ID required" });
     }
+
+    const allowedStatuses = ["pending", "completed", "failed", "refunded"];
+    if (!paymentStatus || !allowedStatuses.includes(paymentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Payment status must be one of: ${allowedStatuses.join(", ")}`
+      });
+    }
+
+    const payment = await paymentModel.findById(paymentId).session(session);
+    if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+
+    const order = await orderModel.findById(payment.orderId).session(session);
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+    // ✅ Increment sold ONLY once if status changes to completed
+    if (paymentStatus === "completed" && payment.paymentStatus !== "completed") {
+      if (order.products && order.products.length > 0) {
+        for (const item of order.products) {
+          if (!item.productId) continue;
+          const updatedProduct = await productModel.findByIdAndUpdate(
+            item.productId,
+            { 
+              $inc: { sold: item.quantity || 1 },
+              $set: { lastSoldAt: new Date() } // Add this field to track last sale time
+            },
+            { new: true, session }
+          );
+          console.log("✅ Updated sold:", updatedProduct?.sold, "for product:", item.productId);
+        }
+      }
+      order.orderStatus = "Delivered";
+      order.payment.status = "Paid";
+    } else if (paymentStatus === "failed") {
+      order.orderStatus = "Cancelled";
+      order.payment.status = "Failed";
+    } else if (paymentStatus === "refunded") {
+      // If refunded, decrease the sold count
+      if (order.products && order.products.length > 0) {
+        for (const item of order.products) {
+          if (!item.productId) continue;
+          await productModel.findByIdAndUpdate(
+            item.productId,
+            { $inc: { sold: -(item.quantity || 1) } },
+            { session }
+          );
+        }
+      }
+      order.orderStatus = "Returned";
+      order.payment.status = "Refunded";
+    } else {
+      order.orderStatus = "Pending";
+      order.payment.status = "Pending";
+    }
+
+    // Update payment status
+    payment.paymentStatus = paymentStatus;
+
+    await payment.save({ session });
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(200).json({
+      success: true,
+      message: `Payment status updated to ${paymentStatus}`,
+      payment,
+      order
+    });
+
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Payment Status Change Error:", error);
+    return res.status(500).json({ success: false, message: "Server error", error: error.message });
+  }
 };

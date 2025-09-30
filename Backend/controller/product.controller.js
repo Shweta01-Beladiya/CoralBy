@@ -10,7 +10,6 @@ import { sendBadRequestResponse, sendErrorResponse, sendNotFoundResponse, sendSu
 import brandModel from "../model/brand.model.js";
 import productModel from "../model/product.model.js";
 import Wishlist from '../model/wishlist.model.js';
-import categoryModel from "../model/category.model.js";
 import productvarientModel from "../model/productvarient.model.js";
 import paymentModel from "../model/payment.model.js";
 import OrderModel from "../model/order.model.js";
@@ -222,33 +221,61 @@ export const getProductById = async (req, res) => {
         const { id } = req.params;
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return sendBadRequestResponse(res, "Invalid ProductId!!!!");
+            return res.status(400).json({ success: false, message: "Invalid ProductId" });
         }
 
-        // ✅ Fetch product
-        const product = await Product.findById(id);
+        const product = await productModel.findById(id)
+            .populate('brand', 'name')
+            .populate('mainCategory', 'name')
+            .populate('category', 'name')
+            .populate('subCategory', 'name')
+            .populate({
+                path: 'varientId',
+                select: 'sku images color size price stock weight isActive createdAt'
+            });
+
         if (!product) {
-            return sendNotFoundResponse(res, "No Product found!!!");
+            return res.status(404).json({ success: false, message: "Product not found" });
         }
 
-        // ✅ Increment views
+        // Calculate last 12 hours sold count based on payment status
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
+        const recentOrders = await OrderModel.find({
+            'products.productId': id,
+            'payment.status': 'Paid', // Payment completed
+            'createdAt': { $gte: twelveHoursAgo }
+        }).select('products');
+
+        let last12HoursSold = 0;
+        recentOrders.forEach(order => {
+            order.products.forEach(item => {
+                if (item.productId.toString() === id) {
+                    last12HoursSold += item.quantity || 1;
+                }
+            });
+        });
+
+        // Increment views
         product.view = (product.view || 0) + 1;
         await product.save();
 
-        // ✅ Build custom response (include sold, rating, etc.)
-        const result = {
-            ...product.toObject(),
-            rating: {
-                average: product.rating?.average || 0,
-                totalReviews: product.rating?.totalReviews || 0
-            },
-            sold: product.sold || 0  // ensure sold is returned
-        };
-
-        return sendSuccessResponse(res, "Product fetched Successfully...", result);
+        return res.status(200).json({
+            success: true,
+            message: "Product fetched Successfully...",
+            result: {
+                ...product.toObject(),
+                rating: {
+                    average: product.rating?.average || 0,
+                    totalReviews: product.rating?.totalReviews || 0
+                },
+                sold: product.sold || 0,
+                last12HoursSold: last12HoursSold
+            }
+        });
 
     } catch (error) {
-        return ThrowError(res, 500, error.message);
+        return res.status(500).json({ success: false, message: error.message });
     }
 };
 
