@@ -1,7 +1,7 @@
 import express from 'express';
 import { AuthController } from '../controller/auth.controller.js';
 import { newSellerController, verifySellerMobileOtpController, sellerLoginController, sellerForgetPasswordController, sellerVerifyForgetOtpController, sellerPasswordResetController, sellerGstVerifyAndInsertController, setSellerBusinessAddressController, sellerGstResetOtpController, sellerBankInfoSetController, sellerPickUpAddressSetController, trueSellerAgreementController, getAllSeller, getSeller, verifySellerOtpController } from '../controller/seller.controller.js';
-import { createCategory, deleteCategoryById, getAllCategory, getCategoryById, updateCategoryById } from '../controller/category.controller.js';
+import { createCategory, deleteCategoryById, getAllCategory, getCategoriesByMainCategoryId, getCategoryById, updateCategoryById } from '../controller/category.controller.js';
 import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdatecontroller, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
@@ -10,7 +10,7 @@ import { getMyCartController, toggleCartItemController } from '../controller/car
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
 import { createMainCategory, deleteMainCategoryById, getAllMainCategory, getMainCategoryById, updateMainCategoryById } from '../controller/mainCategory.controller.js';
-import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCategoryById, updateSubCategoryById } from '../controller/subCategory.controller.js';
+import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCategoriesByCategoryId, getSubCategoryById, updateSubCategoryById } from '../controller/subCategory.controller.js';
 import { brandFilterController, createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand } from '../controller/brand.controller.js';
 import { addToWishlist, getWishlist, removeFromWishlist } from '../controller/wishlist.controller.js';
 import { createCoupon, deleteCoupon, getAllCoupon, getCouponById, updateCoupon } from '../controller/coupon.controller.js';
@@ -31,6 +31,7 @@ import { createContactUs, deleteContactUs, getAllContactUs, getContactUsById, up
 import { createorderfaqCategory, deleteorderfaqCategoryById, getAllorderfaqCategory, getorderfaqCategoryById, updateorderfaqCategoryById } from '../controller/orderfaqCategory.controller.js';
 import { createorderFAQQuestion, deleteorderFAQQuestion, getAllorderFAQQuestions, getorderFAQQuestionById, getorderFAQQuestionsByCategory, updateorderFAQQuestion } from '../controller/orderfaqQuestion.controller.js';
 import { createSubcribe, deleteSubcribeById, getAllSubcribe, getSubcribeById, updateSubcribeById } from '../controller/subcribe.controller.js';
+import { createInsideSubCategory, deleteInsideSubCategoryById, getAllInsideSubCategory, getInsideSubCategoriesBySubCategoryId, getInsideSubCategoryById, updateInsideSubCategoryById } from '../controller/insideSubCategory.controller.js';
 
 
 const indexRouter = express.Router();
@@ -66,6 +67,7 @@ indexRouter.get("/getAllCategory", getAllCategory)
 indexRouter.get("/getCategoryById/:id", getCategoryById)
 indexRouter.patch("/updateCategoryById/:id", UserAuth, isAdmin, updateCategoryById)
 indexRouter.delete("/deleteCategoryById/:id", UserAuth, isAdmin, deleteCategoryById)
+indexRouter.get("/getCategoriesByMainCategoryId/:mainCategoryId", UserAuth, isAdmin, getCategoriesByMainCategoryId)
 
 // SubCategory
 indexRouter.post("/createSubCategory", UserAuth, isAdmin, createSubCategory)
@@ -73,6 +75,15 @@ indexRouter.get("/getAllSubCategory", getAllSubCategory)
 indexRouter.get("/getSubCategoryById/:id", getSubCategoryById)
 indexRouter.patch("/updateSubCategoryById/:id", UserAuth, isAdmin, updateSubCategoryById)
 indexRouter.delete("/deleteSubCategoryById/:id", UserAuth, isAdmin, deleteSubCategoryById)
+indexRouter.get("/getSubCategoriesByCategoryId/:categoryId", UserAuth, isAdmin, getSubCategoriesByCategoryId)
+
+// insideSubCategory
+indexRouter.post("/createInsideSubCategory", UserAuth, isAdmin, createInsideSubCategory)
+indexRouter.get("/getAllInsideSubCategory", getAllInsideSubCategory)
+indexRouter.get("/getInsideSubCategoryById/:id", getInsideSubCategoryById)
+indexRouter.patch("/updateInsideSubCategoryById/:id", UserAuth, isAdmin, updateInsideSubCategoryById)
+indexRouter.delete("/deleteInsideSubCategoryById/:id", UserAuth, isAdmin, deleteInsideSubCategoryById)
+indexRouter.get("/getInsideSubCategoriesBySubCategoryId/:subCategoryId", UserAuth, isAdmin, getInsideSubCategoriesBySubCategoryId)
 
 // Brand
 indexRouter.post("/createBrand", sellerAuth, upload.fields([{ name: "brandImage", maxCount: 1 }]), createBrand);
@@ -229,7 +240,7 @@ indexRouter.patch("/update/job/:jobId", UserAuth, isAdmin, updateJobController);
 indexRouter.delete("/delete/job/:jobId", UserAuth, isAdmin, deleteJobController);
 
 //job application route
-indexRouter.get("/current/jobs", UserAuth, currentJobController);
+indexRouter.get("/current/jobs", currentJobController);
 indexRouter.get("/current/job/:jobId", UserAuth, getCurrentJobByIdController);
 indexRouter.post("/apply/job/:jobId", UserAuth, upload.single("resume"), applyJobController);
 indexRouter.get("/my/applications", UserAuth, getMyJobapplicationsController);
