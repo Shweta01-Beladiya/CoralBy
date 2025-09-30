@@ -3,16 +3,37 @@ import axios from "axios";
 
 const BaseUrl = "http://localhost:9000";
 
+// Async thunk to fetch career job data
 export const createCareerJob = createAsyncThunk(
     "careerJob/fetchAll",
     async () => {
 
         const response = await axios.get(`${BaseUrl}/api/current/jobs`);
-        console.log("Career Job Response:", response.data);
+        // console.log("Career Job Response:", response.data);
         return response.data;
 
     }
 );
+
+// Async thunk to apply for a career job
+export const applyCareerJob = createAsyncThunk(
+    "careerJob/apply",
+    async (applicationData) => {
+        try {
+            const response = await axios.post(`${BaseUrl}/api/apply/job/:jobId`, applicationData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            console.log("Apply Career Job Response:", response.data);
+            return response.data;
+        } catch (error) {
+            console.error("Error applying for job:", error);
+            throw error;
+        }
+    }
+);
+
 
 const careerjobSlice = createSlice({
     name: "careerJob",

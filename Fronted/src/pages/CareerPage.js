@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom';
 
+// Redux imports
 import { useDispatch, useSelector } from 'react-redux';
 import { createCareerJob } from '../Store/Slices/careerjobSlice';
 
@@ -163,7 +164,7 @@ export default function CareerPage() {
 
     const dipatch = useDispatch();
     const { data } = useSelector((state) => state.careerJob);
-    console.log("Career Job Data:", data);
+    // console.log("Career Job Data:", data);
 
 
     useEffect(() => {
