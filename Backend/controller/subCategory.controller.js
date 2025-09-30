@@ -169,3 +169,31 @@ export const deleteSubCategoryById = async (req, res) => {
         return ThrowError(res, 500, error.message)
     }
 }
+
+export const getSubCategoriesByCategoryId = async (req, res) => {
+    try {
+        const { categoryId } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(categoryId)) {
+            return sendBadRequestResponse(res, "Invalid CategoryId!!!")
+        }
+
+        const checkCategory = await CategoryModel.findById(categoryId);
+        if (!checkCategory) {
+            return sendNotFoundResponse(res, "Category not found...")
+        }
+
+        const subCategories = await SubCategoryModel.find({ categoryId })
+            .populate("mainCategoryId")
+            .populate("categoryId")
+
+        if (!subCategories || subCategories.length === 0) {
+            return sendNotFoundResponse(res, "No subCategories found for this Category!!!")
+        }
+
+        return sendSuccessResponse(res, "subCategories fetched successfully...", subCategories)
+
+    } catch (error) {
+        return ThrowError(res, 500, error.message)
+    }
+}
