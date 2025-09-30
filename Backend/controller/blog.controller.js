@@ -62,7 +62,12 @@ export const addNewBlogController = async (req, res) => {
         console.error("CREATE BLOG ERROR:", error);
         return res.status(500).json({ success: false, message: error.message });
     }
-};
+}
+
+
+
+
+;
 
 export const getAllBlogsController = async (req, res) => {
     try {
