@@ -6,7 +6,7 @@ import { deleteS3File } from "../utils/aws.config.js";
 
 export const addNewBlogController = async (req, res) => {
     try {
-        const { blogCategoryId, blogTitle, section } = req.body;
+        const { blogCategoryId, blogTitle, blogDesc, section } = req.body;
 
         let heroImageUrl = null;
 
@@ -47,6 +47,7 @@ export const addNewBlogController = async (req, res) => {
         const blog = new blogModel({
             blogCategoryId,
             blogTitle,
+            blogDesc: blogDesc,
             heroImage: heroImageUrl,
             section: parsedSections,
         });
@@ -62,12 +63,7 @@ export const addNewBlogController = async (req, res) => {
         console.error("CREATE BLOG ERROR:", error);
         return res.status(500).json({ success: false, message: error.message });
     }
-}
-
-
-
-
-    ;
+};
 
 export const getAllBlogsController = async (req, res) => {
     try {
@@ -78,10 +74,13 @@ export const getAllBlogsController = async (req, res) => {
 
         const blogs = await blogModel
             .find()
-            .populate("blogCategoryId", "categoryName") // only bring category name
+            .populate({
+                path: "blogCategoryId"   // fetch full category object
+            })
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 });
+
 
         const total = await blogModel.countDocuments();
 
@@ -131,6 +130,7 @@ export const updateBlogController = async (req, res) => {
         const { blogId } = req.params;
         const blogCategoryId = req.body?.blogCategoryId;
         const blogTitle = req.body?.blogTitle;
+        const blogDesc = req.body?.blogDesc;
         const section = req.body?.section;
         if (!mongoose.Types.ObjectId.isValid(blogId))
             return res.status(400).json({ success: false, message: "Invalid Blog ID" });
@@ -152,6 +152,7 @@ export const updateBlogController = async (req, res) => {
         // 2. Blog Title & Category
         if (blogTitle) blog.blogTitle = blogTitle;
         if (blogCategoryId) blog.blogCategoryId = blogCategoryId;
+        if (blogDesc) blog.blogDesc = blogDesc;
 
         // 3. Sections
         if (section) {

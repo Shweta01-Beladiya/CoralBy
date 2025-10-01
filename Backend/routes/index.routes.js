@@ -287,6 +287,7 @@ indexRouter.get("/all/blogs", getAllBlogsController);
 indexRouter.get("/blog/:blogId", getBlogByIdController);
 indexRouter.patch("/update/blog/:blogId", UserAuth, isAdmin, upload.any(), updateBlogController);
 indexRouter.delete("/delete/blog/:blogId", deleteBlogController);
+
 //ContactUs
 indexRouter.post("/createContactUs", createContactUs);
 indexRouter.get("/getAllContactUs", getAllContactUs);
