@@ -9,7 +9,14 @@ import blog3 from '../images/b-3.jpg'
 import blog4 from '../images/b-4.jpg'
 import blog5 from '../images/b-5.jpg'
 import blog6 from '../images/b-6.jpg'
+import { useParams } from 'react-router-dom';
+
 const BlogDetailsPage = () => {
+
+  const { id } = useParams();
+  console.log("blog page::",id);
+  
+
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const latestBlogs = [
@@ -433,6 +440,7 @@ const BlogDetailsPage = () => {
               </p>
             </div>
           </div>
+
           {/* Conclusion */}
           <div className="mb-12">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">CONCLUSION</h3>
@@ -450,27 +458,28 @@ const BlogDetailsPage = () => {
       {/* Keywords Section */}
       <div className='main_container'>
         <div className="mb-12">
-        <h4 className="font-semibold text-gray-900 mb-4">Primary Keywords</h4>
-        <div className="flex flex-wrap text-md">
-          {[
-            'tech accessories', 'workspace accessories', 'desk gadgets', 'wireless charging pad', 'noise-cancelling headphones',
-            'ergonomic keyboard', 'USB hub', 'ergonomic mouse', 'cable management solutions', 'adjustable monitor stand',
-            'productivity tools', 'home office gadgets', 'desk organization', 'fast charging devices', 'clutter-free workspace',
-            'desk ergonomics', 'office productivity hacks', 'best accessories for work from home', 'laptop stands',
-            'gaming desk setup', 'laptop stands', 'data transfer hub', 'comfort-focused tech', 'organized desk ideas',
-            'how to organize cables on your desk', 'best wireless chargers for smartphones',
-            'tips for setting up a home office workspace', 'ergonomic solutions for desk work',
-            'must-have desk accessories for remote workers', 'how to reduce eye strain with monitor stands',
-            'charging solutions for multiple devices', 'affordable tech accessories for professionals',
-            'office setup ideas for better posture'
-          ].map((keyword, index) => (
-            <span key={index} className=" text-gray-700 mb-3">
-              {keyword}<span className="ml-3 mr-3">|</span>
-            </span>
-          ))}
+          <h4 className="font-semibold text-gray-900 mb-4">Primary Keywords</h4>
+          <div className="flex flex-wrap text-md">
+            {[
+              'tech accessories', 'workspace accessories', 'desk gadgets', 'wireless charging pad', 'noise-cancelling headphones',
+              'ergonomic keyboard', 'USB hub', 'ergonomic mouse', 'cable management solutions', 'adjustable monitor stand',
+              'productivity tools', 'home office gadgets', 'desk organization', 'fast charging devices', 'clutter-free workspace',
+              'desk ergonomics', 'office productivity hacks', 'best accessories for work from home', 'laptop stands',
+              'gaming desk setup', 'laptop stands', 'data transfer hub', 'comfort-focused tech', 'organized desk ideas',
+              'how to organize cables on your desk', 'best wireless chargers for smartphones',
+              'tips for setting up a home office workspace', 'ergonomic solutions for desk work',
+              'must-have desk accessories for remote workers', 'how to reduce eye strain with monitor stands',
+              'charging solutions for multiple devices', 'affordable tech accessories for professionals',
+              'office setup ideas for better posture'
+            ].map((keyword, index) => (
+              <span key={index} className=" text-gray-700 mb-3">
+                {keyword}<span className="ml-3 mr-3">|</span>
+              </span>
+            ))}
+          </div>
         </div>
       </div>
-      </div>
+
       {/* Latest Blogs Slider Section */}
       <div className="main_container">
         <div className=" mx-auto mb-10">
