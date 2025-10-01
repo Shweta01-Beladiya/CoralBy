@@ -74,10 +74,13 @@ export const getAllBlogsController = async (req, res) => {
 
         const blogs = await blogModel
             .find()
-            .populate("blogCategoryId", "categoryName") // only bring category name
+            .populate({
+                path: "blogCategoryId"   // fetch full category object
+            })
             .skip(skip)
             .limit(limit)
             .sort({ createdAt: -1 });
+
 
         const total = await blogModel.countDocuments();
 
