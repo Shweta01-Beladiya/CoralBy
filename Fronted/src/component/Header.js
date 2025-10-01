@@ -1250,195 +1250,74 @@ export default function Header() {
                         <div className="overflow-x-auto custom-scrollbar">
                             <div className="flex justify-between items-center min-w-max w-full">
 
-                                {mainCategory?.map((main) => (
+                                {mainCategory?.map((main) => {
 
-                                    <div
-                                        className="cursor-pointer flex items-center gap-2 shrink-0 px-2  xl:ps-0"
-
-                                        onClick={() => toggleMenu(main._id)}
-                                    >
-                                        {main.mainCategoryName}
-
-                                        {openMenu === main._id ? (
-                                            <FaAngleUp className="text-sm text-[var(--header-text-orange)]" />
-                                        ) : (
-                                            <FaAngleDown className="text-sm" />
-                                        )}
+                                    const hasCategories = category?.some(
+                                        (cat) => cat.mainCategoryId === main._id
+                                    );
 
 
-                                        {openMenu === main._id && (
-                                            <div className="absolute left-0 top-full w-full bg-[var(--bg-white)] shadow-lg z-[90]">
-                                                <div className="max-w-7xl min-w-full px-6 py-6 flex gap-6">
+                                    return (
 
-                                                    {/* 1 - col */}
-                                                    <div className="w-1/5">
+                                        <div
+                                            className="cursor-pointer flex items-center gap-2 shrink-0 px-2  xl:ps-0"
 
-                                                        {/* {category?.map((cat) =>
-                                                        cat?.mainCategoryId === main._id ? (
-                                                            <h3
-                                                            className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]"
-                                                            key={cat._id}
-                                                            >
-                                                            {cat.categoryName}
-                                                            </h3>
-                                                        ) : null
-                                                        )} */}
+                                            onClick={() => hasCategories && toggleMenu(main._id)}
+                                        >
+                                            {main.mainCategoryName}
 
 
+                                            { hasCategories && (
+                                                openMenu === main._id ? (
+                                                    <FaAngleUp className="text-sm text-[var(--header-text-orange)]" />
+                                                ) : (
+                                                    <FaAngleDown className="text-sm" />
+                                                    )
+                                                )
+                                             }
+                                          
+
+
+                                            {openMenu === main._id && (
+                                                <div className="absolute left-0 top-full w-full bg-[var(--bg-white)] shadow-lg z-[90]">
+                                                    <div className="max-w-7xl min-w-full px-6 py-6 bg-white [column-count:5] [column-fill:auto] [column-gap:1.5rem] max-h-[500px] xl:max-h-[450px] overflow-y-auto cursor-auto">
                                                         {category
                                                             .filter((cat) => cat.mainCategoryId === main._id)
                                                             .map((cat) => (
-                                                                <div key={cat._id} className="">
+                                                                <div key={cat._id} className="break-inside-avoid mb-2">
                                                                     {/* Category */}
-                                                                    <h3 className="font-semibold mb-2 text-base text-[var(--dropdown-dark-text)]">{cat.categoryName}</h3>
+                                                                    <h3 className="font-semibold mb-2 text-base text-[var(--dropdown-dark-text)] cursor-pointer">
+                                                                        {cat.categoryName}
+                                                                    </h3>
 
-                                                                    {/* Subcategories*/}
-                                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
+                                                                    {/* Subcategories */}
+                                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal cursor-pointer">
                                                                         {subCategory
                                                                             .filter((sub) => sub.categoryId === cat._id)
                                                                             .map((sub) => (
-                                                                                <li key={sub._id}>{sub.subCategoryName}</li>
+                                                                                <li key={sub._id}  >{sub.subCategoryName}</li>
                                                                             ))}
                                                                     </ul>
+
                                                                 </div>
                                                             ))}
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Furnishing</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Blankets</li>
-                                                            <li>Curtains</li>
-                                                            <li>Bedsheets</li>
-                                                            <li>Bath Towels</li>
-                                                            <li>Pillow</li>
-                                                        </ul>
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Home Decor</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Clocks</li>
-                                                            <li>Showpieces</li>
-                                                            <li>Bedsheets</li>
-                                                            <li>Paintings </li>
-                                                            <li>Flowers</li>
-                                                        </ul>
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Smart Home Automation</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Smart Door Locks</li>
-                                                        </ul>
-
                                                     </div>
 
-
-                                                    <div className="w-1/5">
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Kitchen & Cookware</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Tawas</li>
-                                                            <li>Pressure Cookers</li>
-                                                            <li>Gas Stoves</li>
-                                                            <li>Pans</li>
-                                                            <li>Kitchen Tools</li>
-                                                        </ul>
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Home Lighting</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Bulbs</li>
-                                                            <li>Wall Lamp</li>
-                                                            <li>Table Lamp</li>
-                                                            <li>Night Lamp</li>
-                                                            <li>Celling Lamp</li>
-                                                            <li>Emergency Light</li>
-                                                        </ul>
-
-
-                                                    </div>
-
-                                                    <div className="w-1/5">
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Kitchen Storage</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Flasks</li>
-                                                            <li>Casseroles</li>
-                                                            <li>Lunch Box</li>
-                                                            <li>Water Bottle</li>
-                                                            <li>Spice Racks</li>
-                                                            <li>Storage Jars</li>
-                                                            <li>Fridge Organizers</li>
-                                                            <li>Cutlery Holders</li>
-                                                            <li>Airtight Containers</li>
-                                                            <li>Plastic Storage Boxes</li>
-                                                            <li>Vegetable Storage Bags</li>
-                                                        </ul>
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Festive Décor & Gifts</h3>
-
-                                                    </div>
-
-
-                                                    <div className="w-1/5">
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Pet Supplies</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Dogs</li>
-                                                            <li>Cats</li>
-                                                            <li>Fish</li>
-                                                        </ul>
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Household Appliances</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Vacuum Cleaners</li>
-                                                            <li>Heating & Cooling</li>
-                                                            <li>Whitegoods</li>
-                                                            <li>Air Purifiers</li>
-                                                            <li>Air Purifiers</li>
-                                                        </ul>
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Dining</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Dinner Ware</li>
-                                                            <li>Glass Ware</li>
-                                                            <li>Barware</li>
-                                                            <li>Cups & Mugs</li>
-                                                        </ul>
-                                                    </div>
-
-
-                                                    <div className="w-1/5">
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Gardening Store</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Milton</li>
-                                                            <li>Ajanta</li>
-                                                            <li>Prestige</li>
-                                                        </ul>
-
-                                                        <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Top Brands</h3>
-                                                        <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                            <li>Heritage</li>
-                                                            <li>Dyson</li>
-                                                            <li>Maxwell & Williams</li>
-                                                            <li>Vue</li>
-                                                            <li>Australian House & Garden</li>
-                                                            <li>Mini Jumbak</li>
-                                                            <li>Bissell</li>
-                                                            <li>Braveille</li>
-                                                            <li>Russell Hobbs</li>
-                                                            <li>Amazon Basics</li>
-                                                        </ul>
-
-                                                    </div>
                                                 </div>
-                                            </div>
-                                        )}
+                                            )}
 
-                                    </div>
+                                        </div>
+                                    )
 
-                                ))
+                                })
 
                                 }
 
 
-                              
 
 
-                                
+
+
                             </div>
                         </div>
 

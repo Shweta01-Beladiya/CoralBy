@@ -1,4 +1,11 @@
-import * as Yup from 'yup';
+import React from 'react'
+import * as Yup from "yup"
+
+
+export const subscribeSchema = Yup.object({
+  Email : Yup.string().email().required("Enter Your Email"),
+})
+
 
 // contact us form validation schema
 export const contactUsSchema = Yup.object().shape({

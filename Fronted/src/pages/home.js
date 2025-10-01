@@ -85,11 +85,15 @@ import WelcomeToCoralBay from "../images/WelcomeToCoralBay.png";
 import WelcomeBack from "../images/WelcomeBack.png";
 import '../App.css';
 import { Link } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { getMainCategory } from '../Store/Slices/categorySlice';
 
 
 
 export default function Home() {
 
+
+	const dispatch = useDispatch();
 
 	// *************** Modal Code ***************
 
@@ -426,49 +430,61 @@ export default function Home() {
 
 
 	// *************** 10. Deals For You ***************
+
+	useEffect(() => {
+		getMainCategory()
+	}, [dispatch])
+
+	const mainCategory = useSelector((state) => state.category.mainCategory.data)
+
+	const DealsCardImages = mainCategory?.map((cat) => ({
+		img: cat.mainCategoryImage,  
+		label: cat.mainCategoryName, 
+	}));
+
 	// Card Images
-	const DealsCardImages = [
-		{
-			img: WomensDaySpecials,
-			label: "Women's Day Specials",
-		},
-		{
-			img: HomeGarden,
-			label: "Home & Garden",
-		},
-		{
-			img: GamingToys,
-			label: "Gaming & Toys",
-		},
-		{
-			img: MensGrooming,
-			label: "Men’s Grooming",
-		},
-		{
-			img: HardwareTools,
-			label: "Hardware Tools",
-		},
-		{
-			img: WomensDaySpecials,
-			label: "Women's Day Specials",
-		},
-		{
-			img: HomeGarden,
-			label: "Home & Garden",
-		},
-		{
-			img: GamingToys,
-			label: "Gaming & Toys",
-		},
-		{
-			img: MensGrooming,
-			label: "Men’s Grooming",
-		},
-		{
-			img: HardwareTools,
-			label: "Hardware Tools",
-		}
-	]
+	// const DealsCardImages = [
+	// 	{
+	// 		img: WomensDaySpecials,
+	// 		label: "Women's Day Specials",
+	// 	},
+	// 	{
+	// 		img: HomeGarden,
+	// 		label: "Home & Garden",
+	// 	},
+	// 	{
+	// 		img: GamingToys,
+	// 		label: "Gaming & Toys",
+	// 	},
+	// 	{
+	// 		img: MensGrooming,
+	// 		label: "Men’s Grooming",
+	// 	},
+	// 	{
+	// 		img: HardwareTools,
+	// 		label: "Hardware Tools",
+	// 	},
+	// 	{
+	// 		img: WomensDaySpecials,
+	// 		label: "Women's Day Specials",
+	// 	},
+	// 	{
+	// 		img: HomeGarden,
+	// 		label: "Home & Garden",
+	// 	},
+	// 	{
+	// 		img: GamingToys,
+	// 		label: "Gaming & Toys",
+	// 	},
+	// 	{
+	// 		img: MensGrooming,
+	// 		label: "Men’s Grooming",
+	// 	},
+	// 	{
+	// 		img: HardwareTools,
+	// 		label: "Hardware Tools",
+	// 	}
+	// ]
 
 	// Carousel State and Handlers
 	const [startIndex2, setStartIndex2] = useState(0);

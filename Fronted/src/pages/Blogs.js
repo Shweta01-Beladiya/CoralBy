@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Add this import
 import { ChevronLeft, ChevronRight, ArrowRight } from 'lucide-react';
 import { LiaAngleRightSolid } from "react-icons/lia";
@@ -14,21 +14,32 @@ import blog9 from '../images/b-9.jpg'
 import blog10 from '../images/b-10.jpg'
 import blog11 from '../images/b-11.jpg'
 import blog12 from '../images/b-12.jpg'
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchBlogAllCategories } from '../Store/Slices/blogcategorySlice';
 
 const BlogPage = () => {
   const [activeFilter, setActiveFilter] = useState('All Articles');
   const [currentPage, setCurrentPage] = useState(1);
   const navigate = useNavigate(); // Add navigation hook
 
-  const filterButtons = [
-    'All Articles',
-    'Lifestyle Trends',
-    'Electronics',
-    'Home & Furniture',
-    'Sustainability',
-    'Beauty & Personal Care',
-    'Tech'
-  ];
+  // const filterButtons = [
+  //   'All Articles',
+  //   'Lifestyle Trends',
+  //   'Electronics',
+  //   'Home & Furniture',
+  //   'Sustainability',
+  //   'Beauty & Personal Care',
+  //   'Tech'
+  // ];
+
+
+  const dispatch = useDispatch();
+  const { categories, loading } = useSelector((state) => state.blogallcategory);
+
+  useEffect(() => {
+    dispatch(fetchBlogAllCategories());
+  }, [dispatch]);
+
 
   const blogPosts = [
     {
@@ -333,51 +344,52 @@ const BlogPage = () => {
         <div className='main_container'>
           <div className="mb-12">
             <div className="flex flex-wrap gap-3 ">
-              {filterButtons.map((filter, index) => (
+              {/* Map backend categories */}
+              {categories?.map((cat) => (
                 <button
-                  key={index}
-                  onClick={() => handleFilterChange(filter)}
-                  className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-300 border ${activeFilter === filter
-                      ? 'bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/25'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-orange-300 hover:text-orange-600 hover:shadow-md'
+                  key={cat._id}
+                  onClick={() => handleFilterChange(cat.blogCategoryName)}
+                  className={`px-6 py-3 rounded-md text-sm font-medium transition-all duration-300 border ${activeFilter === cat.blogCategoryName
+                    ? "bg-orange-500 text-white border-orange-500 shadow-lg shadow-orange-500/25"
+                    : "bg-white text-gray-700 border-gray-200 hover:border-orange-300 hover:text-orange-600 hover:shadow-md"
                     }`}
                 >
-                  {filter}
+                  {cat.blogCategoryName}
                 </button>
               ))}
             </div>
           </div>
         </div>
- 
+
         {/* Dynamic Grid Layout */}
-       <div className='main_container'>
-         <div className="space-y-12 mb-16">
-          {gridLayout.map((row, rowIndex) => (
-            <div key={rowIndex}>
-              {row.type === 'mixed-row' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <BlogCard post={row.posts[0]} size="large" />
-                  <BlogCard post={row.posts[1]} />
-                </div>
-              )}
+        <div className='main_container'>
+          <div className="space-y-12 mb-16">
+            {gridLayout.map((row, rowIndex) => (
+              <div key={rowIndex}>
+                {row.type === 'mixed-row' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <BlogCard post={row.posts[0]} size="large" />
+                    <BlogCard post={row.posts[1]} />
+                  </div>
+                )}
 
-              {row.type === 'triple-row' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {row.posts.map((post) => (
-                    <BlogCard key={post.id} post={post} />
-                  ))}
-                </div>
-              )}
+                {row.type === 'triple-row' && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {row.posts.map((post) => (
+                      <BlogCard key={post.id} post={post} />
+                    ))}
+                  </div>
+                )}
 
-              {row.type === 'single' && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <BlogCard post={row.posts[0]} />
-                </div>
-              )}
-            </div>
-          ))}
+                {row.type === 'single' && (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <BlogCard post={row.posts[0]} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
-       </div>
 
         {/* No Posts Message */}
         {currentPosts.length === 0 && (
@@ -394,8 +406,8 @@ const BlogPage = () => {
               onClick={prevPage}
               disabled={currentPage === 1}
               className={`w-12 h-12 rounded-md border-2 transition-all duration-300 flex items-center justify-center ${currentPage === 1
-                  ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'border-gray-300 text-gray-700 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50'
+                ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                : 'border-gray-300 text-gray-700 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50'
                 }`}
             >
               <ChevronLeft className="w-5 h-5" />
@@ -406,8 +418,8 @@ const BlogPage = () => {
                 key={page}
                 onClick={() => setCurrentPage(page)}
                 className={`w-12 h-12 rounded-md transition-all duration-300 text-sm font-semibold ${currentPage === page
-                    ? 'bg-[#111827] text-white '
-                    : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50'
+                  ? 'bg-[#111827] text-white '
+                  : 'bg-white text-gray-700 border-2 border-gray-200 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50'
                   }`}
               >
                 {page}
@@ -418,8 +430,8 @@ const BlogPage = () => {
               onClick={nextPage}
               disabled={currentPage === totalPages}
               className={`w-12 h-12 rounded-md border-2 transition-all duration-300 flex items-center justify-center ${currentPage === totalPages
-                  ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                  : 'border-gray-300 text-gray-700 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50'
+                ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                : 'border-gray-300 text-gray-700 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50'
                 }`}
             >
               <ChevronRight className="w-5 h-5" />
