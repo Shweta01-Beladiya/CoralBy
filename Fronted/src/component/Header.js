@@ -35,7 +35,7 @@ import {
 } from "@headlessui/react";
 import { IoMdClose } from "react-icons/io";
 import { useDispatch, useSelector } from 'react-redux';
-import { getMainCategory, getCategory, getSubCategory } from '../Store/Slices/categorySlice';
+import { getMainCategory, getCategory, getSubCategory, getInsideSubCategory } from '../Store/Slices/categorySlice';
 
 
 export default function Header() {
@@ -220,19 +220,24 @@ export default function Header() {
         dispatch(getMainCategory())
         dispatch(getCategory());
         dispatch(getSubCategory());
+        dispatch(getInsideSubCategory())
     }, [dispatch])
 
     const mainCategory = useSelector((state) => state.category.mainCategory.data);
     const category = useSelector((state) => state.category.category.data);
     const subCategory = useSelector((state) => state.category.subCategory.data);
+    const insideSubCategory = useSelector((state) => state.category.inSubCategory.data);
 
-    console.log("Category", mainCategory?.result)
+    console.log("insideSubCategory :: ", insideSubCategory)
 
     const toggleMenu = (id) => {
         // alert(id)
         setOpenMenu(openMenu === id ? null : id);
     };
 
+    const handleToggleAccordion = (id) => {
+        setOpenIndex(openIndex === id ? null : id);
+    };
 
 
 
@@ -883,345 +888,85 @@ export default function Header() {
                                 <div className="p-5 overflow-y-auto h-screen">
                                     <div className="w-full max-w-md mx-auto space-y-5">
 
-                                        {/* Cat - 1 */}
-                                        <div className="">
-                                            <div
-                                                onClick={() => toggleCatAccodian(1)}
-                                                className="cursor-pointer  flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium"
-                                            >
-                                                <span>Home & Furniture </span>
-                                                <span>{openIndex === 0 ? <FaAngleUp /> : <FaAngleDown />}</span>
-                                            </div>
-                                            {openIndex === 1 && (
-                                                <div className="text-base mt-2 ps-2">
+                                        <div>
+                                            {mainCategory?.map((main) => {
+                                                const hasCategories = category?.some(
+                                                    (cat) => cat.mainCategoryId === main._id
+                                                );
 
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Furnishing</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Blankets</li>
-                                                        <li>Curtains</li>
-                                                        <li>Bedsheets</li>
-                                                        <li>Bath Towels</li>
-                                                        <li>Pillow</li>
-                                                    </ul>
+                                                return (
+                                                    <div key={main._id} className="mb-4">
+                                                        {/* Main Category */}
+                                                        <div
+                                                            onClick={() => hasCategories && handleToggleAccordion(main._id)}
+                                                            className="cursor-pointer flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium "
+                                                        >
+                                                            <span className='w-full'>{main.mainCategoryName}</span>
 
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Home Decor</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Clocks</li>
-                                                        <li>Showpieces</li>
-                                                        <li>Bedsheets</li>
-                                                        <li>Paintings </li>
-                                                        <li>Flowers</li>
-                                                    </ul>
+                                                            {hasCategories && (
+                                                                <span>
+                                                                    {openIndex === main._id ? <FaAngleUp /> : <FaAngleDown />}
+                                                                </span>
+                                                            )}
+                                                        </div>
 
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Smart Home Automation</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Smart Door Locks</li>
-                                                    </ul>
+                                                        {/* Dropdown Content */}
+                                                        {openIndex === main._id && (
+                                                            <div className="text-base mt-2 ps-2">
+                                                                {category
+                                                                    ?.filter((cat) => cat.mainCategoryId === main._id)
+                                                                    .map((cat) => (
+                                                                        <div key={cat._id} className="mb-3">
+                                                                            {/* Category */}
+                                                                            <h3 className="font-semibold mb-2 text-base text-[var(--dropdown-dark-text)]"  >
+                                                                                {cat.categoryName}
+                                                                            </h3>
 
+                                                                            {/* Subcategories */}
+                                                                            <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
+                                                                                {subCategory
+                                                                                    ?.filter((sub) => sub.categoryId === cat._id)
+                                                                                    .map((sub) => {
+                                                                                        const insideSubs = insideSubCategory.filter(
+                                                                                            (inside) => inside.subCategoryId?._id === sub._id
+                                                                                        );
 
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Kitchen & Cookware</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Tawas</li>
-                                                        <li>Pressure Cookers</li>
-                                                        <li>Gas Stoves</li>
-                                                        <li>Pans</li>
-                                                        <li>Kitchen Tools</li>
-                                                    </ul>
+                                                                                        return (
+                                                                                            <li key={sub._id} >
+                                                                                                {insideSubs.length > 0 ? (
+                                                                                                    <>
+                                                                                                        {/* Subcategory heading */}
+                                                                                                        <h4 className="text-base font-semibold text-[var(--dropdown-dark-text)] mb-1" >
+                                                                                                            {sub.subCategoryName}
+                                                                                                        </h4>
 
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Home Lighting</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Bulbs</li>
-                                                        <li>Wall Lamp</li>
-                                                        <li>Table Lamp</li>
-                                                        <li>Night Lamp</li>
-                                                        <li>Celling Lamp</li>
-                                                        <li>Emergency Light</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Kitchen Storage</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Flasks</li>
-                                                        <li>Casseroles</li>
-                                                        <li>Lunch Box</li>
-                                                        <li>Water Bottle</li>
-                                                        <li>Spice Racks</li>
-                                                        <li>Storage Jars</li>
-                                                        <li>Fridge Organizers</li>
-                                                        <li>Cutlery Holders</li>
-                                                        <li>Airtight Containers</li>
-                                                        <li>Plastic Storage Boxes</li>
-                                                        <li>Vegetable Storage Bags</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Festive Décor & Gifts</h3>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Pet Supplies</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Dogs</li>
-                                                        <li>Cats</li>
-                                                        <li>Fish</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Household Appliances</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Vacuum Cleaners</li>
-                                                        <li>Heating & Cooling</li>
-                                                        <li>Whitegoods</li>
-                                                        <li>Air Purifiers</li>
-                                                        <li>Air Purifiers</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Dining</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Dinner Ware</li>
-                                                        <li>Glass Ware</li>
-                                                        <li>Barware</li>
-                                                        <li>Cups & Mugs</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Gardening Store</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Milton</li>
-                                                        <li>Ajanta</li>
-                                                        <li>Prestige</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Top Brands</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Heritage</li>
-                                                        <li>Dyson</li>
-                                                        <li>Maxwell & Williams</li>
-                                                        <li>Vue</li>
-                                                        <li>Australian House & Garden</li>
-                                                        <li>Mini Jumbak</li>
-                                                        <li>Bissell</li>
-                                                        <li>Braveille</li>
-                                                        <li>Russell Hobbs</li>
-                                                        <li>Amazon Basics</li>
-                                                    </ul>
-
-                                                </div>
-                                            )}
+                                                                                                        {/* Inside Subcategories */}
+                                                                                                        <ul className="space-y-2 text-sm text-[var(--dropdown-mmenu-text)]">
+                                                                                                            {insideSubs.map((inside) => (
+                                                                                                                <li key={inside._id} onClick={()=> alert(inside.insideSubCategoryName)}>
+                                                                                                                    {inside.insideSubCategoryName}
+                                                                                                                </li>
+                                                                                                            ))}
+                                                                                                        </ul>
+                                                                                                    </>
+                                                                                                ) : (
+                                                                                                    // Subcategory without inside subs
+                                                                                                    <h4 className="text-sm text-[var(--dropdown-mmenu-text)] font-normal" >
+                                                                                                        {sub.subCategoryName}
+                                                                                                    </h4>
+                                                                                                )}
+                                                                                            </li>
+                                                                                        );
+                                                                                    })}
+                                                                            </ul>
+                                                                        </div>
+                                                                    ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
                                         </div>
-
-                                        {/* Cat - 2 */}
-                                        <div className="">
-                                            <div
-                                                onClick={() => toggleCatAccodian(2)}
-                                                className="cursor-pointer  flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium"
-                                            >
-                                                <span>Fashion</span>
-                                                <span>{openIndex === 0 ? <FaAngleUp /> : <FaAngleDown />}</span>
-                                            </div>
-                                            {openIndex === 2 && (
-                                                <div className="text-base mt-2 ps-2">
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)] border-b border-[var(--dropdown-dark-text)] w-fit">Top Brands</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Levi’s</li>
-                                                        <li>Jack & Jones</li>
-                                                        <li>Allen Solly </li>
-                                                        <li>Park Avenue</li>
-                                                        <li>Aurelia</li>
-                                                        <li>ZARA</li>
-                                                        <li>H&M</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Biba</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Woodland</li>
-                                                        <li>Campus</li>
-                                                        <li>Adidas</li>
-                                                        <li>Nike </li>
-                                                        <li>Skechers</li>
-                                                        <li>Bata</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--text-orange)]">MEN</h3>
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Top Wear</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>T-Shirts</li>
-                                                        <li>Casual Shirts</li>
-                                                        <li>Formal Shirts</li>
-                                                        <li>Jackets</li>
-                                                        <li>Blazer & Coats</li>
-                                                        <li>Suits</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Bottom Wear</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Jeans</li>
-                                                        <li>Casual Trousers</li>
-                                                        <li>Formal Trousers</li>
-                                                        <li>Shots</li>
-                                                        <li>Track Pants & Joggers</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Foot Wear</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Casual Shoes</li>
-                                                        <li>Formal Shoes</li>
-                                                        <li>Sports Shoes</li>
-                                                        <li>Sneakers</li>
-                                                        <li>Socks</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Watches</h3>
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Sunglasses & Frames</h3>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Accessories</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Wallet</li>
-                                                        <li>Belts</li>
-                                                        <li>Perfumes</li>
-                                                        <li>Trimmers</li>
-                                                        <li>Caps & Hats</li>
-                                                        <li>Ties & Cufflinks</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--text-orange)]">WOMEN</h3>
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">New Arrivals</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Dress Shipping & Returns</li>
-                                                        <li>Lehenga Cholis</li>
-                                                        <li>Jackets</li>
-                                                        <li>Ethnic Wear</li>
-                                                        <li>Sarees</li>
-                                                        <li>Kurtis & Suits</li>
-                                                        <li>Salwar's & Chuddar's</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Jewelry</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Fashion Jewelry </li>
-                                                        <li>Fine Jewelry</li>
-                                                        <li>Earrings</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Handbags, Bags & Wallets</h3>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Western Wear</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>T-Shirts</li>
-                                                        <li>Jeans</li>
-                                                        <li>Top</li>
-                                                        <li>Dresses</li>
-                                                        <li>Jumpsuits</li>
-                                                        <li>Trousers & Capris</li>
-                                                        <li>Shots & Skirts</li>
-                                                    </ul>
-
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Beauty & Personal Care</h3>
-                                                    <h3 className="font-semibold mb-3 text-base text-[var(--dropdown-dark-text)]">Sports & Active Wear</h3>
-                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal">
-                                                        <li>Clothing</li>
-                                                        <li>Foot Wear</li>
-                                                        <li>Sports Equipment</li>
-                                                        <li>Sport Accessories</li>
-                                                    </ul>
-
-
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Cat - 3 */}
-                                        <div className="">
-                                            <div
-                                                onClick={() => toggleCatAccodian(3)}
-                                                className="cursor-pointer  flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium"
-                                            >
-                                                <span>Electronics</span>
-                                                <span>{openIndex === 0 ? <FaAngleUp /> : <FaAngleDown />}</span>
-                                            </div>
-                                            {openIndex === 3 && (
-                                                <div className="text-base mt-2 ps-2">
-                                                    Content
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Cat - 4 */}
-                                        <div className="">
-                                            <div
-                                                onClick={() => toggleCatAccodian(4)}
-                                                className="cursor-pointer  flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium"
-                                            >
-                                                <span>Mobile & Tablets</span>
-                                                <span>{openIndex === 0 ? <FaAngleUp /> : <FaAngleDown />}</span>
-                                            </div>
-                                            {openIndex === 4 && (
-                                                <div className="text-base mt-2 ps-2">
-                                                    Content
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Cat - 5 */}
-                                        <div className="">
-                                            <div
-                                                onClick={() => toggleCatAccodian(5)}
-                                                className="cursor-pointer  flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium"
-                                            >
-                                                <span>Beauty</span>
-                                                <span>{openIndex === 0 ? <FaAngleUp /> : <FaAngleDown />}</span>
-                                            </div>
-                                            {openIndex === 5 && (
-                                                <div className="text-base mt-2 ps-2">
-                                                    Content
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Cat - 6 */}
-                                        <div className="">
-                                            <div
-                                                onClick={() => toggleCatAccodian(6)}
-                                                className="cursor-pointer  flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium"
-                                            >
-                                                <span>Personal Care</span>
-                                                <span>{openIndex === 0 ? <FaAngleUp /> : <FaAngleDown />}</span>
-                                            </div>
-                                            {openIndex === 6 && (
-                                                <div className="text-base mt-2 ps-2">
-                                                    Content
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Cat - 7 */}
-                                        <div className="">
-                                            <div
-                                                onClick={() => toggleCatAccodian(7)}
-                                                className="cursor-pointer  flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium"
-                                            >
-                                                <span>Grocery</span>
-                                                <span>{openIndex === 0 ? <FaAngleUp /> : <FaAngleDown />}</span>
-                                            </div>
-                                            {openIndex === 7 && (
-                                                <div className="text-base mt-2 ps-2">
-                                                    Content
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Cat - 8 */}
-                                        <div className="">
-                                            <div
-                                                onClick={() => toggleCatAccodian(8)}
-                                                className="cursor-pointer  flex justify-between items-center text-lg text-[var(--dropdown-dark-text)] font-medium"
-                                            >
-                                                <span>Deal</span>
-                                                <span>{openIndex === 0 ? <FaAngleUp /> : <FaAngleDown />}</span>
-                                            </div>
-                                            {openIndex === 8 && (
-                                                <div className="text-base mt-2 ps-2">
-                                                    Content
-                                                </div>
-                                            )}
-                                        </div>
-
-
 
                                     </div>
                                 </div>
@@ -1267,20 +1012,24 @@ export default function Header() {
                                             {main.mainCategoryName}
 
 
-                                            { hasCategories && (
+                                            {hasCategories && (
                                                 openMenu === main._id ? (
                                                     <FaAngleUp className="text-sm text-[var(--header-text-orange)]" />
                                                 ) : (
                                                     <FaAngleDown className="text-sm" />
-                                                    )
                                                 )
-                                             }
-                                          
+                                            )
+                                            }
+
 
 
                                             {openMenu === main._id && (
                                                 <div className="absolute left-0 top-full w-full bg-[var(--bg-white)] shadow-lg z-[90]">
-                                                    <div className="max-w-7xl min-w-full px-6 py-6 bg-white [column-count:5] [column-fill:auto] [column-gap:1.5rem] max-h-[500px] xl:max-h-[450px] overflow-y-auto cursor-auto">
+
+                                                    <div className="max-w-7xl min-w-full px-6 py-6 bg-white 
+                                                        [column-count:5]  [column-fill:balance] [column-gap:1.5rem] 
+                                                        max-h-[500px] xl:max-h-[550px] 
+                                                        overflow-auto cursor-auto break-words cat-scrollbar">
                                                         {category
                                                             .filter((cat) => cat.mainCategoryId === main._id)
                                                             .map((cat) => (
@@ -1291,17 +1040,42 @@ export default function Header() {
                                                                     </h3>
 
                                                                     {/* Subcategories */}
-                                                                    <ul className="space-y-2 mb-3 text-sm text-[var(--dropdown-mmenu-text)] font-normal cursor-pointer">
+                                                                    <ul className="space-y-2 mb-2 text-sm text-[var(--dropdown-mmenu-text)] font-normal cursor-pointer">
                                                                         {subCategory
                                                                             .filter((sub) => sub.categoryId === cat._id)
-                                                                            .map((sub) => (
-                                                                                <li key={sub._id}  >{sub.subCategoryName}</li>
-                                                                            ))}
-                                                                    </ul>
+                                                                            .map((sub) => {
+                                                                                const insideSubs = insideSubCategory.filter(
+                                                                                    (inside) => inside.subCategoryId?._id === sub._id
+                                                                                );
 
+                                                                                return (
+                                                                                    <li key={sub._id}>
+                                                                                        {insideSubs.length > 0 ? (
+                                                                                            <>
+                                                                                                {/* Subcategory as heading */}
+                                                                                                <h4 className="text-base font-semibold text-[var(--dropdown-dark-text)] mb-1 cursor-pointer">
+                                                                                                    {sub.subCategoryName}
+                                                                                                </h4>
+                                                                                                <ul className="space-y-2 text-sm text-[var(--dropdown-mmenu-text)] cursor-pointer">
+                                                                                                    {insideSubs.map((inside) => (
+                                                                                                        <li key={inside._id}>{inside.insideSubCategoryName}</li>
+                                                                                                    ))}
+                                                                                                </ul>
+                                                                                            </>
+                                                                                        ) : (
+                                                                                            // Normal subcategory - no insideSubCategory
+                                                                                            <h4 className='space-y-2 text-sm text-[var(--dropdown-mmenu-text)] font-normal'>
+                                                                                                {sub.subCategoryName}
+                                                                                            </h4>
+                                                                                        )}
+                                                                                    </li>
+                                                                                );
+                                                                            })}
+                                                                    </ul>
                                                                 </div>
                                                             ))}
                                                     </div>
+
 
                                                 </div>
                                             )}
@@ -1314,23 +1088,16 @@ export default function Header() {
                                 }
 
 
-
-
-
-
                             </div>
                         </div>
-
-
-
-
-
-
-
 
                     </div>
                 </div>
             </section>
+
+
+
+
 
             {/* Modal - Track Order - 1 (OrderID and MobileNo) */}
             <Dialog open={openTrackOrderVerify} onClose={setOpenTrackOrderVerify} className="relative z-[999]">
@@ -1384,6 +1151,7 @@ export default function Header() {
                     </DialogPanel>
                 </div>
             </Dialog>
+
 
             {/* Modal - Track Order - 2 (OTP) */}
             <Dialog open={trackOTPVerify} onClose={setTrackOTPVerify} className="relative z-[999]">
