@@ -10,6 +10,10 @@ const countdownSchema = new mongoose.Schema({
 
 const offerSchema = new mongoose.Schema(
     {
+        section: {
+            type: Number,
+            default: null
+        },
         offerTitle: {
             type: String,
             required: [true, "Offer title is required"],

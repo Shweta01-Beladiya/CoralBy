@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+ import mongoose from "mongoose";
 
 const blogCategorySchema = new mongoose.Schema({
     blogCategoryName: { type: String, default: null },

@@ -40,6 +40,7 @@ function ContactUs() {
         validationSchema: contactUsSchema,
         onSubmit: (values, { resetForm }) => {
             dispatch(createContactUs(values));
+            alert("Message sent successfully!");
             resetForm();
         },
     });

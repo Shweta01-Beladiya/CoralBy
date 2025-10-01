@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom';
 
+// Redux imports
 import { useDispatch, useSelector } from 'react-redux';
 import { createCareerJob } from '../Store/Slices/careerjobSlice';
 
@@ -163,7 +164,7 @@ export default function CareerPage() {
 
     const dipatch = useDispatch();
     const { data } = useSelector((state) => state.careerJob);
-    console.log("Career Job Data:", data);
+    // console.log("Career Job Data:", data);
 
 
     useEffect(() => {
@@ -514,7 +515,7 @@ export default function CareerPage() {
                                     <h1 className="text-[#111827] font-semibold text-lg sm:text-[20px] ">
                                         {data.title}
                                     </h1>
-                                    <p className="text-[#6B7280] font-medium text-base my-3">
+                                    <p className="text-[#6B7280] font-medium text-[15px] mt-3 mb-4">
                                         {data.description}
                                     </p>
 

@@ -4,6 +4,7 @@ import userSlice from '../Store/Slices/UserSlice';
 import contactusReducer from '../Store/Slices/contactusSlice';
 import careerjobReducer from '../Store/Slices/careerjobSlice';
 import subscribeReducer from '../Store/Slices/subscribeSlice';
+import blogallcategoryReducer from '../Store/Slices/blogcategorySlice';
 
 export const store = configureStore({
     reducer: {
@@ -13,6 +14,7 @@ export const store = configureStore({
         contactUs: contactusReducer,
         careerJob: careerjobReducer,
         subscribe: subscribeReducer
+        blogallcategory: blogallcategoryReducer,
     },
 });
 

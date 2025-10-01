@@ -4,6 +4,7 @@ import sellerModel from "../model/seller.model.js";
 import MainCategoryModel from "../model/mainCategory.model.js";
 import CategoryModel from "../model/category.model.js";
 import SubCategoryModel from "../model/subCategory.model.js";
+import InsideSubCategoryModel from "../model/insideSubCategory.model.js";
 import ProductVariant from "../model/productvarient.model.js";
 import { ThrowError } from "../utils/Error.utils.js";
 import { sendBadRequestResponse, sendErrorResponse, sendNotFoundResponse, sendSuccessResponse } from "../utils/Response.utils.js";
@@ -87,6 +88,7 @@ export const createProduct = async (req, res) => {
             mainCategory,
             category,
             subCategory,
+            insideSubCategory, // ✅ Optional
             description,
             productDetails,
             shippingReturn,
@@ -117,6 +119,7 @@ export const createProduct = async (req, res) => {
             selectedBrand = seller.brandId[0]._id;
         }
 
+        // ✅ insideSubCategory is now optional
         if (!title || !mainCategory || !category || !subCategory) {
             return sendBadRequestResponse(res, "title, mainCategory, category and subCategory are required!");
         }
@@ -125,15 +128,26 @@ export const createProduct = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(category)) return sendBadRequestResponse(res, "Invalid category ID!");
         if (!mongoose.Types.ObjectId.isValid(subCategory)) return sendBadRequestResponse(res, "Invalid subCategory ID!");
 
-        const [mainCatExists, catExists, subCatExists] = await Promise.all([
+        const categoryChecks = [
             MainCategoryModel.findById(mainCategory),
             CategoryModel.findById(category),
             SubCategoryModel.findById(subCategory),
-        ]);
+        ];
+
+        // ✅ Add insideSubCategory check only if provided
+        if (insideSubCategory) {
+            if (!mongoose.Types.ObjectId.isValid(insideSubCategory)) {
+                return sendBadRequestResponse(res, "Invalid insideSubCategory ID!");
+            }
+            categoryChecks.push(InsideSubCategoryModel.findById(insideSubCategory));
+        }
+
+        const [mainCatExists, catExists, subCatExists, insideSubCatExists] = await Promise.all(categoryChecks);
 
         if (!mainCatExists) return sendNotFoundResponse(res, "Main category does not exist!");
         if (!catExists) return sendNotFoundResponse(res, "Category does not exist!");
         if (!subCatExists) return sendNotFoundResponse(res, "Sub category does not exist!");
+        if (insideSubCategory && !insideSubCatExists) return sendNotFoundResponse(res, "Inside sub category does not exist!");
 
         if (productDetails) {
             const { material, fit, closure, weight } = productDetails;
@@ -150,7 +164,6 @@ export const createProduct = async (req, res) => {
             if (available && typeof available !== "string") return sendBadRequestResponse(res, "Customer support availability must be a string!");
         }
 
-        // ✅ Validate love_about (Required from Seller)
         if (!love_about || !Array.isArray(love_about) || love_about.length === 0) {
             return sendBadRequestResponse(res, "love_about is required and must be a non-empty array!");
         }
@@ -162,13 +175,12 @@ export const createProduct = async (req, res) => {
             if (!item.point || typeof item.point !== 'string') {
                 return sendBadRequestResponse(res, "Each love_about item must have a 'point' string!");
             }
-            // Seller rate not required
         }
 
         const existingProduct = await Product.findOne({ title, sellerId, category });
         if (existingProduct) return sendBadRequestResponse(res, "This product is already added!");
 
-        const newProduct = await Product.create({
+        const productData = {
             sellerId,
             brand: selectedBrand,
             title,
@@ -179,8 +191,15 @@ export const createProduct = async (req, res) => {
             productDetails,
             shippingReturn,
             warrantySupport,
-            love_about // User will add ratings when reviewing
-        });
+            love_about
+        };
+
+        // ✅ Add insideSubCategory only if provided
+        if (insideSubCategory) {
+            productData.insideSubCategory = insideSubCategory;
+        }
+
+        const newProduct = await Product.create(productData);
 
         await sellerModel.findByIdAndUpdate(
             sellerId,
@@ -192,7 +211,8 @@ export const createProduct = async (req, res) => {
             .populate("brand", "brandName")
             .populate("mainCategory", "mainCategoryName")
             .populate("category", "categoryName")
-            .populate("subCategory", "subCategoryName");
+            .populate("subCategory", "subCategoryName")
+            .populate("insideSubCategory", "insideSubCategoryName");
 
         return sendSuccessResponse(res, "✅ Product created successfully!", populatedProduct);
 
@@ -229,6 +249,7 @@ export const getProductById = async (req, res) => {
             .populate('mainCategory', 'name')
             .populate('category', 'name')
             .populate('subCategory', 'name')
+            .populate('insideSubCategory', 'name')
             .populate({
                 path: 'varientId',
                 select: 'sku images color size price stock weight isActive createdAt'
@@ -238,12 +259,11 @@ export const getProductById = async (req, res) => {
             return res.status(404).json({ success: false, message: "Product not found" });
         }
 
-        // Calculate last 12 hours sold count based on payment status
         const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
 
         const recentOrders = await OrderModel.find({
             'products.productId': id,
-            'payment.status': 'Paid', // Payment completed
+            'payment.status': 'Paid',
             'createdAt': { $gte: twelveHoursAgo }
         }).select('products');
 
@@ -256,7 +276,6 @@ export const getProductById = async (req, res) => {
             });
         });
 
-        // Increment views
         product.view = (product.view || 0) + 1;
         await product.save();
 
@@ -288,6 +307,7 @@ export const updateProduct = async (req, res) => {
             mainCategory,
             category,
             subCategory,
+            insideSubCategory,
             description,
             productDetails,
             shippingReturn,
@@ -308,16 +328,24 @@ export const updateProduct = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(mainCategory)) return sendBadRequestResponse(res, "Invalid mainCategory ID!");
         if (!mongoose.Types.ObjectId.isValid(category)) return sendBadRequestResponse(res, "Invalid category ID!");
         if (!mongoose.Types.ObjectId.isValid(subCategory)) return sendBadRequestResponse(res, "Invalid subCategory ID!");
+        if (insideSubCategory && !mongoose.Types.ObjectId.isValid(insideSubCategory)) return sendBadRequestResponse(res, "Invalid insideSubCategory ID!");
 
-        const [mainCatExists, catExists, subCatExists] = await Promise.all([
+        const categoryChecks = [
             MainCategoryModel.findById(mainCategory),
             CategoryModel.findById(category),
             SubCategoryModel.findById(subCategory),
-        ]);
+        ];
+
+        if (insideSubCategory) {
+            categoryChecks.push(InsideSubCategoryModel.findById(insideSubCategory));
+        }
+
+        const [mainCatExists, catExists, subCatExists, insideSubCatExists] = await Promise.all(categoryChecks);
 
         if (!mainCatExists) return sendNotFoundResponse(res, "Main category does not exist!");
         if (!catExists) return sendNotFoundResponse(res, "Category does not exist!");
         if (!subCatExists) return sendNotFoundResponse(res, "Sub category does not exist!");
+        if (insideSubCategory && !insideSubCatExists) return sendNotFoundResponse(res, "Inside sub category does not exist!");
 
         if (productDetails) {
             const { material, fit, closure, weight } = productDetails;
@@ -334,7 +362,6 @@ export const updateProduct = async (req, res) => {
             if (available && typeof available !== "string") return sendBadRequestResponse(res, "Customer support availability must be a string!");
         }
 
-        // 🔹 Validate love_about if passed
         if (love_about) {
             if (!Array.isArray(love_about)) {
                 return sendBadRequestResponse(res, "love_about must be an array!");
@@ -360,22 +387,32 @@ export const updateProduct = async (req, res) => {
             return sendNotFoundResponse(res, "Product not found or unauthorized!");
         }
 
+        const updateData = {
+            brand,
+            title,
+            mainCategory,
+            category,
+            subCategory,
+            description,
+            productDetails,
+            shippingReturn,
+            warrantySupport,
+            love_about: love_about || product.love_about
+        };
+
+        if (insideSubCategory) {
+            updateData.insideSubCategory = insideSubCategory;
+        }
+
         const updatedProduct = await Product.findByIdAndUpdate(
             id,
-            {
-                brand,
-                title,
-                mainCategory,
-                category,
-                subCategory,
-                description,
-                productDetails,
-                shippingReturn,
-                warrantySupport,
-                love_about: love_about || product.love_about // keep existing if not passed
-            },
+            updateData,
             { new: true, runValidators: true }
-        );
+        ).populate('brand', 'name')
+            .populate('mainCategory', 'name')
+            .populate('category', 'name')
+            .populate('subCategory', 'name')
+            .populate('insideSubCategory', 'name');
 
         return sendSuccessResponse(res, "✅ Product updated successfully!", updatedProduct);
 
@@ -483,22 +520,13 @@ export const getProductBySubCategory = async (req, res) => {
 
 export const getCategoryHierarchy = async (req, res) => {
     try {
-        // Fetch all main categories
         const mainCategories = await MainCategoryModel.find().select("_id mainCategoryName");
-
-        // Fetch all categories
         const categories = await CategoryModel.find().select("_id categoryName mainCategoryId");
-
-        // Fetch all subcategories
         const subCategories = await SubCategoryModel.find().select("_id subCategoryName categoryId");
-
-        // Fetch all products
-        const products = await Product.find().select("_id title brand description subCategory");
-
-        // Fetch all product variants
+        const insideSubCategories = await InsideSubCategoryModel.find().select("_id insideSubCategoryName subCategoryId");
+        const products = await Product.find().select("_id title brand description subCategory insideSubCategory");
         const productVariants = await ProductVariant.find().select("_id productId color size price stock images");
 
-        // Build hierarchy
         const data = mainCategories.map(mainCat => {
             const catList = categories
                 .filter(cat => cat.mainCategoryId.toString() === mainCat._id.toString())
@@ -506,26 +534,37 @@ export const getCategoryHierarchy = async (req, res) => {
                     const subCatList = subCategories
                         .filter(sub => sub.categoryId.toString() === cat._id.toString())
                         .map(sub => {
-                            const productList = products
-                                .filter(p => p.subCategory.toString() === sub._id.toString())
-                                .map(p => {
-                                    const variants = productVariants.filter(
-                                        v => v.productId.toString() === p._id.toString()
-                                    );
+                            const insideSubCatList = insideSubCategories
+                                .filter(insideSub => insideSub.subCategoryId.toString() === sub._id.toString())
+                                .map(insideSub => {
+                                    const productList = products
+                                        .filter(p => p.insideSubCategory && p.insideSubCategory.toString() === insideSub._id.toString())
+                                        .map(p => {
+                                            const variants = productVariants.filter(
+                                                v => v.productId.toString() === p._id.toString()
+                                            );
+                                            return {
+                                                _id: p._id,
+                                                title: p.title,
+                                                brand: p.brand,
+                                                description: p.description,
+                                                subCategory: p.subCategory,
+                                                insideSubCategory: p.insideSubCategory,
+                                                variants
+                                            };
+                                        });
+
                                     return {
-                                        _id: p._id,
-                                        title: p.title,
-                                        brand: p.brand,
-                                        description: p.description,
-                                        subCategory: p.subCategory,
-                                        variants
+                                        _id: insideSub._id,
+                                        insideSubCategoryName: insideSub.insideSubCategoryName,
+                                        products: productList
                                     };
                                 });
 
                             return {
                                 _id: sub._id,
                                 subCategoryName: sub.subCategoryName,
-                                products: productList
+                                insideSubCategories: insideSubCatList
                             };
                         });
 
@@ -586,22 +625,19 @@ export const getProductAll = async (req, res) => {
     const userId = req.user?.id;
 
     try {
-        // Assign badges before fetching
         await assignBadges();
 
-        // Fetch all products
         const products = await Product.find({ isActive: true })
             .populate("brand")
             .populate("mainCategory")
             .populate("category")
             .populate("subCategory")
+            .populate("insideSubCategory") // ✅ Add this line
             .lean();
 
-        // Fetch default variants
         const productIds = products.map((p) => p._id);
         const variants = await ProductVariant.find({ productId: { $in: productIds } }).lean();
 
-        // Map default variant
         const productData = products.map((p) => {
             const defaultVariant = variants.find(
                 (v) => v.productId.toString() === p._id.toString()
@@ -612,7 +648,6 @@ export const getProductAll = async (req, res) => {
             };
         });
 
-        // Wishlist for user
         let wishlistProductIds = [];
         if (userId) {
             const wishlistItems = await WishlistModal.find({ userId }).select("productId");
@@ -664,51 +699,48 @@ export const getSimilarProducts = async (req, res) => {
         const { productId } = req.params;
         const { limit = 12, fields } = req.query;
 
-        // ✅ Validate productId
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             return sendBadRequestResponse(res, "Invalid product ID!");
         }
 
-        // ✅ Build dynamic select string
         let selectFields = "";
         if (fields) {
             const parts = fields.split(",");
             parts.forEach(f => {
                 if (f.startsWith("+")) {
-                    selectFields += " " + f.substring(1); // add field
+                    selectFields += " " + f.substring(1);
                 } else if (f.startsWith("-")) {
-                    selectFields += " -" + f.substring(1); // remove field
+                    selectFields += " -" + f.substring(1);
                 }
             });
         }
 
-        // ✅ Get current product
         const currentProduct = await productModel.findById(productId)
-            .select(selectFields || "") // 🔥 dynamic select
+            .select(selectFields || "")
             .populate("brand", "brandName brandImage")
             .populate("category", "categoryName")
             .populate("subCategory", "subCategoryName")
-            .populate("mainCategory", "mainCategoryName");
+            .populate("mainCategory", "mainCategoryName")
+            .populate("insideSubCategory", "name");
 
         if (!currentProduct) {
             return sendNotFoundResponse(res, "Product not found!");
         }
 
-        // ✅ Get similar products (same subCategory but exclude current one)
         let similarProducts = await productModel.find({
             isActive: true,
             subCategory: currentProduct.subCategory?._id,
             _id: { $ne: currentProduct._id }
         })
-            .select(selectFields || "") // 🔥 dynamic select
+            .select(selectFields || "")
             .populate("brand", "brandName brandImage")
             .populate("mainCategory", "mainCategoryName")
             .populate("category", "categoryName")
             .populate("subCategory", "subCategoryName")
+            .populate("insideSubCategory", "name")
             .sort({ "rating.average": -1, createdAt: -1 })
             .limit(parseInt(limit));
 
-        // ✅ Attach variants & price (NO filter remove for stock)
         const productsWithVariants = await Promise.all(
             similarProducts.map(async (product) => {
                 const variants = await ProductVariant.find({
@@ -726,7 +758,6 @@ export const getSimilarProducts = async (req, res) => {
             })
         );
 
-        // ✅ Final Response
         return sendSuccessResponse(res, "Similar products fetched successfully!", {
             currentProduct: {
                 ...currentProduct.toObject(),
@@ -870,6 +901,16 @@ export const getTrendingProducts = async (req, res) => {
 
             {
                 $lookup: {
+                    from: "insidesubcategories",
+                    localField: "product.insideSubCategory",
+                    foreignField: "_id",
+                    as: "insideSubCategory"
+                }
+            },
+            { $unwind: { path: "$insideSubCategory", preserveNullAndEmptyArrays: true } },
+
+            {
+                $lookup: {
                     from: "brands",
                     localField: "product.brand",
                     foreignField: "_id",
@@ -915,6 +956,13 @@ export const getTrendingProducts = async (req, res) => {
                         $cond: [
                             { $ifNull: ["$subCategory._id", false] },
                             { _id: "$subCategory._id", name: "$subCategory.subCategoryName" },
+                            null
+                        ]
+                    },
+                    insideSubCategory: {
+                        $cond: [
+                            { $ifNull: ["$insideSubCategory._id", false] },
+                            { _id: "$insideSubCategory._id", name: "$insideSubCategory.insideSubCategoryName" },
                             null
                         ]
                     },

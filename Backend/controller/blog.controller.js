@@ -62,7 +62,12 @@ export const addNewBlogController = async (req, res) => {
         console.error("CREATE BLOG ERROR:", error);
         return res.status(500).json({ success: false, message: error.message });
     }
-};
+}
+
+
+
+
+    ;
 
 export const getAllBlogsController = async (req, res) => {
     try {
@@ -219,7 +224,6 @@ export const deleteBlogController = async (req, res) => {
             await deleteS3File(key);
         }
 
-        // 4. Delete section images from S3
         if (blog.section?.length) {
             for (const sec of blog.section) {
                 if (sec.sectionImg?.length) {
@@ -250,6 +254,17 @@ export const getBlogWithCategoryController = async (req, res) => {
         const filter = categoryId && mongoose.Types.ObjectId.isValid(categoryId)
             ? { blogCategoryId: categoryId }
             : {};
+
+        if (categoryId === "68dba9693f29e2eef1ceee93") {
+            const products = await blogModel.find({})
+                .populate({
+                    path: "blogCategoryId",
+                    select: "blogCategoryName slug isFeatureBlog"
+                })
+                .sort({ createdAt: -1 });
+
+            return sendSuccessResponse(res, "All blogs fetched successfully", products);
+        }
 
         const blogs = await blogModel.find(filter)
             .populate({
