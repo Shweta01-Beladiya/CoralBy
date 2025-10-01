@@ -2,10 +2,12 @@ import React from 'react'
 import newsletter_bg from "../images/newsletter-bg.png";
 import { useFormik } from 'formik';
 import { subscribeSchema } from '../schemas';
-
+import { useDispatch } from 'react-redux';
+import { subscribe } from '../Store/Slices/subscribeSlice';
 
 const Newsletter = () => {
 
+    const dispatch = useDispatch();
 
 	const initialValues = {
 		Email: "",
@@ -15,19 +17,12 @@ const Newsletter = () => {
 		initialValues,
 		validationSchema: subscribeSchema,
 		onSubmit: (values, action) => {
-			// dispatch(login(
-			// 	{
-			// 		email: values.Email,
-			// 		password: values.Password
-			// 	}
-			// ));
-			// alert("Form Submitted Successfully")
-           
-			// console.log("Email" , values.Email)
+			
+          dispatch(subscribe({ email: values.Email }));
+          alert("Subscribe Successfully")
 
+		  action.resetForm()
 
-
-			action.resetForm()
 		},
 	});
 
