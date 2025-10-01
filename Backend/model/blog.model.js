@@ -13,6 +13,10 @@ const blogSchema = new mongoose.Schema({
         type: String,
         default: null
     },
+    blogDesc: {
+        type: String,
+        default: null
+    },
     section: [
         {
             sectionTitle: { type: String, default: null },
