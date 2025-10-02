@@ -4,7 +4,7 @@ import { newSellerController, verifySellerMobileOtpController, sellerLoginContro
 import { createCategory, deleteCategoryById, getAllCategory, getCategoriesByMainCategoryId, getCategoryById, updateCategoryById } from '../controller/category.controller.js';
 import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/imageupload.js';
-import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdatecontroller, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
+import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdateController, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
 import { createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
 import { getMyCartController, toggleCartItemController } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
@@ -171,7 +171,7 @@ indexRouter.patch("/user/profile/update", UserAuth, userProfileUpdateController)
 
 //user address
 indexRouter.post("/user/address", UserAuth, userAddressAddController);
-indexRouter.patch("/user/address/update/:addressId", UserAuth, userAddressUpdatecontroller);
+indexRouter.patch("/user/address/update/:addressId", UserAuth, userAddressUpdateController);
 indexRouter.delete("/user/address/delete/:addressId", UserAuth, userAddressDeleteController);
 indexRouter.get("/user/address", UserAuth, getUserAddressController);
 

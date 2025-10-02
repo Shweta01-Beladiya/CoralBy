@@ -17,7 +17,9 @@ export const UserAddressSchema = new mongoose.Schema({
         type: String,
         enum: ["Home", "Office", "Other"],
         default: "Home"
-    }
+    },
+    officeOpenOnSaturday: { type: Boolean, default: false },
+    officeOpenOnSunday: { type: Boolean, default: false },
 });
 
 export const UserBillingAddressSchema = new mongoose.Schema({
@@ -36,7 +38,9 @@ export const UserBillingAddressSchema = new mongoose.Schema({
         type: String,
         enum: ["Home", "Office", "Other"],
         default: "Home"
-    }
+    },
+    officeOpenOnSaturday: { type: Boolean, default: false },
+    officeOpenOnSunday: { type: Boolean, default: false },
 });
 
 
