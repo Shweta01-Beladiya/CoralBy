@@ -15,7 +15,7 @@ export const fetchBlogAllCategories = createAsyncThunk(
     }
 );
 
-// All blog fetch
+// All blog card fetch
 export const fetchAllBlog = createAsyncThunk(
     "blogall/fetchAll",
     async () => {
@@ -28,12 +28,25 @@ export const fetchAllBlog = createAsyncThunk(
 );
 
 
+export const fetchBlogById = createAsyncThunk(
+    "blogall/fetchById",
+    async (id) => {
+
+        const response = await axios.get(`${BaseUrl}/api/blog/${id}`);
+        console.log("Blog By ID Response:", response.data);
+        return response.data.blog;
+
+    }
+);
+
+
 const blogallcategorySlice = createSlice({
     name: "blogallcategory",
     initialState: {
         loading: false,
         categories: [],
         allblog: [],
+        blogbyid: [],
         error: null,
         success: false,
     },
@@ -58,7 +71,7 @@ const blogallcategorySlice = createSlice({
                 state.success = false;
             })
 
-            // Fetch All Blogs
+            // Fetch All Blogs card
             .addCase(fetchAllBlog.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -70,6 +83,23 @@ const blogallcategorySlice = createSlice({
                 state.success = true;
             })
             .addCase(fetchAllBlog.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message;
+                state.success = false;
+            })
+
+            // Fetch Blog By ID
+            .addCase(fetchBlogById.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+                state.success = false;
+            })
+            .addCase(fetchBlogById.fulfilled, (state, action) => {
+                state.loading = false;
+                state.blogbyid = action.payload || [];
+                state.success = true;
+            })
+            .addCase(fetchBlogById.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message;
                 state.success = false;
