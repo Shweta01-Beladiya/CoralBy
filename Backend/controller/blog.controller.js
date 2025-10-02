@@ -129,7 +129,7 @@ export const getBlogByIdController = async (req, res) => {
 
         const blog = await blogModel
             .findById(id)
-            .populate("blogCategoryId", "categoryName");
+            .populate("blogCategoryId");
 
         if (!blog) {
             return res.status(404).json({ success: false, message: "Blog not found" });
