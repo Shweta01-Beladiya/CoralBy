@@ -54,7 +54,7 @@ export const createFAQQuestion = async (req, res) => {
         // Populate category details
         await newFAQQuestion.populate('faqCategoryId', 'name description');
 
-        return sendSuccessResponse(res, "✅ FAQ question created successfully!", newFAQQuestion);
+        return sendSuccessResponse(res, " FAQ question created successfully!", newFAQQuestion);
 
     } catch (error) {
         console.error('Create FAQ Question Error:', error);
@@ -138,7 +138,6 @@ export const updateFAQQuestion = async (req, res) => {
                 return sendBadRequestResponse(res, "FAQ question must be less than 500 characters!");
             }
 
-            // Check for duplicate question (excluding current question)
             const duplicateQuestion = await FAQQuestion.findOne({
                 _id: { $ne: id },
                 faqCategoryId: existingQuestion.faqCategoryId,
@@ -166,7 +165,7 @@ export const updateFAQQuestion = async (req, res) => {
         await existingQuestion.save();
         await existingQuestion.populate('faqCategoryId', 'name description');
 
-        return sendSuccessResponse(res, "✅ FAQ question updated successfully!", existingQuestion);
+        return sendSuccessResponse(res, " FAQ question updated successfully!", existingQuestion);
 
     } catch (error) {
         console.error('Update FAQ Question Error:', error);
@@ -188,7 +187,7 @@ export const deleteFAQQuestion = async (req, res) => {
             return sendNotFoundResponse(res, "FAQ question not found!");
         }
 
-        return sendSuccessResponse(res, "✅ FAQ question deleted successfully!");
+        return sendSuccessResponse(res, " FAQ question deleted successfully!");
 
     } catch (error) {
         console.error('Delete FAQ Question Error:', error);

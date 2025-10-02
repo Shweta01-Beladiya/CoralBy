@@ -14,7 +14,6 @@ const applicationSchema = new mongoose.Schema({
     appliedAt: { type: Date, default: Date.now }
 });
 
-// ✅ Prevent duplicate applications for same job & email
 applicationSchema.index({ job: 1, email: 1 }, { unique: true });
 
 export default mongoose.model("Application", applicationSchema);

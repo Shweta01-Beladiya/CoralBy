@@ -18,17 +18,17 @@ import OrderModel from "../model/order.model.js";
 // Assign badges: NEW, TRENDING, TOP RATED
 export const assignBadges = async () => {
     try {
-        // ===== 1️⃣ NEW BADGE (Last 3 products per seller) =====
+
         const sellers = await Product.distinct("sellerId");
 
         for (let sellerId of sellers) {
-            // Get last 3 products for this seller, sorted by createdAt descending
+
             const last3 = await Product.find({ sellerId })
                 .sort({ createdAt: -1 })
                 .limit(3);
 
             for (let p of last3) {
-                // Assign NEW only if badge is null (preserve manual badges)
+                
                 if (!p.badge) {
                     p.badge = "NEW";
                     await p.save();
@@ -36,7 +36,7 @@ export const assignBadges = async () => {
             }
         }
 
-        // ===== 2️⃣ TRENDING BADGE (Based on sales) =====
+
         const orders = await OrderModal.find();
         const productSalesCount = {};
 
@@ -55,14 +55,14 @@ export const assignBadges = async () => {
 
         for (let id of topSellingIds) {
             const p = await Product.findById(id);
-            // Only assign TRENDING if badge is null
+    
             if (p && !p.badge) {
                 p.badge = "TRENDING";
                 await p.save();
             }
         }
 
-        // ===== 3️⃣ TOP RATED BADGE =====
+
         const topRatedProducts = await Product.find({ "rating.average": { $gt: 0 } })
             .sort({ "rating.average": -1 })
             .limit(10);

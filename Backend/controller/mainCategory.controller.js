@@ -108,7 +108,6 @@ export const updateMainCategoryById = async (req, res) => {
             }
         }
 
-        // === Handle image update ===
         let mainCategoryImage = mainCategory.mainCategoryImage;
         const imageFile = req.files?.mainCategoryImage?.[0];
 
@@ -131,17 +130,17 @@ export const updateMainCategoryById = async (req, res) => {
                             Key: oldImageKey,
                         })
                     );
-                    console.log("✅ Deleted old main category image:", oldImageKey);
+                    console.log(" Deleted old main category image:", oldImageKey);
                 } catch (err) {
-                    console.error("❌ Failed to delete old image:", err.message);
-                    console.error("❌ Error details:", err);
+                    console.error(" Failed to delete old image:", err.message);
+                    console.error(" Error details:", err);
                 }
             }
 
             // Upload new image
             const result = await uploadFile(imageFile);
             mainCategoryImage = result.url;
-            console.log("✅ Uploaded new image:", result.key);
+            console.log(" Uploaded new image:", result.key);
         }
 
         // Update main category

@@ -13,7 +13,7 @@ export const addProductBannerController = async (req, res) => {
         const uploadedImages = [];
 
         for (const file of imageFiles) {
-            const result = await uploadFile(file); // your upload function should return { url }
+            const result = await uploadFile(file); 
             uploadedImages.push(result.url);
         }
 
@@ -52,7 +52,6 @@ export const updateProductBannerController = async (req, res) => {
             return res.status(404).json({ message: "Banner not found" });
         }
 
-        // Check if new images are uploaded
         if (
             req.file ||
             (req.files?.mainImage && req.files.mainImage.length > 0) ||

@@ -6,7 +6,7 @@ config();
 
 export const UserAuth = async (req, res, next) => {
     try {
-        // Check if JWT_SECRET is properly configured
+
         if (!process.env.JWT_SECRET) {
             console.error('JWT_SECRET is not configured');
             return sendErrorResponse(res, 500, 'Server configuration error');

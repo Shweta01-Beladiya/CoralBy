@@ -11,13 +11,13 @@ import axios from 'axios';
 import { stat } from 'fs';
 import { ThrowError } from '../utils/Error.utils.js';
 
-//global config
+
 const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const saltRounds = 10;
 const JWT_SECRET = process.env.JWT_SECRET
 
 
-// new seller register & verify -otp send
+
 export const newSellerController = async (req, res) => {
     try {
         const { mobileNo, email, password } = req.body;
@@ -39,11 +39,10 @@ export const newSellerController = async (req, res) => {
             });
         }
 
-        // Hash password
+
         const hashedPassword = await bcrypt.hash(password, saltRounds);
 
 
-        //generate random avatar image.
         function Ravatar(email) {
             try {
                 const formattedName = email.trim().replace(/\s+/g, "+");
@@ -59,7 +58,6 @@ export const newSellerController = async (req, res) => {
         }
         const profileAvatar = Ravatar(email) || "";
 
-        // Create new seller
         const newSeller = await sellerModel.create({
             email,
             mobileNo,
@@ -67,7 +65,6 @@ export const newSellerController = async (req, res) => {
             password: hashedPassword,
         });
 
-        // Send OTP via Twilio
         try {
             const verification = await client.verify.v2
                 .services(process.env.TWILIO_VERIFY_SID)
@@ -133,7 +130,7 @@ export const getSeller = async (req, res) => {
     try {
         const { id } = req.user;
 
-        // Exclude sensitive fields
+
         const seller = await sellerModel.findById(id).select("-password -tokens");
         if (!seller) {
             return sendNotFoundResponse(res, "Seller not found");
@@ -147,7 +144,6 @@ export const getSeller = async (req, res) => {
     }
 };
 
-//verify mobile otp while register
 export const verifySellerMobileOtpController = async (req, res) => {
     const COMMON_OTP = "000000";
 
@@ -162,7 +158,6 @@ export const verifySellerMobileOtpController = async (req, res) => {
             });
         }
 
-        // Check if seller exists
         const seller = await sellerModel.findOne({ mobileNo: mobileNo });
         if (seller) {
             const payload = {
@@ -183,7 +178,7 @@ export const verifySellerMobileOtpController = async (req, res) => {
             });
         }
 
-        // Twilio OTP verification
+  
         try {
             const verificationCheck = await client.verify.v2
                 .services(process.env.TWILIO_VERIFY_SID)

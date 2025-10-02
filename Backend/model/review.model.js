@@ -22,10 +22,10 @@ const reviewSchema = new mongoose.Schema({
     dislikes: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
 }, { timestamps: true });
 
-// Ensure one review per user per product
+
 reviewSchema.index({ productId: 1, userId: 1 }, { unique: true });
 
-// Static: get average rating and totalReviews
+
 reviewSchema.statics.getRatingStats = async function (productId) {
     const result = await this.aggregate([
         { $match: { productId: new mongoose.Types.ObjectId(productId) } },

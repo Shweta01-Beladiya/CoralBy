@@ -8,7 +8,7 @@ export const s3 = new S3Client({
     },
 });
 
-// Build a public URL for the stored key
+
 export const publicUrlForKey = (key) => {
     const cdn = process.env.CDN_BASE_URL?.replace(/\/$/, '');
     if (cdn) return `${cdn}/${key}`; // CloudFront or custom domain
@@ -38,7 +38,6 @@ export const deleteS3File = async (key) => {
 };
 
 
-// Delete uploaded object if we need to roll back after a validation error
 export const cleanupUploadedIfAny = async (file) => {
     if (file?.key) {
         try {

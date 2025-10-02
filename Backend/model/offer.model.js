@@ -1,12 +1,12 @@
 import mongoose from "mongoose";
 
-// Optional countdown schema
+
 const countdownSchema = new mongoose.Schema({
     days: { type: Number, default: 0 },
     hours: { type: Number, default: 0 },
     minutes: { type: Number, default: 0 },
     seconds: { type: Number, default: 0 },
-}, { _id: false }); // no separate _id for subdocument
+}, { _id: true }); 
 
 const offerSchema = new mongoose.Schema(
     {
@@ -32,10 +32,9 @@ const offerSchema = new mongoose.Schema(
             ref: "Category"
         },
 
-        // New optional fields
         isSpecialOffer: {
             type: Boolean,
-            default: false, // existing controllers won't be affected
+            default: false, 
         },
         discountPercent: {
             type: Number,
@@ -52,7 +51,7 @@ const offerSchema = new mongoose.Schema(
         countdown: countdownSchema,
     },
     {
-        timestamps: true, // createdAt & updatedAt
+        timestamps: true, 
     }
 );
 

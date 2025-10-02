@@ -18,7 +18,7 @@ export const makeNewPaymentController = async (req, res) => {
             bankTransferDetails,
         } = req.body;
 
-        // ✅ Validate required fields
+        //  Validate required fields
         if (!userId || !orderId || !paymentMethod) {
             return res.status(400).json({
                 success: false,
@@ -26,7 +26,7 @@ export const makeNewPaymentController = async (req, res) => {
             });
         }
 
-        // ✅ Fetch order and check if it belongs to the user
+        //  Fetch order and check if it belongs to the user
         const order = await orderModel.findOne({ _id: orderId, userId });
         if (!order) {
             return res.status(404).json({
@@ -35,7 +35,7 @@ export const makeNewPaymentController = async (req, res) => {
             });
         }
 
-        // ✅ Check if payment already exists for this order
+        //  Check if payment already exists for this order
         const existingPayment = await paymentModel.findOne({ orderId });
         if (existingPayment) {
             return res.status(409).json({
@@ -44,10 +44,10 @@ export const makeNewPaymentController = async (req, res) => {
             });
         }
 
-        // ✅ Use order.totalAmount as the payment amount
+        //  Use order.totalAmount as the payment amount
         const amount = order.totalAmount;
 
-        // ✅ Create Payment record with initial status "pending"
+        //  Create Payment record with initial status "pending"
         let payment = await paymentModel.create({
             userId,
             orderId,
@@ -60,7 +60,7 @@ export const makeNewPaymentController = async (req, res) => {
             paymentStatus: "pending", // initial state
         });
 
-        // ✅ Remove ordered items from user's cart
+        //  Remove ordered items from user's cart
         if (order.items && order.items.length > 0) {
             const productIds = order.items.map(item => item.productId);
             const packSizeIds = order.items.map(item => item.packSizeId).filter(Boolean);
@@ -80,7 +80,7 @@ export const makeNewPaymentController = async (req, res) => {
             );
         }
 
-        // ✅ Update order status to pending
+        //  Update order status to pending
         await orderModel.findByIdAndUpdate(orderId, {
             status: "pending",
             paymentStatus: "pending"
@@ -88,13 +88,13 @@ export const makeNewPaymentController = async (req, res) => {
 
         await payment.save();
 
-        // ✅ Update order status to completed
+        //  Update order status to completed
         await orderModel.findByIdAndUpdate(orderId, {
             status: "completed",
             paymentStatus: "completed"
         });
 
-        // ✅ Update sold count for each product in the order
+        //  Update sold count for each product in the order
         if (order.items && order.items.length > 0) {
             for (const item of order.items) {
                 await Product.findByIdAndUpdate(
@@ -416,7 +416,7 @@ export const paymentStatusChangeController = async (req, res) => {
     const order = await orderModel.findById(payment.orderId).session(session);
     if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
-    // ✅ Increment sold ONLY once if status changes to completed
+    //  Increment sold ONLY once if status changes to completed
     if (paymentStatus === "completed" && payment.paymentStatus !== "completed") {
       if (order.products && order.products.length > 0) {
         for (const item of order.products) {
@@ -429,7 +429,7 @@ export const paymentStatusChangeController = async (req, res) => {
             },
             { new: true, session }
           );
-          console.log("✅ Updated sold:", updatedProduct?.sold, "for product:", item.productId);
+          console.log("Updated sold:", updatedProduct?.sold, "for product:", item.productId);
         }
       }
       order.orderStatus = "Delivered";

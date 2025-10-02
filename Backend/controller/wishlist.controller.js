@@ -9,7 +9,6 @@ export const addToWishlist = async (req, res) => {
         const { id: userId } = req.user;
         const { productId } = req.params;
 
-        // Validate productId
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             return sendBadRequestResponse(res, "Invalid product ID!");
         }
@@ -17,18 +16,15 @@ export const addToWishlist = async (req, res) => {
         const product = await productModel.findById(productId);
         if (!product) return sendNotFoundResponse(res, "Product not found!");
 
-        // Find or create wishlist
         let wishlist = await wishlistModel.findOne({ userId });
         if (!wishlist) {
             wishlist = new wishlistModel({ userId, items: [] });
         }
 
-        // Ensure items array exists
         if (!Array.isArray(wishlist.items)) {
             wishlist.items = [];
         }
 
-        // Check duplicate
         const exists = wishlist.items.some(
             (item) => item.productId.toString() === productId
         );

@@ -38,7 +38,6 @@ export const createReview = async (req, res) => {
             return sendBadRequestResponse(res, "Rating must be an integer between 1 and 5!");
         }
 
-        // Parse love_about
         let parsedLoveAbout = [];
         if (love_about) {
             parsedLoveAbout = typeof love_about === "string" ? JSON.parse(love_about) : love_about;

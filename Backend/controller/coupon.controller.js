@@ -56,7 +56,7 @@ export const getCouponById = async (req, res) => {
     try {
         const { id } = req.params;
 
-        // Validate ID
+
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid Coupon ID");
         }
@@ -120,7 +120,7 @@ export const updateCoupon = async (req, res) => {
             { new: true, runValidators: true }
         );
 
-        return sendSuccessResponse(res, "✅ Coupon updated successfully!", updatedCoupon);
+        return sendSuccessResponse(res, " Coupon updated successfully!", updatedCoupon);
 
     } catch (error) {
         return ThrowError(res, 500, error.message);
@@ -147,7 +147,7 @@ export const deleteCoupon = async (req, res) => {
 
         await CouponModel.findByIdAndDelete(id);
 
-        return sendSuccessResponse(res, "✅ Coupon deleted successfully!", { deletedId: id });
+        return sendSuccessResponse(res, " Coupon deleted successfully!", { deletedId: id });
 
     } catch (error) {
         return ThrowError(res, 500, error.message);

@@ -310,7 +310,6 @@ export class AuthController {
             // Check OTP in DB
             if (user.resetOtp && user.resetOtpExpiry && user.resetOtpExpiry > Date.now()) {
                 if (user.resetOtp === otp) {
-                    // Clear OTP after verification
                     user.otp = null;
                     user.resetOtpExpiry = null;
                     await user.save();

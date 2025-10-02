@@ -29,7 +29,7 @@ export const getCurrentJobByIdController = async (req, res) => {
 
 export const applyJobController = async (req, res) => {
     try {
-        const { id } = req.user; // Assuming user's ID is available in req.user
+        const { id } = req.user; 
         const { jobId } = req.params;
         const {
             firstName,
@@ -56,17 +56,17 @@ export const applyJobController = async (req, res) => {
 
         const resume = req.file;
 
-        // ✅ Validate file type
+        // Validate file type
         if (!resume.mimetype.startsWith("application/pdf")) {
             return sendErrorResponse(res, 400, "Only PDF files are allowed for resume.");
         }
 
-        // ✅ Validate file size (2MB max)
+        //  Validate file size (2MB max)
         if (resume.size > 2 * 1024 * 1024) {
             return sendErrorResponse(res, 400, "Resume size should not exceed 2MB.");
         }
 
-        // ✅ Check valid jobId
+        // Check valid jobId
         if (!mongoose.Types.ObjectId.isValid(jobId)) {
             return sendErrorResponse(res, 400, "Invalid Job ID.");
         }
@@ -83,7 +83,7 @@ export const applyJobController = async (req, res) => {
         }
 
 
-        // ✅ Save application
+        //Save application
         const newApplication = new applicationModel({
             job: jobId,
             firstName,
@@ -122,7 +122,7 @@ export const applyJobController = async (req, res) => {
 const extractKeyFromS3Url = (url) => {
     try {
         const parsedUrl = new URL(url);
-        // The pathname includes a leading slash, which we remove.
+
         const key = parsedUrl.pathname.substring(1);
         if (key) {
             return key;
@@ -150,12 +150,12 @@ export const deleteJobApplicationController = async (req, res) => {
             if (fileKey) {
                 const deleted = await deleteS3File(fileKey);
                 if (deleted) {
-                    console.log(`✅ Deleted from S3: ${fileKey}`);
+                    console.log(` Deleted from S3: ${fileKey}`);
                 } else {
-                    console.warn("⚠️ Failed to delete from S3, check permissions/key");
+                    console.warn(" Failed to delete from S3, check permissions/key");
                 }
             } else {
-                console.warn("⚠️ Failed to extract file key from URL, skipping S3 deletion.");
+                console.warn("Failed to extract file key from URL, skipping S3 deletion.");
             }
         }
 
@@ -164,7 +164,7 @@ export const deleteJobApplicationController = async (req, res) => {
 
         return res.json({ message: "Job application deleted successfully" });
     } catch (error) {
-        console.error("❌ Error deleting job application:", error);
+        console.error(" Error deleting job application:", error);
         return res.status(500).json({ message: "Failed to delete job application", error });
     }
 };
@@ -172,7 +172,7 @@ export const deleteJobApplicationController = async (req, res) => {
 
 export const getMyJobapplicationsController = async (req, res) => {
     try {
-        const { id } = req.user; // Assuming user's email is available in req.user
+        const { id } = req.user; 
         const applications = await applicationModel.find({ userId: id }).populate('job');
 
         return sendSuccessResponse(res, "Job applications fetched successfully.", applications);

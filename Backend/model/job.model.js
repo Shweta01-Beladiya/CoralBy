@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const jobSchema = new mongoose.Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
-    jobType: { type: String, required: true }, // Full-time / Part-time etc
+    jobType: { type: String, required: true },
     location: { type: String, required: true },
     isActive:{type: Boolean, default:true},
     salary: { type: String },

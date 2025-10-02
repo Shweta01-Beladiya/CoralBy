@@ -17,14 +17,14 @@ export const toggleCartItemController = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(productVarientId))
             return sendBadRequestResponse(res, "Invalid product variant ID");
 
-        // === Product & Variant Check ===
+ 
         const product = await productModel.findById(productId);
         if (!product) return sendNotFoundResponse(res, "Product not found");
 
         const variant = await ProductVariant.findOne({ _id: productVarientId, productId });
         if (!variant) return sendNotFoundResponse(res, "Product variant not found");
 
-        // === Cart Check ===
+
         let cart = await cartModel.findOne({ userId });
         if (!cart) cart = new cartModel({ userId, items: [] });
 
@@ -34,10 +34,10 @@ export const toggleCartItemController = async (req, res) => {
         );
 
         if (itemIndex > -1) {
-            // Item exists → remove it
+     
             cart.items.splice(itemIndex, 1);
         } else {
-            // Item does not exist → add it
+   
             cart.items.push({
                 productId: new mongoose.Types.ObjectId(productId),
                 productVarientId: new mongoose.Types.ObjectId(productVarientId),
@@ -51,7 +51,7 @@ export const toggleCartItemController = async (req, res) => {
             { path: "items.productVarientId", select: "size color price stock" },
         ]);
 
-        // === Calculate totalAmount ===
+ 
         let totalAmount = 0;
         cart.items.forEach((i) => {
             if (i.productVarientId?.price) {

@@ -54,7 +54,7 @@ export const createorderFAQQuestion = async (req, res) => {
         // Populate category details
         await neworderFAQQuestion.populate('orderfaqCategoryId', 'name description');
 
-        return sendSuccessResponse(res, "✅ orderFAQ question created successfully!", neworderFAQQuestion);
+        return sendSuccessResponse(res, " orderFAQ question created successfully!", neworderFAQQuestion);
 
     } catch (error) {
         console.error('Create orderFAQ Question Error:', error);
