@@ -6,9 +6,9 @@ import '../styles/r_style.css';
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { useDispatch, useSelector } from 'react-redux';
-import { loginUser, registerUser } from '../Store/Slices/authSlice'
+import { forgotPassword, loginUser, registerUser, resetPassword, verifyOtp } from '../Store/Slices/authSlice'
 import { useNavigate } from 'react-router-dom';
-
+import { useLocation } from "react-router-dom";
 
 
 function Login() {
@@ -32,8 +32,21 @@ function Login() {
   const [maskedPassword, setMaskedPassword] = useState("");
   const [error, setError] = useState("");
   const [isShowError, setIsShowError] = useState(false);
+  const [sentMail, setSentMail] = useState(null);
   const dispatch = useDispatch()
   const navigate = useNavigate()
+  const location = useLocation();
+
+  const signupModel = location.state?.signup;
+
+  useEffect( ()=> {
+    if(signupModel){
+        setIsModalOpen(true);
+    }
+  }, [signupModel] )
+
+
+  
 
   const inputRefs = useRef([]);
   const validationSchema = Yup.object({
@@ -178,7 +191,7 @@ function Login() {
 
   const resetOtpModal = () => {
     setOtp(['', '', '', '']);
-    setCountdown(56);
+    setCountdown(10);
   };
 
   const handleVerification = () => {
@@ -200,6 +213,22 @@ function Login() {
     setConfirmPassword('');
   };
 
+
+  const resendOTP = async () => {
+
+    setCountdown(10)
+
+    setIsShowError(false);
+    setError(null);
+
+    let sentOtpTo = { email : sentMail }
+    await dispatch(forgotPassword(sentOtpTo))  
+  }
+
+  
+
+
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       {!isModalOpen && !isModalOpen1 && !isModalOpen2 && !isModalOpen3 && (
@@ -216,7 +245,7 @@ function Login() {
 
           {/* Login */}
           <div className="mt-6">
-           
+
 
             {isShowError && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
@@ -233,24 +262,24 @@ function Login() {
               initialValues={{ email: "", password: "" }}
               validationSchema={validationSchema}
               onSubmit={async (values, { resetForm }) => {
-       
-                  const logInRes = await dispatch(loginUser(values));
 
-                  if (loginUser.rejected.match(logInRes)) {
+                const logInRes = await dispatch(loginUser(values));
 
-                    // console.log('Login failed', logInRes.payload);
-                    setIsShowError(true);
-                    setError(logInRes.payload || "Something went wrong");
-                    
-                  } else {
+                if (loginUser.rejected.match(logInRes)) {
 
-                    setIsShowError(false);
-                    setError(null);
-                    alert('Login Successfully');
-                    navigate('/')
-                    resetForm();
-                  }
-               
+                  // console.log('Login failed', logInRes.payload);
+                  setIsShowError(true);
+                  setError(logInRes.payload || "Something went wrong");
+
+                } else {
+
+                  setIsShowError(false);
+                  setError(null);
+                  alert('Login Successfully');
+                  navigate('/')
+                  resetForm();
+                }
+
               }}
 
             >
@@ -361,7 +390,7 @@ function Login() {
             Don't have an account?{" "}
             <button
               type="button"
-              onClick={() => {setIsModalOpen(true); setIsShowError(false);}}
+              onClick={() => { setIsModalOpen(true); setIsShowError(false); }}
               className="text-blue-600 underline"
             >
               Create Account
@@ -375,14 +404,13 @@ function Login() {
 
 
 
-
       {/* Create Account  */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md p-8 relative r_container320">
             <button
               type="button"
-              onClick={() => {setIsModalOpen(false); setIsShowError(false)}}
+              onClick={() => { setIsModalOpen(false); setIsShowError(false) }}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
             >
               ✕
@@ -560,7 +588,7 @@ function Login() {
               Already have an account?{" "}
               <button
                 type="button"
-                onClick={() => {setIsModalOpen(false); setIsShowError(false);}}
+                onClick={() => { setIsModalOpen(false); setIsShowError(false); }}
                 className="text-blue-600 underline"
               >
                 Log In
@@ -577,7 +605,7 @@ function Login() {
           <div className="bg-white rounded-lg shadow-lg max-w-md p-8 relative r_container320">
             <button
               type="button"
-              onClick={() => setIsModalOpen1(false)}
+              onClick={() => {setIsModalOpen1(false); setIsShowError(false)}}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
             >
               ✕
@@ -590,6 +618,7 @@ function Login() {
             <p className="text-center mb-6 text-gray-600">
               We'll help you get back to shopping.
             </p>
+
             {/* <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
               <div className="flex items-center">
                 <span className="text-red-600 mr-2">✕</span>
@@ -598,23 +627,52 @@ function Login() {
                 </span>
               </div>
             </div> */}
+
+            {isShowError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2" onClick={() => setIsShowError(false)}>✕</span>
+                  <span className="text-red-600 text-sm font-medium">
+                    {error}
+                  </span>
+                </div>
+              </div>
+            )}
+
+
             <Formik
               initialValues={{ email: "" }}
               validationSchema={forgotPassSchema}
-              onSubmit={(values, { setSubmitting }) => {
+              onSubmit={async (values, { resetForm }) => {
                 console.log("Form submitted:", values);
 
-                setIsModalOpen1(false);
-                setIsModalOpen2(true);
-                console.log("sent otp to email:", values.email);
-                console.log("ismodel", isModalOpen2)
-                resetOtpModal();
 
-                setSubmitting(false);
+                const forgotRes = await dispatch(forgotPassword(values));
+
+                if (forgotPassword.rejected.match(forgotRes)) {
+
+                  // console.log(forgotRes.payload);
+                  setIsShowError(true);
+                  setError(forgotRes.payload || "Something went wrong");
+
+                } else {
+
+                  setSentMail(values.email);
+                  setIsModalOpen1(false);
+                  setIsModalOpen2(true);
+                  resetOtpModal();
+
+                  setIsShowError(false);
+                  setError(null);
+                  // alert('Mail Sent Successfully');
+                  resetForm();
+                }
+
+
               }}
             >
-              {({ isSubmitting }) => (
-                <Form>
+              {({ handleSubmit }) => (
+                <Form onSubmit={handleSubmit}>
 
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -637,7 +695,6 @@ function Login() {
                   <div className="text-center mt-6">
                     <button
                       type="submit"
-                      // disabled={isSubmitting}
                       className="bg-orange-500 text-white px-6 py-2 rounded-md hover:bg-orange-600 transition"
                     >
                       Send OTP
@@ -652,13 +709,14 @@ function Login() {
         </div>
       )}
 
+
       {/* OTP Verification Modal */}
       {isModalOpen2 && (
         <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md p-8 relative r_container320">
             <button
               type="button"
-              onClick={() => setIsModalOpen2(false)}
+              onClick={() => {setIsModalOpen2(false); setIsShowError(false);}}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
             >
               ✕
@@ -669,8 +727,9 @@ function Login() {
             </h2>
 
             <p className="text-center mb-6 text-gray-600">
-              We sent the OTP to exa.......@gmail.com
+              We sent the OTP to {sentMail}
             </p>
+
             {/* <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
               <div className="flex items-center">
                 <span className="text-red-600 mr-2">✕</span>
@@ -679,25 +738,54 @@ function Login() {
                 </span>
               </div>
             </div> */}
+            {isShowError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2" onClick={() => setIsShowError(false)}>✕</span>
+                  <span className="text-red-600 text-sm font-medium">
+                    {error}
+                  </span>
+                </div>
+              </div>
+            )}
+
             <Formik
               initialValues={{ otp: "".padStart(OTP_LENGTH, "") }}
               validationSchema={otpSchema}
-              onSubmit={(values, { setSubmitting }) => {
-                console.log("Form submitted:", values);
-                setIsModalOpen2(false);
-                setIsModalOpen3(true);
-                resetOtpModal();
-                setSubmitting(false);
+              onSubmit={ async (values, { resetForm }) => {
+
+                
+                const verifyData = { email: sentMail , otp: values.otp }
+                const sendOTP = await dispatch(verifyOtp(verifyData));
+
+                if (verifyOtp.rejected.match(sendOTP)) {
+
+                  setIsShowError(true);
+                  setError(sendOTP.payload || "Something went wrong");
+
+                } else {
+
+                  setIsModalOpen2(false);
+                  setIsModalOpen3(true);
+                  resetOtpModal();
+
+                  setIsShowError(false);
+                  setError(null);
+                  // alert('Otp Verify Successfully');
+                  resetForm();
+                }
+
+
               }}
             >
-              {({ values, setFieldValue }) => (
-                <Form>
-                  <div className="mb-6">
+              {({ values, setFieldValue , handleSubmit }) => (
+                <Form onSubmit={handleSubmit}>
+                  <div className="mb-2">
                     <label className="block text-sm font-medium text-gray-700 mb-3">
                       OTP <span className="text-red-500">*</span>
                     </label>
 
-                    <div className="flex justify-center gap-3 mb-2">
+                    <div className="flex justify-center gap-3 mb-3">
                       {Array.from({ length: OTP_LENGTH }).map((_, index) => (
                         <Field
                           key={index}
@@ -733,6 +821,14 @@ function Login() {
                     />
                   </div>
 
+                  <div className="mb-3 text-[#111827] font-semibold text-sm">
+                    Send OTP again:{" "}
+                    <span className="text-[#6B7280]">
+                      00:{countdown < 10 ? `0${countdown}` : countdown}
+                    </span>
+                  </div>
+
+
                   <div className="text-center">
                     <button
                       type="submit"
@@ -749,7 +845,7 @@ function Login() {
               <div className="text-center mt-4">
                 <button
                   type="button"
-                  onClick={() => setCountdown(56)}
+                  onClick={() => resendOTP()}
                   className="text-orange-500 hover:text-orange-600 text-sm font-medium"
                 >
                   Resend OTP
@@ -760,13 +856,14 @@ function Login() {
         </div>
       )}
 
+
       {/* New Password Modal */}
       {isModalOpen3 && (
         <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md p-8 relative r_container320">
             <button
               type="button"
-              onClick={() => setIsModalOpen3(false)}
+              onClick={() => {setIsModalOpen3(false); setIsShowError(false);}}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
             >
               ✕
@@ -783,17 +880,21 @@ function Login() {
             <Formik
               initialValues={{ newPassword: "", confirmPassword: "" }}
               validationSchema={confirmSchema}
-              onSubmit={(values, { resetForm, setSubmitting }) => {
-                console.log("Password Reset:", values);
-
-                alert('Password reset successfully!');
+              onSubmit={ async (values, { resetForm }) => {
+                
+                let newPwdData = {email: sentMail , newPassword: values.newPassword }
+                await dispatch(resetPassword(newPwdData))
+                // console.log("Password Reset:", newPwdData);
+                
+                alert('Password reset successfully');
                 setIsModalOpen3(false);
                 resetForm();
-                setSubmitting(false);
+
+                // setSubmitting(false);
               }}
             >
-              {({ isSubmitting }) => (
-                <Form>
+              {({ handleSubmit }) => (
+                <Form onSubmit={handleSubmit}>
                   <div className="space-y-4">
                     {/* New Password Field */}
                     <div>
@@ -853,10 +954,10 @@ function Login() {
                   <div className="mt-6">
                     <button
                       type="submit"
-                      disabled={isSubmitting}
+                      // disabled={isSubmitting}
                       className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition font-medium"
-                    >
-                      {isSubmitting ? "Resetting..." : "Reset Password"}
+                    > Reset Password
+                      {/* {isSubmitting ? "Resetting..." : "Reset Password"} */}
                     </button>
                   </div>
                 </Form>
