@@ -19,14 +19,20 @@ export const getSubCategory = createAsyncThunk('category/fetchSubCat', async () 
     return response.data.result;
 })
 
+export const getInsideSubCategory = createAsyncThunk('category/fetchInsideSubCat', async () => {
+    const response = await axios.get(`${BaseUrl}/api/getAllInsideSubCategory`);
+    return response.data.result;
+})
+
 
 
 const categorySlice = createSlice({
     name: "category",
     initialState: {
         mainCategory: { isLoading: false, data: [], isError: false },
-        category: { isLoading: false, data: null, isError: false },
-        subCategory: { isLoading: false, data: null, isError: false },
+        category: { isLoading: false, data: [], isError: false },
+        subCategory: { isLoading: false, data: [], isError: false },
+        inSubCategory: { isLoading: false, data: [], isError: false }
     },
     reducers: {},
     extraReducers: (builder) => {
@@ -73,6 +79,20 @@ const categorySlice = createSlice({
             .addCase(getSubCategory.rejected, (state) => {
                 state.subCategory.isLoading = false;
                 state.subCategory.isError = true;
+            })
+
+            //Inside-SubCategory
+            .addCase(getInsideSubCategory.pending, (state) => {
+                state.inSubCategory.isLoading = true;
+            })
+            .addCase(getInsideSubCategory.fulfilled, (state, action) => {
+                state.inSubCategory.isLoading = false;
+                state.inSubCategory.data = action.payload;
+        
+            })
+            .addCase(getInsideSubCategory.rejected, (state) => {
+                state.inSubCategory.isLoading = false;
+                state.inSubCategory.isError = true;
             })
 
     },

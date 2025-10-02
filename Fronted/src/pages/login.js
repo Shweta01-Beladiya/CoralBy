@@ -5,7 +5,16 @@ import register from '../images/register.png';
 import '../styles/r_style.css';
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, registerUser } from '../Store/Slices/authSlice'
+import { useNavigate } from 'react-router-dom';
+
+
+
 function Login() {
+
+
+
   const [showPassword, setShowPassword] = useState(false);
   const [showPassword1, setShowPassword1] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -21,7 +30,10 @@ function Login() {
   const [otp, setOtp] = useState(['', '', '', '']);
   const [countdown, setCountdown] = useState(56);
   const [maskedPassword, setMaskedPassword] = useState("");
-
+  const [error, setError] = useState("");
+  const [isShowError, setIsShowError] = useState(false);
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
 
   const inputRefs = useRef([]);
   const validationSchema = Yup.object({
@@ -32,6 +44,7 @@ function Login() {
       .min(6, "Password must be at least 6 characters")
       .required("Password is required"),
   });
+
   const forgotPassSchema = Yup.object({
     email: Yup.string()
       .email("Invalid email format")
@@ -82,70 +95,70 @@ function Login() {
     setShowConfirmPassword((prev) => !prev);
   };
 
- const handleOtpChange = (e, index, values, setFieldValue) => {
-  const inputValue = e.target.value;
-  
-  // Handle paste event - check if multiple characters are being entered
-  if (inputValue.length > 1) {
-    // This is likely a paste event
-    const pastedValue = inputValue.slice(0, OTP_LENGTH); 
-    let newOtp = values.otp.split('');
-    
-  
-    for (let i = 0; i < pastedValue.length && (index + i) < OTP_LENGTH; i++) {
-      if (/^\d$/.test(pastedValue[i])) {
-        newOtp[index + i] = pastedValue[i];
+  const handleOtpChange = (e, index, values, setFieldValue) => {
+    const inputValue = e.target.value;
+
+    // Handle paste event - check if multiple characters are being entered
+    if (inputValue.length > 1) {
+      // This is likely a paste event
+      const pastedValue = inputValue.slice(0, OTP_LENGTH);
+      let newOtp = values.otp.split('');
+
+
+      for (let i = 0; i < pastedValue.length && (index + i) < OTP_LENGTH; i++) {
+        if (/^\d$/.test(pastedValue[i])) {
+          newOtp[index + i] = pastedValue[i];
+        }
+      }
+
+      setFieldValue('otp', newOtp.join(''));
+
+      const nextIndex = Math.min(index + pastedValue.length, OTP_LENGTH - 1);
+      if (inputRefs.current[nextIndex]) {
+        inputRefs.current[nextIndex].focus();
+      }
+
+      return;
+    }
+
+
+    if (/^\d$/.test(inputValue) || inputValue === '') {
+      let newOtp = values.otp.split('');
+      newOtp[index] = inputValue;
+      setFieldValue('otp', newOtp.join(''));
+
+
+      if (inputValue && index < OTP_LENGTH - 1) {
+        inputRefs.current[index + 1]?.focus();
       }
     }
-   
-    setFieldValue('otp', newOtp.join(''));
-    
-    const nextIndex = Math.min(index + pastedValue.length, OTP_LENGTH - 1);
-    if (inputRefs.current[nextIndex]) {
-      inputRefs.current[nextIndex].focus();
+  };
+
+
+  const handleKeyDown = (e, index, values, setFieldValue) => {
+
+    if (e.key === 'Backspace') {
+      let newOtp = values.otp.split('');
+
+      if (newOtp[index]) {
+
+        newOtp[index] = '';
+        setFieldValue('otp', newOtp.join(''));
+      } else if (index > 0) {
+
+        newOtp[index - 1] = '';
+        setFieldValue('otp', newOtp.join(''));
+        inputRefs.current[index - 1]?.focus();
+      }
     }
-    
-    return;
-  }
-  
- 
-  if (/^\d$/.test(inputValue) || inputValue === '') {
-    let newOtp = values.otp.split('');
-    newOtp[index] = inputValue;
-    setFieldValue('otp', newOtp.join(''));
-    
 
-    if (inputValue && index < OTP_LENGTH - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  }
-};
-
-
-const handleKeyDown = (e, index, values, setFieldValue) => {
-
-  if (e.key === 'Backspace') {
-    let newOtp = values.otp.split('');
-    
-    if (newOtp[index]) {
-
-      newOtp[index] = '';
-      setFieldValue('otp', newOtp.join(''));
-    } else if (index > 0) {
-   
-      newOtp[index - 1] = '';
-      setFieldValue('otp', newOtp.join(''));
+    if (e.key === 'ArrowLeft' && index > 0) {
       inputRefs.current[index - 1]?.focus();
     }
-  }
-  
-  if (e.key === 'ArrowLeft' && index > 0) {
-    inputRefs.current[index - 1]?.focus();
-  }
-  if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
-    inputRefs.current[index + 1]?.focus();
-  }
-};
+    if (e.key === 'ArrowRight' && index < OTP_LENGTH - 1) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
 
   useEffect(() => {
     let timer;
@@ -200,26 +213,50 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
             Shop millions of products in one place.
           </p>
 
+
+          {/* Login */}
           <div className="mt-6">
-            {/* <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
-              <div className="flex items-center">
-                <span className="text-red-600 mr-2">✕</span>
-                <span className="text-red-600 text-sm font-medium">
-                 Incorrect password
-                </span>
+           
+
+            {isShowError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2" onClick={() => setIsShowError(false)}>✕</span>
+                  <span className="text-red-600 text-sm font-medium">
+                    {error}
+                  </span>
+                </div>
               </div>
-            </div> */}
+            )}
+
             <Formik
               initialValues={{ email: "", password: "" }}
               validationSchema={validationSchema}
-              onSubmit={(values) => {
-                console.log("Form submitted:", values);
-                alert("Login Successful 🚀");
-              }}
-            >
-              {({ isSubmitting }) => (
+              onSubmit={async (values, { resetForm }) => {
+       
+                  const logInRes = await dispatch(loginUser(values));
 
-                <Form>
+                  if (loginUser.rejected.match(logInRes)) {
+
+                    // console.log('Login failed', logInRes.payload);
+                    setIsShowError(true);
+                    setError(logInRes.payload || "Something went wrong");
+                    
+                  } else {
+
+                    setIsShowError(false);
+                    setError(null);
+                    alert('Login Successfully');
+                    navigate('/')
+                    resetForm();
+                  }
+               
+              }}
+
+            >
+              {({ handleSubmit }) => (
+
+                <Form onSubmit={handleSubmit}>
 
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -299,14 +336,14 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
 
                   <button
                     type="submit"
-                    disabled={isSubmitting}
                     className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition"
-                  >
-                    {isSubmitting ? "Logging in..." : "Login"}
+                  > Login
                   </button>
+
                 </Form>
               )}
             </Formik>
+
             <div className="text-right mb-4">
               <button
                 type="button"
@@ -324,7 +361,7 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
             Don't have an account?{" "}
             <button
               type="button"
-              onClick={() => setIsModalOpen(true)}
+              onClick={() => {setIsModalOpen(true); setIsShowError(false);}}
               className="text-blue-600 underline"
             >
               Create Account
@@ -332,12 +369,20 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
           </p>
         </div>
       )}
+
+
+
+
+
+
+
+      {/* Create Account  */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md p-8 relative r_container320">
             <button
               type="button"
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {setIsModalOpen(false); setIsShowError(false)}}
               className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
             >
               ✕
@@ -352,24 +397,44 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
             <p className="text-gray-500 text-center mb-6">
               Create your account and start shopping today.
             </p>
-            {/* <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
-              <div className="flex items-center">
-                <span className="text-red-600 mr-2">✕</span>
-                <span className="text-red-600 text-sm font-medium">
-                 Incorrect password
-                </span>
+
+            {isShowError && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md mb-2">
+                <div className="flex items-center">
+                  <span className="text-red-600 mr-2" onClick={() => setIsShowError(false)}>✕</span>
+                  <span className="text-red-600 text-sm font-medium">
+                    {error}
+                  </span>
+                </div>
               </div>
-            </div> */}
+            )}
+
+
+
             <Formik
               initialValues={{ firstName: "", lastName: "", email: "", password: "" }}
               validationSchema={registerSchema}
-              onSubmit={(values, { resetForm }) => {
-                console.log("Form Submitted", values);
-                resetForm();
+              onSubmit={async (values, { resetForm }) => {
+
+                const resultAction = await dispatch(registerUser(values));
+
+                if (registerUser.rejected.match(resultAction)) {
+                  // Only show error if thunk was rejected
+                  setIsShowError(true);
+                  setError(resultAction.payload || "Something went wrong");
+                } else {
+
+                  setIsShowError(false);
+                  setError(null);
+                  alert('Create Account Successfully , Login Now')
+                  resetForm();
+                }
+
+
               }}
             >
-              {({ isSubmitting }) => (
-                <Form>
+              {({ handleSubmit }) => (
+                <Form onSubmit={handleSubmit}>
 
                   <div className="grid grid-cols-2 gap-4 mb-4">
                     <div>
@@ -433,7 +498,6 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
                     <div className="relative">
                       <Field name="password">
                         {({ field, form }) => {
-                          // Show password or mask with *
                           const displayValue = showPassword
                             ? field.value
                             : "*".repeat(field.value?.length || 0);
@@ -444,14 +508,11 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
                             if (showPassword) {
                               form.setFieldValue("password", realValue);
                             } else {
-
                               const oldValue = field.value || "";
                               if (realValue.length > displayValue.length) {
-
                                 const newChar = realValue[realValue.length - 1];
                                 form.setFieldValue("password", oldValue + newChar);
                               } else {
-
                                 form.setFieldValue("password", oldValue.slice(0, -1));
                               }
                             }
@@ -477,14 +538,19 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
                         {showPassword ? <FaRegEyeSlash /> : <FaRegEye />}
                       </button>
                     </div>
+                    <ErrorMessage
+                      name="password"
+                      component="div"
+                      className="text-red-500 text-sm mt-1"
+                    />
                   </div>
+
 
                   <button
                     type="submit"
-                    disabled={isSubmitting}
                     className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition"
-                  >
-                    {isSubmitting ? "Creating..." : "Create Account"}
+                  > Create Account
+
                   </button>
                 </Form>
               )}
@@ -494,7 +560,7 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
               Already have an account?{" "}
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => {setIsModalOpen(false); setIsShowError(false);}}
                 className="text-blue-600 underline"
               >
                 Log In
@@ -505,6 +571,7 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
       )}
 
       {/* Forgot Password Modal */}
+
       {isModalOpen1 && (
         <div className="fixed inset-0 flex items-center justify-center  bg-opacity-50 z-50">
           <div className="bg-white rounded-lg shadow-lg max-w-md p-8 relative r_container320">
@@ -612,71 +679,71 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
                 </span>
               </div>
             </div> */}
-           <Formik
-  initialValues={{ otp: "".padStart(OTP_LENGTH, "") }}
-  validationSchema={otpSchema}
-  onSubmit={(values, { setSubmitting }) => {
-    console.log("Form submitted:", values);
-    setIsModalOpen2(false);
-    setIsModalOpen3(true);
-    resetOtpModal();
-    setSubmitting(false);
-  }}
->
-  {({ values, setFieldValue }) => (
-    <Form>
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-3">
-          OTP <span className="text-red-500">*</span>
-        </label>
-
-        <div className="flex justify-center gap-3 mb-2">
-          {Array.from({ length: OTP_LENGTH }).map((_, index) => (
-            <Field
-              key={index}
-              innerRef={(el) => (inputRefs.current[index] = el)}
-              type="text"
-              name={`otp-${index}`}
-              value={values.otp[index] || ""}
-              onChange={(e) => handleOtpChange(e, index, values, setFieldValue)}
-              onKeyDown={(e) => handleKeyDown(e, index, values, setFieldValue)}
-              onPaste={(e) => {
-                // Prevent default paste behavior and let onChange handle it
-                e.preventDefault();
-                const pastedData = e.clipboardData.getData('text');
-                
-                // Create a synthetic event to trigger handleOtpChange
-                const syntheticEvent = {
-                  target: {
-                    value: pastedData
-                  }
-                };
-                handleOtpChange(syntheticEvent, index, values, setFieldValue);
+            <Formik
+              initialValues={{ otp: "".padStart(OTP_LENGTH, "") }}
+              validationSchema={otpSchema}
+              onSubmit={(values, { setSubmitting }) => {
+                console.log("Form submitted:", values);
+                setIsModalOpen2(false);
+                setIsModalOpen3(true);
+                resetOtpModal();
+                setSubmitting(false);
               }}
-              maxLength={OTP_LENGTH} // Allow pasting multiple characters
-              className="w-12 h-12 text-center text-lg font-semibold border-2 border-gray-300 rounded-lg focus:outline-none "
-            />
-          ))}
-        </div>
+            >
+              {({ values, setFieldValue }) => (
+                <Form>
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      OTP <span className="text-red-500">*</span>
+                    </label>
 
-        <ErrorMessage
-          name="otp"
-          component="div"
-          className="text-red-500 text-sm text-center"
-        />
-      </div>
+                    <div className="flex justify-center gap-3 mb-2">
+                      {Array.from({ length: OTP_LENGTH }).map((_, index) => (
+                        <Field
+                          key={index}
+                          innerRef={(el) => (inputRefs.current[index] = el)}
+                          type="text"
+                          name={`otp-${index}`}
+                          value={values.otp[index] || ""}
+                          onChange={(e) => handleOtpChange(e, index, values, setFieldValue)}
+                          onKeyDown={(e) => handleKeyDown(e, index, values, setFieldValue)}
+                          onPaste={(e) => {
+                            // Prevent default paste behavior and let onChange handle it
+                            e.preventDefault();
+                            const pastedData = e.clipboardData.getData('text');
 
-      <div className="text-center">
-        <button
-          type="submit"
-          className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition font-medium"
-        >
-          Verification
-        </button>
-      </div>
-    </Form>
-  )}
-</Formik>
+                            // Create a synthetic event to trigger handleOtpChange
+                            const syntheticEvent = {
+                              target: {
+                                value: pastedData
+                              }
+                            };
+                            handleOtpChange(syntheticEvent, index, values, setFieldValue);
+                          }}
+                          maxLength={OTP_LENGTH} // Allow pasting multiple characters
+                          className="w-12 h-12 text-center text-lg font-semibold border-2 border-gray-300 rounded-lg focus:outline-none "
+                        />
+                      ))}
+                    </div>
+
+                    <ErrorMessage
+                      name="otp"
+                      component="div"
+                      className="text-red-500 text-sm text-center"
+                    />
+                  </div>
+
+                  <div className="text-center">
+                    <button
+                      type="submit"
+                      className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition font-medium"
+                    >
+                      Verification
+                    </button>
+                  </div>
+                </Form>
+              )}
+            </Formik>
 
             {countdown === 0 && (
               <div className="text-center mt-4">
@@ -694,112 +761,110 @@ const handleKeyDown = (e, index, values, setFieldValue) => {
       )}
 
       {/* New Password Modal */}
-    
+      {isModalOpen3 && (
+        <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 z-50">
+          <div className="bg-white rounded-lg shadow-lg max-w-md p-8 relative r_container320">
+            <button
+              type="button"
+              onClick={() => setIsModalOpen3(false)}
+              className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
+            >
+              ✕
+            </button>
 
-{isModalOpen3 && (
-  <div className="fixed inset-0 flex items-center justify-center bg-opacity-50 z-50">
-    <div className="bg-white rounded-lg shadow-lg max-w-md p-8 relative r_container320">
-      <button
-        type="button"
-        onClick={() => setIsModalOpen3(false)}
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl"
-      >
-        ✕
-      </button>
+            <h2 className="text-2xl font-semibold text-center mb-2">
+              Create New Password
+            </h2>
 
-      <h2 className="text-2xl font-semibold text-center mb-2">
-        Create New Password
-      </h2>
+            <p className="text-center mb-6 text-gray-600">
+              Password should be different from the previous one.
+            </p>
 
-      <p className="text-center mb-6 text-gray-600">
-        Password should be different from the previous one.
-      </p>
+            <Formik
+              initialValues={{ newPassword: "", confirmPassword: "" }}
+              validationSchema={confirmSchema}
+              onSubmit={(values, { resetForm, setSubmitting }) => {
+                console.log("Password Reset:", values);
 
-      <Formik
-        initialValues={{ newPassword: "", confirmPassword: "" }}
-        validationSchema={confirmSchema}
-        onSubmit={(values, { resetForm, setSubmitting }) => {
-          console.log("Password Reset:", values);
-         
-          alert('Password reset successfully!');
-          setIsModalOpen3(false);
-          resetForm();
-          setSubmitting(false);
-        }}
-      >
-        {({ isSubmitting }) => (
-          <Form>
-            <div className="space-y-4">
-              {/* New Password Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  New Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Field
-                    name="newPassword"
-                    type={showNewPassword ? "text" : "password"}
-                    placeholder="Enter new password"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={toggleNewPassword}
-                    className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
-                  >
-                    {showNewPassword ? <FaRegEyeSlash /> : <FaRegEye />}
-                  </button>
-                </div>
-                <ErrorMessage
-                  name="newPassword"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
+                alert('Password reset successfully!');
+                setIsModalOpen3(false);
+                resetForm();
+                setSubmitting(false);
+              }}
+            >
+              {({ isSubmitting }) => (
+                <Form>
+                  <div className="space-y-4">
+                    {/* New Password Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        New Password <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Field
+                          name="newPassword"
+                          type={showNewPassword ? "text" : "password"}
+                          placeholder="Enter new password"
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleNewPassword}
+                          className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                        >
+                          {showNewPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+                        </button>
+                      </div>
+                      <ErrorMessage
+                        name="newPassword"
+                        component="div"
+                        className="text-red-500 text-sm mt-1"
+                      />
+                    </div>
 
-              {/* Confirm Password Field */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirm Password <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Field
-                    name="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
-                    placeholder="Confirm new password"
-                    className="w-full px-3 py-2 border rounded-md focus:outline-none pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={toggleConfirmPassword}
-                    className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
-                  >
-                    {showConfirmPassword ? <FaRegEyeSlash /> : <FaRegEye />}
-                  </button>
-                </div>
-                <ErrorMessage
-                  name="confirmPassword"
-                  component="div"
-                  className="text-red-500 text-sm mt-1"
-                />
-              </div>
-            </div>
+                    {/* Confirm Password Field */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Confirm Password <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Field
+                          name="confirmPassword"
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm new password"
+                          className="w-full px-3 py-2 border rounded-md focus:outline-none pr-10"
+                        />
+                        <button
+                          type="button"
+                          onClick={toggleConfirmPassword}
+                          className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600"
+                        >
+                          {showConfirmPassword ? <FaRegEyeSlash /> : <FaRegEye />}
+                        </button>
+                      </div>
+                      <ErrorMessage
+                        name="confirmPassword"
+                        component="div"
+                        className="text-red-500 text-sm mt-1"
+                      />
+                    </div>
+                  </div>
 
-            <div className="mt-6">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition font-medium"
-              >
-                {isSubmitting ? "Resetting..." : "Reset Password"}
-              </button>
-            </div>
-          </Form>
-        )}
-      </Formik>
-    </div>
-  </div>
-)}
+                  <div className="mt-6">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="w-full bg-orange-500 text-white py-2 rounded-md hover:bg-orange-600 transition font-medium"
+                    >
+                      {isSubmitting ? "Resetting..." : "Reset Password"}
+                    </button>
+                  </div>
+                </Form>
+              )}
+            </Formik>
+          </div>
+        </div>
+      )}
 
     </div>
   );
