@@ -15,7 +15,7 @@ import blog10 from '../images/b-10.jpg'
 import blog11 from '../images/b-11.jpg'
 import blog12 from '../images/b-12.jpg'
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchBlogAllCategories } from '../Store/Slices/blogcategorySlice';
+import { fetchAllBlog, fetchBlogAllCategories } from '../Store/Slices/blogcategorySlice';
 
 const BlogPage = () => {
   const [activeFilter, setActiveFilter] = useState('All Articles');
@@ -32,7 +32,6 @@ const BlogPage = () => {
   //   'Tech'
   // ];
 
-
   const dispatch = useDispatch();
   const { categories, loading } = useSelector((state) => state.blogallcategory);
 
@@ -41,140 +40,169 @@ const BlogPage = () => {
   }, [dispatch]);
 
 
-  const blogPosts = [
-    {
-      id: 1,
-      title: 'Essential Beauty Products for a Simple, Daily Self-Care Routine',
-      category: 'Beauty & Personal Care',
-      author: 'Beauty Expert',
-      readTime: '5 min read',
-      image: blog1,
-      description: 'Find out which products are necessary for effective skin and hair care without overwhelming your routine.',
-      date: '09 Sep 2025',
-      featured: true
-    },
-    {
-      id: 2,
-      title: 'Decorating Tips to Create a Cozy & Inviting Home Space',
-      category: 'Home & Furniture',
-      author: 'Interior Designer',
-      readTime: '8 min read',
-      image: blog2,
-      description: 'Use colors, textures, and lighting to transform any room into a relaxing and personalized retreat.',
-      date: '08 Sep 2025',
-      featured: true
-    },
-    {
-      id: 3,
-      title: 'Seasonal Fashion Trends 2025: Style Guide & Must-Haves',
-      category: 'Lifestyle Trends',
-      author: 'Fashion Stylist',
-      readTime: '6 min read',
-      image: blog3,
-      description: 'Stay ahead with fashion trends that define the season, including styling tips and wardrobe essentials.',
-      date: '05 Sep 2025'
-    },
-    {
-      id: 4,
-      title: 'Top Smartphones to Watch in 2025: Features, Specs & Review',
-      category: 'Electronics',
-      author: 'Tech Reviewer',
-      readTime: '10 min read',
-      image: blog4,
-      description: 'Explore the latest smartphones with cutting-edge features, from superior photography to lightning-fast 5G connectivity.',
-      date: '02 Sep 2025'
-    },
-    {
-      id: 5,
-      title: 'Must-Have Gadgets for a Smarter Lifestyle in 2025',
-      category: 'Tech',
-      author: 'Tech Enthusiast',
-      readTime: '7 min read',
-      image: blog5,
-      description: 'Explore devices that make everyday living more convenient, from smart home assistants to fitness trackers.',
-      date: '30 Aug 2025'
-    },
-    {
-      id: 6,
-      title: 'How to Shop Responsibly: Support Sustainable Brands',
-      category: 'Sustainability',
-      author: 'Eco Expert',
-      readTime: '9 min read',
-      image: blog6,
-      description: 'Make a difference with conscious consumption. Discover eco-friendly informed choices and support brands prioritizing sustainability.',
-      date: '25 Aug 2025'
-    },
-    {
-      id: 7,
-      title: 'Personal Care Essentials You Can\'t Live Without',
-      category: 'Beauty & Personal Care',
-      author: 'Wellness Coach',
-      readTime: '6 min read',
-      image: blog7,
-      description: 'Discover must-have items essential for professional wellness for everyday routines while prioritizing health and self-care.',
-      date: '20 Aug 2025'
-    },
-    {
-      id: 8,
-      title: 'The Ultimate Guide to Sustainable Home Design Solutions',
-      category: 'Home & Furniture',
-      author: 'Sustainable Designer',
-      readTime: '8 min read',
-      image: blog8,
-      description: 'Transform your home with sustainable, affordable design and second-hand furniture options that reduce waste and environmental impact.',
-      date: '15 Aug 2025'
-    },
-    {
-      id: 9,
-      title: 'Protecting Your Devices: Essential Security Tips Everyone Should Know',
-      category: 'Tech',
-      author: 'Cybersecurity Expert',
-      readTime: '12 min read',
-      image: blog9,
-      description: 'Learn how to safeguard your personal data with practical device and internet security tools and techniques.',
-      date: '10 Aug 2025'
-    },
-    {
-      id: 10,
-      title: '10 Simple Habits That Improve Daily Life and Wellness',
-      category: 'Lifestyle Trends',
-      author: 'Life Coach',
-      readTime: '7 min read',
-      image: blog10,
-      description: 'Discover small but impactful habits that boost energy levels and mental health while enhancing overall life satisfaction.',
-      date: '05 Aug 2025'
-    },
-    {
-      id: 11,
-      title: 'A Beginner\'s Guide to Maintaining Your Electronic Devices for Peak Performance',
-      category: 'Electronics',
-      author: 'Tech Support',
-      readTime: '9 min read',
-      image: blog11,
-      description: 'Avoid common pitfalls by following cleaning, updating, and maintenance techniques that will extend device lifespan.',
-      date: '01 Aug 2025'
-    },
-    {
-      id: 12,
-      title: 'Must-Have Accessories That Complement Your Tech Setup',
-      category: 'Tech',
-      author: 'Tech Reviewer',
-      readTime: '6 min read',
-      image: blog12,
-      description: 'From wireless chargers to ergonomic keyboards, discover tools that enhance comfort and productivity.',
-      date: '28 Jul 2025'
-    }
-  ];
+  // const blogPosts = [
+  //   {
+  //     id: 1,
+  //     title: 'Essential Beauty Products for a Simple, Daily Self-Care Routine',
+  //     category: 'Beauty & Personal Care',
+  //     author: 'Beauty Expert',
+  //     readTime: '5 min read',
+  //     image: blog1,
+  //     description: 'Find out which products are necessary for effective skin and hair care without overwhelming your routine.',
+  //     date: '09 Sep 2025',
+  //     featured: true
+  //   },
+  //   // {
+  //   //   id: 2,
+  //   //   title: 'Decorating Tips to Create a Cozy & Inviting Home Space',
+  //   //   category: 'Home & Furniture',
+  //   //   author: 'Interior Designer',
+  //   //   readTime: '8 min read',
+  //   //   image: blog2,
+  //   //   description: 'Use colors, textures, and lighting to transform any room into a relaxing and personalized retreat.',
+  //   //   date: '08 Sep 2025',
+  //   //   featured: true
+  //   // },
+  //   // {
+  //   //   id: 3,
+  //   //   title: 'Seasonal Fashion Trends 2025: Style Guide & Must-Haves',
+  //   //   category: 'Lifestyle Trends',
+  //   //   author: 'Fashion Stylist',
+  //   //   readTime: '6 min read',
+  //   //   image: blog3,
+  //   //   description: 'Stay ahead with fashion trends that define the season, including styling tips and wardrobe essentials.',
+  //   //   date: '05 Sep 2025'
+  //   // },
+  //   // {
+  //   //   id: 4,
+  //   //   title: 'Top Smartphones to Watch in 2025: Features, Specs & Review',
+  //   //   category: 'Electronics',
+  //   //   author: 'Tech Reviewer',
+  //   //   readTime: '10 min read',
+  //   //   image: blog4,
+  //   //   description: 'Explore the latest smartphones with cutting-edge features, from superior photography to lightning-fast 5G connectivity.',
+  //   //   date: '02 Sep 2025'
+  //   // },
+  //   // {
+  //   //   id: 5,
+  //   //   title: 'Must-Have Gadgets for a Smarter Lifestyle in 2025',
+  //   //   category: 'Tech',
+  //   //   author: 'Tech Enthusiast',
+  //   //   readTime: '7 min read',
+  //   //   image: blog5,
+  //   //   description: 'Explore devices that make everyday living more convenient, from smart home assistants to fitness trackers.',
+  //   //   date: '30 Aug 2025'
+  //   // },
+  //   // {
+  //   //   id: 6,
+  //   //   title: 'How to Shop Responsibly: Support Sustainable Brands',
+  //   //   category: 'Sustainability',
+  //   //   author: 'Eco Expert',
+  //   //   readTime: '9 min read',
+  //   //   image: blog6,
+  //   //   description: 'Make a difference with conscious consumption. Discover eco-friendly informed choices and support brands prioritizing sustainability.',
+  //   //   date: '25 Aug 2025'
+  //   // },
+  //   // {
+  //   //   id: 7,
+  //   //   title: 'Personal Care Essentials You Can\'t Live Without',
+  //   //   category: 'Beauty & Personal Care',
+  //   //   author: 'Wellness Coach',
+  //   //   readTime: '6 min read',
+  //   //   image: blog7,
+  //   //   description: 'Discover must-have items essential for professional wellness for everyday routines while prioritizing health and self-care.',
+  //   //   date: '20 Aug 2025'
+  //   // },
+  //   // {
+  //   //   id: 8,
+  //   //   title: 'The Ultimate Guide to Sustainable Home Design Solutions',
+  //   //   category: 'Home & Furniture',
+  //   //   author: 'Sustainable Designer',
+  //   //   readTime: '8 min read',
+  //   //   image: blog8,
+  //   //   description: 'Transform your home with sustainable, affordable design and second-hand furniture options that reduce waste and environmental impact.',
+  //   //   date: '15 Aug 2025'
+  //   // },
+  //   // {
+  //   //   id: 9,
+  //   //   title: 'Protecting Your Devices: Essential Security Tips Everyone Should Know',
+  //   //   category: 'Tech',
+  //   //   author: 'Cybersecurity Expert',
+  //   //   readTime: '12 min read',
+  //   //   image: blog9,
+  //   //   description: 'Learn how to safeguard your personal data with practical device and internet security tools and techniques.',
+  //   //   date: '10 Aug 2025'
+  //   // },
+  //   // {
+  //   //   id: 10,
+  //   //   title: '10 Simple Habits That Improve Daily Life and Wellness',
+  //   //   category: 'Lifestyle Trends',
+  //   //   author: 'Life Coach',
+  //   //   readTime: '7 min read',
+  //   //   image: blog10,
+  //   //   description: 'Discover small but impactful habits that boost energy levels and mental health while enhancing overall life satisfaction.',
+  //   //   date: '05 Aug 2025'
+  //   // },
+  //   // {
+  //   //   id: 11,
+  //   //   title: 'A Beginner\'s Guide to Maintaining Your Electronic Devices for Peak Performance',
+  //   //   category: 'Electronics',
+  //   //   author: 'Tech Support',
+  //   //   readTime: '9 min read',
+  //   //   image: blog11,
+  //   //   description: 'Avoid common pitfalls by following cleaning, updating, and maintenance techniques that will extend device lifespan.',
+  //   //   date: '01 Aug 2025'
+  //   // },
+  //   // {
+  //   //   id: 12,
+  //   //   title: 'Must-Have Accessories That Complement Your Tech Setup',
+  //   //   category: 'Tech',
+  //   //   author: 'Tech Reviewer',
+  //   //   readTime: '6 min read',
+  //   //   image: blog12,
+  //   //   description: 'From wireless chargers to ergonomic keyboards, discover tools that enhance comfort and productivity.',
+  //   //   date: '28 Jul 2025'
+  //   // }
+  // ];
 
-  const filteredPosts = activeFilter === 'All Articles'
-    ? blogPosts
-    : blogPosts.filter(post => post.category === activeFilter);
+  const { allblog, error } = useSelector((state) => state.blogallcategory);
 
-  const postsPerPage = 9;
+  useEffect(() => {
+    dispatch(fetchAllBlog());
+  }, [dispatch]);
+
+  // Map API fields into UI format here
+  const normalizedPosts = Array.isArray(allblog)
+    ? allblog.map((blog) => ({
+      id: blog._id,
+      image: blog.heroImage,
+      title: blog.blogTitle,
+      description: blog.blogDesc,
+      date: new Date(blog.createdAt).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      category: blog.blogCategoryId?.blogCategoryName || "Uncategorized",
+    }))
+    : [];
+
+
+  // Apply filter
+  const filteredPosts =
+    activeFilter === "All Articles"
+      ? normalizedPosts
+      : normalizedPosts.filter((post) => post.category === activeFilter);
+
+
+  const postsPerPage = 16;
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
   const startIndex = (currentPage - 1) * postsPerPage;
   const endIndex = startIndex + postsPerPage;
   const currentPosts = filteredPosts.slice(startIndex, endIndex);
+  console.log("Current Posts:", currentPosts);
+
+
 
   const handleFilterChange = (filter) => {
     setActiveFilter(filter);
@@ -193,17 +221,17 @@ const BlogPage = () => {
     }
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      'Beauty & Personal Care': 'bg-pink-100 text-pink-700',
-      'Home & Furniture': 'bg-blue-100 text-blue-700',
-      'Lifestyle Trends': 'bg-purple-100 text-purple-700',
-      'Electronics': 'bg-green-100 text-green-700',
-      'Tech': 'bg-indigo-100 text-indigo-700',
-      'Sustainability': 'bg-emerald-100 text-emerald-700',
-    };
-    return colors[category] || 'bg-gray-100 text-gray-700';
-  };
+  // const getCategoryColor = (category) => {
+  //   const colors = {
+  //     'Beauty & Personal Care': 'bg-pink-100 text-pink-700',
+  //     'Home & Furniture': 'bg-blue-100 text-blue-700',
+  //     'Lifestyle Trends': 'bg-purple-100 text-purple-700',
+  //     'Electronics': 'bg-green-100 text-green-700',
+  //     'Tech': 'bg-indigo-100 text-indigo-700',
+  //     'Sustainability': 'bg-emerald-100 text-emerald-700',
+  //   };
+  //   return colors[category] || 'bg-gray-100 text-gray-700';
+  // };
 
   // Create grid layout with featured posts
   const getGridLayout = () => {
@@ -212,35 +240,25 @@ const BlogPage = () => {
     const layout = [];
     let index = 0;
 
+    // Create rows in a repeating 2-3-3 pattern
+    const pattern = [2, 3, 3];
+    let patternIndex = 0;
+
     while (index < currentPosts.length) {
-      // First row: 1 large + 1 regular
-      if (index < currentPosts.length - 1) {
-        layout.push({
-          type: 'mixed-row',
-          posts: [currentPosts[index], currentPosts[index + 1]],
-          featured: currentPosts[index].featured
-        });
-        index += 2;
-      } else if (index < currentPosts.length) {
-        layout.push({
-          type: 'single',
-          posts: [currentPosts[index]]
-        });
-        index += 1;
+      const count = pattern[patternIndex];
+      const rowPosts = [];
+
+      for (let i = 0; i < count && index < currentPosts.length; i++) {
+        rowPosts.push(currentPosts[index]);
+        index++;
       }
 
-      // Second row: 3 regular cards
-      if (index < currentPosts.length) {
-        const rowPosts = [];
-        for (let i = 0; i < 3 && index < currentPosts.length; i++) {
-          rowPosts.push(currentPosts[index]);
-          index++;
-        }
-        layout.push({
-          type: 'triple-row',
-          posts: rowPosts
-        });
-      }
+      layout.push({
+        type: rowPosts.length === 1 ? 'single' : (count === 2 ? 'mixed-row' : 'triple-row'),
+        posts: rowPosts
+      });
+
+      patternIndex = (patternIndex + 1) % pattern.length;
     }
 
     return layout;
@@ -254,6 +272,7 @@ const BlogPage = () => {
 
     const handleCardClick = () => {
       navigate(`/blog/${post.id}`); // Navigate to blog details page
+      // alert(post.id,"Card Clicked");
     };
 
     const handleReadMoreClick = (e) => {
@@ -262,6 +281,8 @@ const BlogPage = () => {
     };
 
     return (
+
+      // Single Blog Card
       <article
         className="bg-gray-50 rounded-md overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-300 hover:border-orange-200 group cursor-pointer"
         onClick={handleCardClick} // Add click handler to entire card
@@ -270,8 +291,7 @@ const BlogPage = () => {
           <img
             src={post.image}
             alt={post.title}
-            className={`w-full object-cover transition-transform duration-300 p-1 rounded-lg group-hover:scale-105 h-100'
-            }`}
+            className="w-full object-cover transition-transform duration-300 p-1 rounded-lg group-hover:scale-105"
           />
         </div>
 
@@ -307,6 +327,7 @@ const BlogPage = () => {
           </div>
         </div>
       </article>
+
     );
   };
 

@@ -67,20 +67,43 @@ export const addNewBlogController = async (req, res) => {
 
 export const getAllBlogsController = async (req, res) => {
     try {
-        // Optional pagination
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
-        const skip = (page - 1) * limit;
+        // If pagination query params are provided, paginate; otherwise return all
+        const hasPagination =
+            typeof req.query.page !== "undefined" || typeof req.query.limit !== "undefined";
 
+        if (hasPagination) {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            const skip = (page - 1) * limit;
+
+            const blogs = await blogModel
+                .find()
+                .populate({
+                    path: "blogCategoryId"
+                })
+                .skip(skip)
+                .limit(limit)
+                .sort({ createdAt: -1 });
+
+            const total = await blogModel.countDocuments();
+
+            return res.status(200).json({
+                success: true,
+                message: "All blogs fetched successfully",
+                total,
+                page,
+                limit,
+                blogs,
+            });
+        }
+
+        // No pagination params: return all records
         const blogs = await blogModel
             .find()
             .populate({
-                path: "blogCategoryId"   // fetch full category object
+                path: "blogCategoryId"
             })
-            .skip(skip)
-            .limit(limit)
             .sort({ createdAt: -1 });
-
 
         const total = await blogModel.countDocuments();
 
@@ -88,8 +111,6 @@ export const getAllBlogsController = async (req, res) => {
             success: true,
             message: "All blogs fetched successfully",
             total,
-            page,
-            limit,
             blogs,
         });
     } catch (error) {
