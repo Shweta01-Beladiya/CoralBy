@@ -13,7 +13,7 @@ export const store = configureStore({
         users: userSlice,
         contactUs: contactusReducer,
         careerJob: careerjobReducer,
-        subscribe: subscribeReducer
+        subscribe: subscribeReducer,
         blogallcategory: blogallcategoryReducer,
     },
 });

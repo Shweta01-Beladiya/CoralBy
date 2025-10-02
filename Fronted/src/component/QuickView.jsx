@@ -14,7 +14,7 @@ const QuickView = ({ product, onClose }) => {
     color: "",
     colorName: "",
   };
-
+ 
   const [activeVariant, setActiveVariant] = useState(initialVariant);
   const [activeSize, setActiveSize] = useState(8);
   const [inWishlist, setInWishlist] = useState(false);
@@ -80,7 +80,7 @@ const QuickView = ({ product, onClose }) => {
                     key={i}
                     src={img}
                     alt={`${product.title}-${i}`}
-                    className="hidden sm:block w-full h-[220px] object-cover rounded-lg border"
+                    className="hidden sm:block w-full h-[220px] max-w-[200px] object-cover rounded-lg border"
                   />
                 ))}
               </div>
