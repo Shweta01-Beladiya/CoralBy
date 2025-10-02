@@ -189,14 +189,17 @@ export const myOrderController = async (req, res) => {
             return sendErrorResponse(res, 400, "Valid UserID is required");
         }
 
-        // Fetch orders for this user and populate user details
-        const orders = await orderModel.find({ userId }).populate("userId").sort({ createdAt: -1 });
+        // Fetch only PENDING orders for this user
+        const orders = await orderModel
+            .find({ userId, orderStatus: "Pending" })
+            .populate("userId")
+            .sort({ createdAt: -1 });
 
         if (!orders || orders.length === 0) {
-            return sendErrorResponse(res, 404, "No orders found for this user");
+            return sendErrorResponse(res, 404, "No pending orders found for this user");
         }
 
-        // Map orders to include the delivery address object
+        // Format orders with delivery address
         const formattedOrders = orders.map((order) => {
             const user = order.userId;
             const deliveryAddress = user?.billingaddress?.find(
@@ -212,7 +215,7 @@ export const myOrderController = async (req, res) => {
                 totalAmount: order.totalAmount,
                 couponCode: order.couponCode,
                 isCouponApplied: order.isCouponApplied,
-                orderStatus: order.orderStatus,
+                orderStatus: order.orderStatus, // will always be "Pending" here
                 deliveryExpected: order.deliveryExpected,
                 createdAt: order.createdAt,
                 orderInstruction: order.orderInstruction,
@@ -221,7 +224,7 @@ export const myOrderController = async (req, res) => {
             };
         });
 
-        return sendSuccessResponse(res, "User orders fetched successfully", {
+        return sendSuccessResponse(res, "Pending orders fetched successfully", {
             orders: formattedOrders,
         });
 
@@ -230,6 +233,60 @@ export const myOrderController = async (req, res) => {
         return sendErrorResponse(res, 500, "Error fetching user orders", error.message);
     }
 };
+
+export const myHistoryOrderController = async (req, res) => {
+  try {
+    const { id: userId } = req?.user;
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return sendErrorResponse(res, 400, "Valid UserID is required");
+    }
+
+    // Fetch all orders for this user where status is NOT Pending
+    const orders = await orderModel
+      .find({ userId, orderStatus: { $ne: "Pending" } })
+      .populate("userId")
+      .sort({ createdAt: -1 });
+
+    if (!orders || orders.length === 0) {
+      return sendErrorResponse(res, 404, "No history orders found for this user");
+    }
+
+    // Format response with delivery address
+    const formattedOrders = orders.map((order) => {
+      const user = order.userId;
+      const deliveryAddress = user?.billingaddress?.find(
+        (addr) => addr._id.toString() === order.deliveryAddress.toString()
+      );
+
+      return {
+        _id: order._id,
+        orderId: order.orderId,
+        products: order.products,
+        billingAmount: order.billingAmount,
+        discountAmount: order.discountAmount,
+        totalAmount: order.totalAmount,
+        couponCode: order.couponCode,
+        isCouponApplied: order.isCouponApplied,
+        orderStatus: order.orderStatus, // will be anything except Pending
+        deliveryExpected: order.deliveryExpected,
+        createdAt: order.createdAt,
+        orderInstruction: order.orderInstruction,
+        payment: order.payment,
+        deliveryAddress: deliveryAddress || null,
+      };
+    });
+
+    return sendSuccessResponse(res, "Order history fetched successfully", {
+      orders: formattedOrders,
+    });
+
+  } catch (error) {
+    console.error("Error fetching order history:", error);
+    return sendErrorResponse(res, 500, "Error fetching order history", error.message);
+  }
+};
+
 
 
 export const getAllOrders = async (req, res) => {
@@ -466,10 +523,10 @@ export const getShippingEstimates = async (req, res) => {
             return sendBadRequestResponse(res, "Please provide a valid 4-digit 'postcode' in the request body.");
         }
 
-        const API_KEY = '92944ac9-842b-46e1-b527-766ddaa48d20'; 
+        const API_KEY = '92944ac9-842b-46e1-b527-766ddaa48d20';
 
-        const fromPostcode = '2000'; 
-        const toPostcode = postcode.trim(); 
+        const fromPostcode = '2000';
+        const toPostcode = postcode.trim();
         const length = 22;
         const width = 16;
         const height = 7.7;
