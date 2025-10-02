@@ -240,61 +240,109 @@ export const getProductById = async (req, res) => {
     try {
         const { id } = req.params;
 
+        // Validate ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
-            return res.status(400).json({ success: false, message: "Invalid ProductId" });
+            return res.status(400).json({
+                success: false,
+                message: "Invalid Product ID",
+            });
         }
 
-        const product = await productModel.findById(id)
-            .populate('brand', 'name')
-            .populate('mainCategory', 'name')
-            .populate('category', 'name')
-            .populate('subCategory', 'name')
-            .populate('insideSubCategory', 'name')
+        // Fetch product with population
+        let product = await Product.findById(id)
+            .populate("brand", "name")
+            .populate("mainCategory", "name")
+            .populate("category", "name")
+            .populate("subCategory", "name")
+            .populate("insideSubCategory", "name")
             .populate({
-                path: 'varientId',
-                select: 'sku images color size price stock weight isActive createdAt'
+                path: "varientId",
+                select: "sku images color size price stock weight isActive createdAt",
             });
 
         if (!product) {
-            return res.status(404).json({ success: false, message: "Product not found" });
+            return res.status(404).json({
+                success: false,
+                message: "Product not found",
+            });
         }
 
-        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
+        // Auto-fill missing category based on mainCategory
+        if (!product.category && product.mainCategory) {
+            const cat = await CategoryModel.findOne({ mainCategoryId: product.mainCategory._id });
+            if (cat) product.category = cat;
+        }
 
+        // Auto-fill missing subCategory based on category
+        if (!product.subCategory && product.category) {
+            const subCat = await SubCategoryModel.findOne({ categoryId: product.category._id });
+            if (subCat) product.subCategory = subCat;
+        }
+
+        // Auto-fill missing insideSubCategory based on subCategory
+        if (!product.insideSubCategory && product.subCategory) {
+            const insideSubCat = await InsideSubCategoryModel.findOne({ subCategoryId: product.subCategory._id });
+            if (insideSubCat) product.insideSubCategory = insideSubCat;
+        }
+
+        // Calculate last 12 hours sold
+        const twelveHoursAgo = new Date(Date.now() - 12 * 60 * 60 * 1000);
         const recentOrders = await OrderModel.find({
-            'products.productId': id,
-            'payment.status': 'Paid',
-            'createdAt': { $gte: twelveHoursAgo }
-        }).select('products');
+            "products.productId": id,
+            "payment.status": "Paid",
+            createdAt: { $gte: twelveHoursAgo },
+        }).select("products");
 
         let last12HoursSold = 0;
         recentOrders.forEach(order => {
             order.products.forEach(item => {
-                if (item.productId.toString() === id) {
-                    last12HoursSold += item.quantity || 1;
-                }
+                if (item.productId.toString() === id) last12HoursSold += item.quantity || 1;
             });
         });
 
+        // Increment view count
         product.view = (product.view || 0) + 1;
         await product.save();
 
+        // Build response
+        const response = {
+            _id: product._id,
+            title: product.title,
+            description: product.description,
+            badge: product.badge,
+            isActive: product.isActive,
+            view: product.view,
+            sold: product.sold || 0,
+            last12HoursSold,
+            rating: {
+                average: product.rating?.average || 0,
+                totalReviews: product.rating?.totalReviews || 0,
+            },
+            brand: product.brand || null,
+            mainCategory: product.mainCategory || null,
+            category: product.category || null,
+            subCategory: product.subCategory || null,
+            insideSubCategory: product.insideSubCategory || null,
+            varients: product.varientId || [],
+            createdAt: product.createdAt,
+            updatedAt: product.updatedAt,
+            productDetails: product.productDetails || {},
+            shippingReturn: product.shippingReturn || {},
+            warrantySupport: product.warrantySupport || {},
+            love_about: product.love_about || [],
+        };
+
         return res.status(200).json({
             success: true,
-            message: "Product fetched Successfully...",
-            result: {
-                ...product.toObject(),
-                rating: {
-                    average: product.rating?.average || 0,
-                    totalReviews: product.rating?.totalReviews || 0
-                },
-                sold: product.sold || 0,
-                last12HoursSold: last12HoursSold
-            }
+            message: "Product fetched successfully",
+            result: response,
         });
-
     } catch (error) {
-        return res.status(500).json({ success: false, message: error.message });
+        console.error("Error in getProductById:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Internal Server Error",
+        });
     }
 };
 
@@ -618,59 +666,6 @@ export const getProductsByBrand = async (req, res) => {
 
     } catch (error) {
         return sendErrorResponse(res, 500, error.message);
-    }
-};
-
-export const getProductAll = async (req, res) => {
-    const userId = req.user?.id;
-
-    try {
-        await assignBadges();
-
-        const products = await Product.find({ isActive: true })
-            .populate("brand")
-            .populate("mainCategory")
-            .populate("category")
-            .populate("subCategory")
-            .populate("insideSubCategory") // ✅ Add this line
-            .lean();
-
-        const productIds = products.map((p) => p._id);
-        const variants = await ProductVariant.find({ productId: { $in: productIds } }).lean();
-
-        const productData = products.map((p) => {
-            const defaultVariant = variants.find(
-                (v) => v.productId.toString() === p._id.toString()
-            );
-            return {
-                ...p,
-                defaultVariant: defaultVariant || null,
-            };
-        });
-
-        let wishlistProductIds = [];
-        if (userId) {
-            const wishlistItems = await WishlistModal.find({ userId }).select("productId");
-            wishlistProductIds = wishlistItems.map((item) => item.productId?.toString());
-        }
-
-        const productsWithWishlist = productData.map((product) => ({
-            ...product,
-            isWishlist: wishlistProductIds.includes(product._id.toString()),
-        }));
-
-        return res.status(200).json({
-            status: true,
-            message: "Products fetched successfully",
-            data: productsWithWishlist,
-        });
-    } catch (error) {
-        console.error("Error:", error);
-        return res.status(500).json({
-            status: false,
-            message: "Server Error",
-            error: error.message,
-        });
     }
 };
 

@@ -5,7 +5,7 @@ import { createCategory, deleteCategoryById, getAllCategory, getCategoriesByMain
 import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdatecontroller, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
-import { createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductAll, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
+import { createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
 import { getMyCartController, toggleCartItemController } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
@@ -109,7 +109,6 @@ indexRouter.delete("/deleteProduct/:id", sellerAuth, deleteProduct);
 indexRouter.get("/getProductBySubCategory/:subCategoryId", getProductBySubCategory);
 indexRouter.get("/getCategoryHierarchy", getCategoryHierarchy);
 indexRouter.get("/getProductsByBrand/:brandId", getProductsByBrand);
-indexRouter.get("/getProductAll", getProductAll);
 indexRouter.get("/getSimilarProducts/:productId", getSimilarProducts);
 indexRouter.get("/getMostWishlistedProducts", getMostWishlistedProducts);
 indexRouter.get("/getTrendingProducts", getTrendingProducts);
@@ -287,6 +286,7 @@ indexRouter.get("/all/blogs", getAllBlogsController);
 indexRouter.get("/blog/:blogId", getBlogByIdController);
 indexRouter.patch("/update/blog/:blogId", UserAuth, isAdmin, upload.any(), updateBlogController);
 indexRouter.delete("/delete/blog/:blogId", deleteBlogController);
+
 //ContactUs
 indexRouter.post("/createContactUs", createContactUs);
 indexRouter.get("/getAllContactUs", getAllContactUs);
