@@ -225,7 +225,7 @@ export class AuthController {
             }
 
             // Generate OTP
-            const OTP = Math.floor(100000 + Math.random() * 900000).toString();
+            const OTP = Math.floor(1000 + Math.random() * 9000).toString();
             const from_email = process.env.SMTP_EMAIL || "hit.kalathiyainfotech@gmail.com";
 
             // Save OTP in DB with expiry
