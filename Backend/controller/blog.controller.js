@@ -6,7 +6,7 @@ import { deleteS3File } from "../utils/aws.config.js";
 
 export const addNewBlogController = async (req, res) => {
     try {
-        const { blogCategoryId, blogTitle, blogDesc, section } = req.body;
+        const { blogCategoryId, blogTitle, blogDesc, section, conclusion } = req.body;
 
         let heroImageUrl = null;
 
@@ -50,6 +50,7 @@ export const addNewBlogController = async (req, res) => {
             blogDesc: blogDesc,
             heroImage: heroImageUrl,
             section: parsedSections,
+            conclusion: conclusion
         });
 
         await blog.save();
@@ -153,6 +154,7 @@ export const updateBlogController = async (req, res) => {
         const blogTitle = req.body?.blogTitle;
         const blogDesc = req.body?.blogDesc;
         const section = req.body?.section;
+        const conclusion = req.body?.conclusion;
         if (!mongoose.Types.ObjectId.isValid(blogId))
             return res.status(400).json({ success: false, message: "Invalid Blog ID" });
 
@@ -174,7 +176,7 @@ export const updateBlogController = async (req, res) => {
         if (blogTitle) blog.blogTitle = blogTitle;
         if (blogCategoryId) blog.blogCategoryId = blogCategoryId;
         if (blogDesc) blog.blogDesc = blogDesc;
-
+        if (conclusion) blog.conclusion = conclusion
         // 3. Sections
         if (section) {
             const parsedSections = JSON.parse(section);
@@ -302,4 +304,28 @@ export const getBlogWithCategoryController = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 
+}
+
+export const getLatestBlogController = async (req, res) => {
+    try {
+        const limit = parseInt(req.query.limit, 10) || 5;
+
+        const blogs = await blogModel
+            .find({})
+            .sort({ createdAt: -1 })
+            .populate({
+                path: "blogCategoryId",
+                select: "name description", // only fetch needed fields
+            })
+            .limit(limit);
+
+        if (!blogs || blogs.length === 0) {
+            return sendNotFoundResponse(res, "No blogs found.");
+        }
+
+        return sendSuccessResponse(res, "Latest blogs fetched successfully.", blogs);
+    } catch (error) {
+        console.log(error.message);
+        return sendErrorResponse(res, 500, "Error During Featch latest Blog", error)
+    }
 }
