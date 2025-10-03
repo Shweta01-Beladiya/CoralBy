@@ -6,6 +6,7 @@ import careerjobReducer from '../Store/Slices/careerjobSlice';
 import subscribeReducer from '../Store/Slices/subscribeSlice';
 import blogallcategoryReducer from '../Store/Slices/blogcategorySlice';
 import authReducer from '../Store/Slices/authSlice';
+import authProfileReducer from '../Store/Slices/authProfileSlice';
 
 export const store = configureStore({
     reducer: {
@@ -16,7 +17,8 @@ export const store = configureStore({
         careerJob: careerjobReducer,
         subscribe: subscribeReducer,
         blogallcategory: blogallcategoryReducer,
-        auth: authReducer
+        auth: authReducer,
+        authProfie: authProfileReducer
     },
 });
 
