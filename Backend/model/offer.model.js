@@ -6,7 +6,7 @@ const countdownSchema = new mongoose.Schema({
     hours: { type: Number, default: 0 },
     minutes: { type: Number, default: 0 },
     seconds: { type: Number, default: 0 },
-}, { _id: true }); 
+}, { _id: true });
 
 const offerSchema = new mongoose.Schema(
     {
@@ -23,6 +23,10 @@ const offerSchema = new mongoose.Schema(
             type: String,
             trim: true,
         },
+        offerMidText: {
+            type: String,
+            default: null
+        },
         offerImage: {
             type: String,
             required: [true, "Offer image is required"],
@@ -34,7 +38,7 @@ const offerSchema = new mongoose.Schema(
 
         isSpecialOffer: {
             type: Boolean,
-            default: false, 
+            default: false,
         },
         discountPercent: {
             type: Number,
@@ -51,7 +55,7 @@ const offerSchema = new mongoose.Schema(
         countdown: countdownSchema,
     },
     {
-        timestamps: true, 
+        timestamps: true,
     }
 );
 
