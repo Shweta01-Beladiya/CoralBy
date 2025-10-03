@@ -314,8 +314,7 @@ export const getLatestBlogController = async (req, res) => {
             .find({})
             .sort({ createdAt: -1 })
             .populate({
-                path: "blogCategoryId",
-                select: "name description", // only fetch needed fields
+                path: "blogCategoryId"
             })
             .limit(limit);
 
