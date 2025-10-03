@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight, Facebook, Twitter, Instagram, Share2 } from 'lucide-react';
 import { TiSocialFacebook } from "react-icons/ti";
 import { LiaAngleRightSolid } from "react-icons/lia";
@@ -10,63 +10,75 @@ import blog4 from '../images/b-4.jpg'
 import blog5 from '../images/b-5.jpg'
 import blog6 from '../images/b-6.jpg'
 import { useParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchBlogById } from '../Store/Slices/blogcategorySlice';
 
 const BlogDetailsPage = () => {
 
   const { id } = useParams();
-  console.log("blog page::",id);
-  
+  console.log("blog page::", id);
+
+  const dispatch = useDispatch();
+
+  const { blogbyid, loading } = useSelector((state) => state.blogallcategory);
+  console.log("Blog by ID from Redux:", blogbyid);
+
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchBlogById(id));
+    }
+  }, [id, dispatch]);
 
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  const latestBlogs = [
-    {
-      id: 1,
-      title: 'Seasonal Fashion Trends 2025: Style, Colors & Must-Haves',
-      category: 'Lifestyle Trends',
-      date: '08 Sep 2025',
-      image: blog3,
-      description: 'Stay ahead with fashion trends that define the season, including styling tips and wardrobe essentials.'
-    },
-    {
-      id: 2,
-      title: 'Top Smartphones to Watch in 2025: Features, Specs & Reviews',
-      category: 'Tech',
-      date: '05 Sep 2025',
-      image: blog4,
-      description: 'Explore the latest smartphones with cutting-edge features, camera tech, and performance insights to help you make the right choice.'
-    },
-    {
-      id: 3,
-      title: 'Must-Have Gadgets for a Smarter Lifestyle in 2025',
-      category: 'Electronics',
-      date: '03 Sep 2025',
-      image: blog5,
-      description: 'Explore devices that make everyday living more convenient, from smart home assistants to wearable tech.'
-    },
-    {
-      id: 4,
-      title: 'Decorating Tips to Create a Cozy Home Space',
-      category: 'Home & Furniture',
-      date: '01 Sep 2025',
-      image: blog6,
-      description: 'Use colors, textures, and lighting to transform any room into a relaxing retreat.'
-    }
-  ];
+  // const latestBlogs = [
+  //   {
+  //     id: 1,
+  //     title: 'Seasonal Fashion Trends 2025: Style, Colors & Must-Haves',
+  //     category: 'Lifestyle Trends',
+  //     date: '08 Sep 2025',
+  //     image: blog3,
+  //     description: 'Stay ahead with fashion trends that define the season, including styling tips and wardrobe essentials.'
+  //   },
+  //   {
+  //     id: 2,
+  //     title: 'Top Smartphones to Watch in 2025: Features, Specs & Reviews',
+  //     category: 'Tech',
+  //     date: '05 Sep 2025',
+  //     image: blog4,
+  //     description: 'Explore the latest smartphones with cutting-edge features, camera tech, and performance insights to help you make the right choice.'
+  //   },
+  //   {
+  //     id: 3,
+  //     title: 'Must-Have Gadgets for a Smarter Lifestyle in 2025',
+  //     category: 'Electronics',
+  //     date: '03 Sep 2025',
+  //     image: blog5,
+  //     description: 'Explore devices that make everyday living more convenient, from smart home assistants to wearable tech.'
+  //   },
+  //   {
+  //     id: 4,
+  //     title: 'Decorating Tips to Create a Cozy Home Space',
+  //     category: 'Home & Furniture',
+  //     date: '01 Sep 2025',
+  //     image: blog6,
+  //     description: 'Use colors, textures, and lighting to transform any room into a relaxing retreat.'
+  //   }
+  // ];
 
-  const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % Math.ceil(latestBlogs.length / 3));
-  };
+  // const nextSlide = () => {
+  //   setCurrentSlide((prev) => (prev + 1) % Math.ceil(latestBlogs.length / 3));
+  // };
 
-  const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + Math.ceil(latestBlogs.length / 3)) % Math.ceil(latestBlogs.length / 3));
-  };
+  // const prevSlide = () => {
+  //   setCurrentSlide((prev) => (prev - 1 + Math.ceil(latestBlogs.length / 3)) % Math.ceil(latestBlogs.length / 3));
+  // };
 
-  const getVisibleBlogs = () => {
-    const itemsPerSlide = 3;
-    const startIndex = currentSlide * itemsPerSlide;
-    return latestBlogs.slice(startIndex, startIndex + itemsPerSlide);
-  };
+  // const getVisibleBlogs = () => {
+  //   const itemsPerSlide = 3;
+  //   const startIndex = currentSlide * itemsPerSlide;
+  //   return latestBlogs.slice(startIndex, startIndex + itemsPerSlide);
+  // };
 
   return (
     <div className="min-h-screen bg-white">
@@ -82,7 +94,9 @@ const BlogDetailsPage = () => {
               <LiaAngleRightSolid />
               <h3 className="text-[16px] text-[#BABABA] font-medium">Blogs</h3>
               <LiaAngleRightSolid />
-              <h3 className="text-[16px] text-[#44506A] font-medium">Must-Have Accessories That Complement Your Tech Setup</h3>
+              <h3 className="text-[16px] text-[#44506A] font-medium">
+                {blogbyid.blogTitle}
+              </h3>
             </div>
           </div>
         </div>
@@ -94,9 +108,9 @@ const BlogDetailsPage = () => {
         {/* Hero Image */}
         <div className="relative mb-8 py-8">
           <img
-            src={require("../images/b-17.jpg")}
-            alt="Tech accessories on desk"
-            className="w-full md:h-100 object-cover rounded-lg"
+            src={blogbyid.heroImage}
+            alt={blogbyid.blogTitle}
+            className="w-full md:h-[500px] object-contain rounded-lg"
           />
         </div>
 
@@ -104,9 +118,19 @@ const BlogDetailsPage = () => {
         <div className="mb-8">
           <div className='md:flex justify-between flex-none'>
             <div className="flex items-center gap-4 mb-4">
-              <span className="text-orange-500 text-sm font-medium">Electronics</span>
+              {/* Blog Category */}
+              <span className="text-orange-500 text-sm font-medium">
+                {blogbyid?.blogCategoryId?.blogCategoryName}
+              </span>
               <span className="text-gray-500 text-sm">|</span>
-              <span className="text-gray-500 text-sm">04 Sep 2025</span>
+              {/* Created Date */}
+              <span className="text-gray-500 text-sm">
+                {new Date(blogbyid?.createdAt).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </span>
             </div>
             <div className="flex items-center space-x-2 mb-4">
               <TiSocialFacebook className="w-6 h-6 text-black-400 hover:text-blue-600 cursor-pointer transition-colors" />
@@ -116,10 +140,11 @@ const BlogDetailsPage = () => {
             </div>
           </div>
           <h2 className="font-base  font-bold text-gray-900 mb-4">
-            Must-Have Accessories That Complement Your Tech Setup
+            {blogbyid.blogTitle}
           </h2>
           <p className="text-gray-600 text-lg leading-relaxed mb-6">
-            From wireless chargers to ergonomic keyboards, explore tools that increase comfort and productivity.
+            {/* From wireless chargers to ergonomic keyboards, explore tools that increase comfort and productivity. */}
+            {blogbyid.blogDesc}
           </p>
 
           {/* Social Share */}
@@ -132,72 +157,77 @@ const BlogDetailsPage = () => {
         <div className="prose prose-lg max-w-none">
           {/* Introduction */}
           <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">INTRODUCTION</h3>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              In today's fast-paced digital world, having a functional and efficient tech setup is more important than ever. Whether you're working from home, gaming, or streaming, the right accessories make a huge difference. They not only enhance the performance of your devices but also improve your comfort, productivity, and overall experience. A cluttered desk doesn't just look unprofessional—it can impact your focus, making it harder to enjoy your time using technology.
-            </p>
-            <p className="text-gray-700 leading-relaxed mb-4">
-              Choosing the right tech accessories doesn't mean buying everything on the market—it's about selecting tools that fit your lifestyle, preferences, and work habits. From charging solutions and sound-enhancing gadgets to ergonomic peripherals, these small additions can have a big impact on how you use your devices daily.
-            </p>
-            <p className="text-gray-700 leading-relaxed">
-              In this article, we'll explore the essential accessories that complement your tech setup, making it smarter, more efficient, and tailored to your needs. Whether you're a student, entrepreneur, creative professional, or casual user, these accessories are game-changers.
-            </p>
+
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">
+              {blogbyid?.section?.sectionTitle}
+            </h3>
+
+            {blogbyid?.section?.sectionDesc?.map((para, index) => (
+              <p key={index} className="text-gray-700 leading-relaxed mb-4">
+                {para}
+              </p>
+            ))}
           </div>
 
           {/* Wireless Charging Pads */}
-          <div className="mb-8">
-            <h3 className="text-xl font-semibold text-gray-900 mb-4">1. Wireless Charging Pads</h3>
-            <p className="text-gray-700 leading-relaxed mb-6">
-              With more devices needing power throughout the day, wireless charging pads offer a practical and aesthetically pleasing way to keep your desk clean and efficient. Instead of multiple cables for phones, smartwatches, and earbuds, you can charge everything in one place without the hassle of unplugging or untangling cords.
-            </p>
+          {blogbyid?.section?.map((sec, index) => (
 
-            <div className="mb-6">
-              <div className="lg:w-1/4 mb-5">
-                <img
-                  src={require("../images/b-18.jpg")}
-                  alt="Wireless charging pad"
-                  className="w-full h-100 object-cover rounded-lg"
-                />
+            <div key={index} className="mb-8">
+
+              {/* Title */}
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">
+                {sec.sectionTitle}
+              </h3>
+
+              {/* Description */}
+              {sec.sectionDesc?.map((para, i) => (
+                <p key={i} className="text-gray-700 leading-relaxed mb-4">
+                  {para}
+                </p>
+              ))}
+
+              {/* Image + Points */}
+              <div className="mb-6">
+                {/* Image */}
+                {sec.sectionImg?.length > 0 && (
+                  <div className="lg:w-1/4 mb-5">
+                    <img
+                      src={sec.sectionImg[0]}
+                      alt={sec.sectionTitle}
+                      className="w-full h-100 object-cover rounded-lg"
+                    />
+                  </div>
+                )}
+
+                {/* Points */}
+                {sec.sectionPoints?.length > 0 && (
+                  <ul className="space-y-2 ml-4">
+                    {sec.sectionPoints.map((point, idx) => (
+                      <li key={idx} className="flex items-start">
+                        <span className="text-orange-500 mr-2">▶</span>
+                        <span className="text-gray-700">{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
-              <div className="lg:w-2/3">
-                <ul className="space-y-2 ml-4 ">
-                  <li className="flex items-start">
-                    <span className="text-orange-500 mr-2">▶</span>
-                    <span className="text-gray-700">Supports fast charging for newer devices</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-orange-500 mr-2">▶</span>
-                    <span className="text-gray-700">Works with multiple brands and models</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-orange-500 mr-2">▶</span>
-                    <span className="text-gray-700">Compact, lightweight designs that suit any workspace</span>
-                  </li>
-                  <li className="flex items-start">
-                    <span className="text-orange-500 mr-2">▶</span>
-                    <span className="text-gray-700">Anti-slip surfaces to ensure devices stay in place while charging</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
 
-            <div className="mb-4">
-              <h4 className="text-lg font-bold text-gray-500 mb-2">Where to Use:</h4>
-              <p className="text-gray-500 text-md font-sans font-normal">
-                Keep a charging pad near your laptop or monitor so that you can easily recharge your phone between meetings. Some designs also feature LED indicators to show charging progress, making it simple to monitor at a glance.
-              </p>
+              {/* Other Info */}
+              {sec.sectionOtherInfo?.map((info, idx) => (
+                <div key={idx} className="mb-4">
+                  <h4 className="text-lg font-bold text-gray-500 mb-2">
+                    {info.otherInfoTitle}
+                  </h4>
+                  <p className="text-gray-500 text-md font-sans font-normal">
+                    {info.otherInfoDesc}
+                  </p>
+                </div>
+              ))}
             </div>
-
-            <div>
-              <h4 className="text-lg font-bold text-gray-500 mb-2">Tip:</h4>
-              <p className="text-gray-500 text-md font-sans font-normal">
-                Look for multi-device chargers if you regularly use more than one device at once. These help you power your gadgets without taking up extra space.
-              </p>
-            </div>
-          </div>
+          ))}
 
           {/* Noise-Cancelling Headphones */}
-          <div className="mb-8">
+          {/* <div className="mb-8">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">2. Noise-Cancelling Headphones</h3>
             <p className="text-gray-700 leading-relaxed mb-6">
               Noise-cancelling headphones are an essential accessory for anyone who needs to block out distractions. Whether you're working from a noisy cafe, participating in virtual meetings, or simply listening to music, these headphones enhance audio quality and give you the focus you need.</p>
@@ -238,10 +268,10 @@ const BlogDetailsPage = () => {
               <p className="text-gray-500 text-md font-sans font-normal">
                 Look for headphones with adjustable ear cups and customizable sound profiles to suit both music listening and voice communication. Some models also come with ambient modes to let you stay aware of your surroundings when needed.</p>
             </div>
-          </div>
+          </div> */}
 
           {/* Ergonomic Keyboards & Mice */}
-          <div className="mb-8">
+          {/* <div className="mb-8">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">3. Ergonomic Keyboards & Mice – Comfort Meets Productivity</h3>
             <p className="text-gray-700 leading-relaxed mb-6">Spending hours typing or navigating on your device can strain your wrists and shoulders. Ergonomic accessories help reduce discomfort, prevent long-term injuries, and boost your efficiency.</p>
 
@@ -293,10 +323,10 @@ const BlogDetailsPage = () => {
                 Ergonomic setups are particularly beneficial for those who suffer from repetitive strain injuries or spend extended periods at the desk.
               </p>
             </div>
-          </div>
+          </div> */}
 
           {/* Multi-Port USB Hubs – Expand Your Connectivity */}
-          <div className="mb-8">
+          {/* <div className="mb-8">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">4. Multi-Port USB Hubs – Expand Your Connectivity</h3>
             <p className="text-gray-700 leading-relaxed mb-6">
               Modern devices often come with limited ports, forcing users to constantly switch cables. Multi-port USB hubs eliminate this frustration by offering multiple connections in a sleek, easy-to-use device. Instead of multiple cables for phones, smartwatches, and earbuds, you can charge everything in one place without the hassle of unplugging or untangling cords.
@@ -346,10 +376,10 @@ const BlogDetailsPage = () => {
               <h4 className="text-lg font-bold text-gray-500 mb-2">Tip:</h4>
               <p className="text-gray-500 text-md font-sans font-normal">Choose hubs with power delivery to ensure your laptop stays charged while other devices are connected.              </p>
             </div>
-          </div>
+          </div> */}
 
           {/* Cable Management Solutions */}
-          <div className="mb-8">
+          {/* <div className="mb-8">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">5. Cable Management Solutions</h3>
             <p className="text-gray-700 leading-relaxed">
               A cluttered desk with tangled wires isn’t just distracting — it’s inefficient and stressful. Cable management products help organize cords and prevent wear and tear.
@@ -394,10 +424,10 @@ const BlogDetailsPage = () => {
                 Label cables to quickly identify chargers, data cables, or connectors. This helps you maintain an orderly space without searching for specific wires in a pile.
               </p>
             </div>
-          </div>
+          </div> */}
 
           {/*Adjustable Monitor Stands */}
-          <div className="mb-8">
+          {/* <div className="mb-8">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">6. Adjustable Monitor Stands</h3>
             <p className="text-gray-700 leading-relaxed">
               A monitor placed at the wrong height can lead to neck pain and eye strain. Adjustable stands allow you to position your screen for optimal comfort.
@@ -439,10 +469,10 @@ const BlogDetailsPage = () => {
                 Use anti-glare screen protectors along with stands for better viewing and less eye fatigue during long work sessions.
               </p>
             </div>
-          </div>
+          </div> */}
 
           {/* Conclusion */}
-          <div className="mb-12">
+          {/* <div className="mb-12">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">CONCLUSION</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
               The right tech accessories are not just gadgets — they're tools that support a healthier, more productive lifestyle. A well-thought-out setup helps you work more efficiently, reduce workspace clutter, and enjoy enhanced comfort. Whether you're upgrading your home office or just looking for practical solutions that fit seamlessly into your daily routine.
@@ -450,13 +480,14 @@ const BlogDetailsPage = () => {
             <p className="text-gray-700 leading-relaxed">
               Start by identifying your biggest pain points — whether that's clutter, poor posture, or device compatibility — and invest in accessories that address them. Over time, you'll build a workspace that's not only functional but also reflects your style and personality.
             </p>
-          </div>
+          </div> */}
+
         </div>
       </div>
 
 
       {/* Keywords Section */}
-      <div className='main_container'>
+      {/* <div className='main_container'>
         <div className="mb-12">
           <h4 className="font-semibold text-gray-900 mb-4">Primary Keywords</h4>
           <div className="flex flex-wrap text-md">
@@ -478,12 +509,14 @@ const BlogDetailsPage = () => {
             ))}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Latest Blogs Slider Section */}
       <div className="main_container">
         <div className=" mx-auto mb-10">
-          <div className="flex items-center justify-between mb-8">
+
+          {/* Title */}
+          {/* <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Latest Blogs</h2>
             <div className="flex space-x-2">
               <button
@@ -499,10 +532,10 @@ const BlogDetailsPage = () => {
                 <ChevronRight className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-          </div>
+          </div> */}
 
           {/* Slider */}
-          <div className="overflow-hidden">
+          {/* <div className="overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getVisibleBlogs().map((blog) => (
                 <div key={blog.id} className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-300 group cursor-pointer">
@@ -533,7 +566,7 @@ const BlogDetailsPage = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
 
           {/* Slider Indicators */}
           {/* <div className="flex justify-center mt-8 space-x-2">

@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom';
 
 // Redux imports
 import { useDispatch, useSelector } from 'react-redux';
-import { createCareerJob } from '../Store/Slices/careerjobSlice';
+import { createCareerJob, applyCareerJob } from '../Store/Slices/careerjobSlice';
+import { careerJobSchema } from '../schemas';
+import { useFormik } from 'formik';
 
 // images
 import JoinOurGrowingTeam from '../images/group-people-working-out-business-plan-office 1.png'
@@ -173,7 +175,83 @@ export default function CareerPage() {
 
 
     // Job Openings Modal State
-    const [openJob, setOpenJob] = useState(false)
+    const [openJob, setOpenJob] = useState(false);
+    const [selectedJobId, setSelectedJobId] = useState(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const dispatch = useDispatch();
+
+    const initialValues = {
+        firstName: "",
+        lastName: "",
+        email: "",
+        mobileNo: "",
+        currentCompany: "",
+        currentCTC: "",
+        expectedCTC: "",
+        resume: null,
+    };
+
+    const formik = useFormik({
+        initialValues,
+        validationSchema: careerJobSchema,
+        onSubmit: async (values, { resetForm, setFieldError }) => {
+            // Check if user is logged in
+            const token = localStorage.getItem("token");
+            if (!token) {
+                alert("Please log in to apply for this job.");
+                setOpenJob(false);
+                return;
+            }
+
+            // Check if resume is uploaded
+            if (!file) {
+                setFieldError("resume", "Resume is required");
+                return;
+            }
+
+            setIsSubmitting(true);
+
+            try {
+                // Create FormData for file upload
+                const formData = new FormData();
+                formData.append("firstName", values.firstName);
+                formData.append("lastName", values.lastName);
+                formData.append("email", values.email);
+                formData.append("mobileNo", values.mobileNo);
+                formData.append("currentCompany", values.currentCompany);
+                formData.append("currentCTC", values.currentCTC);
+                formData.append("expectedCTC", values.expectedCTC);
+                formData.append("resume", file);
+
+                const result = await dispatch(applyCareerJob({
+                    jobId: selectedJobId,
+                    applicationData: formData
+                }));
+
+                if (applyCareerJob.fulfilled.match(result)) {
+                    alert("Job application submitted successfully!");
+                    setFile(null);
+                    resetForm();
+                    setOpenJob(false);
+                    setSelectedJobId(null);
+                } else if (applyCareerJob.rejected.match(result)) {
+                    const errorMessage = result.payload?.message || "Failed to submit application. Please try again.";
+                    console.error("Application failed:", result.payload);
+                    alert(errorMessage);
+                } else {
+                    alert("Failed to submit application. Please try again.");
+                }
+            } catch (error) {
+                console.error("Unexpected error:", error);
+                alert("An unexpected error occurred. Please try again.");
+            } finally {
+                setIsSubmitting(false);
+            }
+        },
+    });
+
+    const { values, errors, touched, handleBlur, handleChange, handleSubmit } = formik;
 
 
     // *************** Resume Upload Section ***************
@@ -186,21 +264,21 @@ export default function CareerPage() {
         const selectedFile = e.target.files[0]; // only one file
 
         if (selectedFile) {
-            // Allow only PDF & DOCX
-            const isValidType = [
-                "application/pdf",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
-            ].includes(selectedFile.type);
+            // Allow only PDF files (backend requirement)
+            const isValidType = selectedFile.type === "application/pdf";
 
-            // Max size 5MB
-            const isValidSize = selectedFile.size <= 5 * 1024 * 1024;
+            // Max size 2MB (backend requirement)
+            const isValidSize = selectedFile.size <= 2 * 1024 * 1024;
 
             if (isValidType && isValidSize) {
                 setFile(selectedFile);
+                // Update formik values to clear validation error
+                formik.setFieldValue("resume", selectedFile);
             } else {
-                alert("Only PDF or DOCX files under 5MB are allowed.");
+                alert("Only PDF files under 2MB are allowed.");
                 e.target.value = ""; // reset input
                 setFile(null);
+                formik.setFieldValue("resume", null);
             }
         }
     };
@@ -399,12 +477,12 @@ export default function CareerPage() {
                                             <div
                                                 key={index}
                                                 className="
-                  flex-shrink-0 
-                  w-full     
-                  sm:w-[calc(49%-0.75rem)] 
-                  lg:w-[calc(40%-1rem)]    
-                  bg-white rounded-xl p-2 flex flex-col items-start
-                "
+                                                    flex-shrink-0 
+                                                    w-full     
+                                                    sm:w-[calc(49%-0.75rem)] 
+                                                    lg:w-[calc(40%-1rem)]    
+                                                    bg-white rounded-xl p-2 flex flex-col items-start
+                                                    "
                                             >
 
                                                 <img
@@ -509,7 +587,7 @@ export default function CareerPage() {
                             {/* Job card */}
                             {data?.map((data, index) => (
                                 <div
-                                    key={index}
+                                    key={data.id || index}
                                     className="group bg-[#F9FAFB] rounded-xl flex flex-col p-6 col-span-1 h-full hover:bg-white hover:shadow-[0_0_10px_0_#75757533] transition-all duration-200 ease-in-out "
                                 >
                                     <h1 className="text-[#111827] font-semibold text-lg sm:text-[20px] ">
@@ -521,7 +599,18 @@ export default function CareerPage() {
 
                                     <div className="mt-auto flex justify-center">
                                         <button
-                                            onClick={() => setOpenJob(true)} command="show-modal" commandfor="dialog"
+                                            onClick={() => {
+                                                // Check if user is logged in
+                                                const token = localStorage.getItem("token");
+                                                if (!token) {
+                                                    alert("Please log in to apply for this job.");
+                                                    return;
+                                                }
+
+                                                console.log(`Job ID: ${data._id}`);
+                                                setSelectedJobId(data._id);
+                                                setOpenJob(true); // modal open
+                                            }}
                                             className="w-full py-2.5 rounded-lg bg-[#E5E7EB] lg:text-lg text-base text-[#6B7280] hover:bg-[#F97316] group-hover:bg-[#F97316] group-hover:text-white hover:text-[#ffffff] font-semibold  focus:outline-none focus:ring-0 transition-all duration-200 ease-in-out"
                                         >
                                             Apply Now
@@ -554,7 +643,7 @@ export default function CareerPage() {
                         {/* Header */}
                         <div className="flex justify-between items-center py-3 shrink-0">
                             <DialogTitle className="text-lg font-semibold text-[var(--profile-dark-text,#111)]">
-                                Add New & Billing Address
+                                Product Manager
                             </DialogTitle>
                             <IoMdClose onClick={() => setOpenJob(false)} className="text-[24px] text-[var(--profile-dark-text)] cursor-pointer bg-[var(--profile-gray-text)] p-1 rounded-full" />
                         </div>
@@ -562,7 +651,9 @@ export default function CareerPage() {
                         <div className="border-b border-[var(--profile-border,#ddd)]"></div>
 
                         {/* Scrollable Body */}
-                        <div className="flex-1 overflow-y-auto py-5 space-y-4 custom-scrollbar-modal">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="flex-1 overflow-y-auto py-5 space-y-4 custom-scrollbar-modal">
 
                             {/* First + Last name */}
                             <div className="flex flex-col md:flex-row gap-4">
@@ -574,9 +665,16 @@ export default function CareerPage() {
                                     </label>
                                     <input
                                         type="text"
+                                        name="firstName"
                                         placeholder="Ex. John"
+                                        value={values.firstName}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
                                         className="focus:outline-none mt-1 border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                     />
+                                    {errors.firstName && touched.firstName && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>
+                                    )}
                                 </div>
                                 {/* Last Name */}
                                 <div className="flex-1">
@@ -586,9 +684,16 @@ export default function CareerPage() {
                                     </label>
                                     <input
                                         type="text"
+                                        name="lastName"
                                         placeholder="Ex. Doe"
+                                        value={values.lastName}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
                                         className="focus:outline-none mt-1 border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                     />
+                                    {errors.lastName && touched.lastName && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -602,9 +707,16 @@ export default function CareerPage() {
                                     </label>
                                     <input
                                         type="email"
+                                        name="email"
                                         placeholder="Ex. john.doe@example.com"
+                                        value={values.email}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
                                         className="focus:outline-none mt-1 border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                     />
+                                    {errors.email && touched.email && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.email}</p>
+                                    )}
                                 </div>
                                 {/* Mobile Number */}
                                 <div className="flex-1">
@@ -613,10 +725,17 @@ export default function CareerPage() {
                                         <span className='text-[#DC2626] font-medium ml-1'>*</span>
                                     </label>
                                     <input
-                                        type="number"
+                                        type="text"
+                                        name="mobileNo"
                                         placeholder="Ex. +61 412 345 678"
+                                        value={values.mobileNo}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
                                         className="focus:outline-none mt-1 border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                     />
+                                    {errors.mobileNo && touched.mobileNo && (
+                                        <p className="text-red-500 text-sm mt-1">{errors.mobileNo}</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -627,7 +746,11 @@ export default function CareerPage() {
                                 </label>
                                 <input
                                     type="text"
+                                    name="currentCompany"
                                     placeholder='Ex. ABC Technologies'
+                                    value={values.currentCompany}
+                                    onChange={handleChange}
+                                    // onBlur={handleBlur}
                                     className='w-full placeholder:text-[var(--profile-darkgray-text)] py-2 px-4 mt-2 border border-[#44506A33] rounded-lg outline-none' />
                             </div>
 
@@ -639,8 +762,12 @@ export default function CareerPage() {
                                         Current CTC
                                     </label>
                                     <input
-                                        type="text"
-                                        placeholder="Ex. $ 80,000 PA"
+                                        type="number"
+                                        name="currentCTC"
+                                        placeholder="Ex. 80000"
+                                        value={values.currentCTC}
+                                        onChange={handleChange}
+                                        // onBlur={handleBlur}
                                         className="focus:outline-none mt-1 border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                     />
                                 </div>
@@ -650,8 +777,12 @@ export default function CareerPage() {
                                         Expected CTC
                                     </label>
                                     <input
-                                        type="text"
-                                        placeholder="Ex. $ 1,00,000 PA"
+                                        type="number"
+                                        name="expectedCTC"
+                                        placeholder="Ex. 100000"
+                                        value={values.expectedCTC}
+                                        onChange={handleChange}
+                                        // onBlur={handleBlur}
                                         className="focus:outline-none mt-1 border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                     />
                                 </div>
@@ -675,7 +806,7 @@ export default function CareerPage() {
                                             <span>Drag and drop your resume here</span>
                                         </p>
                                         <p className="font-medium text-[#6B7280] mt-1">
-                                            ( PDF, DOCX ), or click to select
+                                            ( PDF only ), or click to select
                                         </p>
                                         <p className="font-medium text-[#6B7280]">a file for upload</p>
 
@@ -683,10 +814,15 @@ export default function CareerPage() {
                                             id="file-upload"
                                             type="file"
                                             className="hidden"
-                                            accept=".pdf,.docx"
+                                            accept=".pdf"
                                             onChange={handleFileChange}
                                         />
                                     </label>
+                                )}
+
+                                {/* Resume validation error */}
+                                {errors.resume && touched.resume && (
+                                    <p className="text-red-500 text-sm mt-1">{errors.resume}</p>
                                 )}
 
                                 {/* Preview section */}
@@ -709,7 +845,10 @@ export default function CareerPage() {
 
                                         {/* Remove Button */}
                                         <button
-                                            onClick={() => setFile(null)}
+                                            onClick={() => {
+                                                setFile(null);
+                                                formik.setFieldValue("resume", null);
+                                            }}
                                             className="ml-auto flex items-center justify-center"
                                             title="Remove File"
                                         >
@@ -719,22 +858,29 @@ export default function CareerPage() {
                                     </div>
                                 )}
                             </div>
-                        </div>
+                            {/* Footer Buttons */}
+                            <div className="flex gap-3 shrink-0 border-[#F9FAFB] mt-4">
 
-                        {/* Footer */}
-                        <div className="flex gap-3 shrink-0 border-[#F9FAFB]">
+                                <button
+                                    type="submit"
+                                    disabled={isSubmitting}
+                                    className='bg-[var(--bg-orange)] w-full text-[var(--text-white)] p-2 rounded-md text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed'>
+                                    {isSubmitting ? 'Applying...' : 'Apply'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setOpenJob(false);
+                                        setSelectedJobId(null);
+                                        setFile(null);
+                                        formik.resetForm();
+                                    }}
+                                    className='p-2 rounded-md text-base w-full font-medium text-[var(--profile-darkgray-text)] border border-[var(--profile-darkgray-text)]'>
+                                    Cancel
+                                </button>
 
-                            <button
-                                className='bg-[var(--bg-orange)] w-full text-[var(--text-white)] p-2 rounded-md text-base font-medium'>
-                                Apply
-                            </button>
-                            <button
-                                onClick={() => setOpenJob(false)}
-                                className='p-2 rounded-md text-base w-full font-medium text-[var(--profile-darkgray-text)] border border-[var(--profile-darkgray-text)]'>
-                                Cancel
-                            </button>
-
-                        </div>
+                            </div>
+                        </form>
 
                     </DialogPanel>
                 </div>
