@@ -43,7 +43,7 @@ export const createOfferController = async (req, res) => {
 
         // Create new offer
         const newOffer = await offerModel.create({
-            section: section ? Number(section) : 0, // default 0 if not provided
+            section: section ? Number(section) : 0,
             offerTitle,
             offerDesc,
             offerImage: uploadedImage.url,
