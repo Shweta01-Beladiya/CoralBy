@@ -21,6 +21,8 @@ import { IoMdCloudUpload } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
+import { getAuthData } from '../Store/Slices/authProfileSlice';
+import { useDispatch, useSelector } from 'react-redux';
 
 
 export default function Profile() {
@@ -32,7 +34,7 @@ export default function Profile() {
     const [reviewImages, setReviewImages] = useState([]);
     const { tab } = useParams();
     const navigate = useNavigate();
-
+    const dispatch = useDispatch()
 
     useEffect(() => {
         if (tab) setActiveTab(tab);
@@ -67,6 +69,21 @@ export default function Profile() {
         wishlist: "Wishlist",
         Orders: "Orders",
     };
+
+
+    const authData = useSelector( (state) => state.authProfie.userData)
+    console.log("Auth Data From Profile ::" , authData);
+    
+    const token = localStorage.getItem('token');
+
+    useEffect(()=>{
+        if(token){
+            dispatch(getAuthData())
+        }
+    },[token])
+
+
+
     return (
         <>
 
@@ -159,6 +176,7 @@ export default function Profile() {
                                             <input
                                                 type="text"
                                                 placeholder="Ex. John"
+                                                value={authData.firstName}
                                                 className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                             />
                                         </div>
@@ -171,6 +189,7 @@ export default function Profile() {
                                             <input
                                                 type="text"
                                                 placeholder="Ex. Fernandez"
+                                                value={authData.lastName}
                                                 className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                             />
                                         </div>
@@ -187,6 +206,7 @@ export default function Profile() {
                                             <input
                                                 type="text"
                                                 placeholder="Ex. Jhon89@example.com"
+                                                value={authData.email}
                                                 className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
                                             />
                                         </div>

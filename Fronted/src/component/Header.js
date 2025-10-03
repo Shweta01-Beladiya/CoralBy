@@ -36,6 +36,7 @@ import {
 import { IoMdClose } from "react-icons/io";
 import { useDispatch, useSelector } from 'react-redux';
 import { getMainCategory, getCategory, getSubCategory, getInsideSubCategory } from '../Store/Slices/categorySlice';
+import { getAuthData } from '../Store/Slices/authProfileSlice';
 
 
 export default function Header() {
@@ -56,17 +57,25 @@ export default function Header() {
     const [giftAdd, setGiftAdd] = useState(false);
     const menuRef = useRef(null);
     const searchDropRef = useRef(null)
-    const navigte = useNavigate()
+    const navigate = useNavigate()
     const [openTrackOrderVerify, setOpenTrackOrderVerify] = useState(false)
     const [trackOTPVerify, setTrackOTPVerify] = useState(false)
     const dispatch = useDispatch();
 
 
+    const authData = useSelector( (state) => state.authProfie.userData)
 
+    const token = localStorage.getItem('token');
+    // console.log('Token ::' , token)
 
-    const toggleCatAccodian = (index) => {
-        setOpenIndex(openIndex === index ? null : index);
-    };
+    useEffect(()=>{
+        if(token){
+            dispatch(getAuthData())
+        }
+    },[token])
+    
+    // console.log("Auth Data Header :::" , authData)
+
 
     // Stop Body Scroll - Canvas 
     useEffect(() => {
@@ -228,7 +237,7 @@ export default function Header() {
     const subCategory = useSelector((state) => state.category.subCategory.data);
     const insideSubCategory = useSelector((state) => state.category.inSubCategory.data);
 
-    console.log("insideSubCategory :: ", insideSubCategory)
+    // console.log("insideSubCategory :: ", insideSubCategory)
 
     const toggleMenu = (id) => {
         // alert(id)
@@ -250,7 +259,7 @@ export default function Header() {
                 <div className='main_container'>
                     <div className="  flex flex-wrap sm:flex-nowrap sm:gap-0 gap-2 items-center xl:px-0 py-3  relative">
                         {/* Logo */}
-                        <div className="flex justify-center items-center gap-1 cursor-pointer" onClick={() => navigte("/")} >
+                        <div className="flex justify-center items-center gap-1 cursor-pointer" onClick={() => navigate("/")} >
                             <img src={logoIcon} alt="Coralbay" className="md:w-8 md:h-8 w-6 h-6" />
                             <h5 className="text-[var(--logo-heading-text)] font-[700] md:text-2xl text-xl">
                                 CORALBAY
@@ -368,66 +377,77 @@ export default function Header() {
                                             border-l-transparent border-r-transparent 
                                             border-b-[var(--header-border-dropdown)]"></div>
 
-                                            {/* Login - Not LogInUser */}
-                                            {/* <div className='z-10 relative p-2 text-base'>
-                                                <button className='bg-[var(--bg-orange)] w-full rounded-md p-2 text-[var(--text-white)] font-semibold'>LOGIN</button>
-                                                <p className='mt-2 text-[var(--dropdown-text-color)] font-medium text-[15px] flex justify-between'>New Customer? <span className='text-[var(--dropdown-dark-text)] font-semibold'>Sign Up</span> </p>
-                                            </div> */}
+                                            {token ? (
+                                                <div>
+                                                    {/* LogIn user */}
+                                                    <ul className="text-[var(--dropdown-text-color)] text-base font-medium relative z-10 py-2">
+                                                        <li className="block px-3 py-2 text-[14px] text-[var(--dropdown-dark-text)] font-bold">
+                                                            Hello, {authData.firstName}
+                                                        </li>
+                                                        <li>
+                                                            <Link
+                                                                onClick={() => setShowUserDropdown(false)}
+                                                                to="/profile/PersonalInformation"
+                                                                className="block px-3 py-2 hover:bg-[var(--dropdown-hover)]"
+                                                            >
+                                                                Account
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            <Link
+                                                                onClick={() => setShowUserDropdown(false)}
+                                                                to="/profile/Saveaddress"
+                                                                className="block px-3 py-2 hover:bg-[var(--dropdown-hover)]"
+                                                            >
+                                                                Save address
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            <Link
+                                                                onClick={() => setShowUserDropdown(false)}
+                                                                to="/profile/Orders"
+                                                                className="block px-3 py-2 hover:bg-[var(--dropdown-hover)]"
+                                                            >
+                                                                Orders
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            <Link
+                                                                onClick={() => setShowUserDropdown(false)}
+                                                                to="/profile/Orders"
+                                                                // to="#"
+                                                                // onClick={ () => setOpenTrackOrderVerify(true) }
+                                                                className="block px-3 py-2 hover:bg-[var(--dropdown-hover)]"
+                                                            >
+                                                                Track Order
+                                                            </Link>
+                                                        </li>
+                                                        <li>
+                                                            <Link
+                                                                onClick={() => {setShowUserDropdown(false); navigate('/'); localStorage.removeItem('token');  }}
+                                                                to="/"
+                                                                className="block px-3 py-2 hover:bg-[var(--dropdown-hover)] text-[var(--text-red)] "
+                                                            >
+                                                                Sign out
+                                                            </Link>
+                                                        </li>
+                                                    </ul>
+
+                                                </div>
+                                            ) :
+                                                (
+                                                    <div>
+                                                        {/* Login - Not LogInUser */}
+                                                        <div className='z-10 relative p-2 text-base'>
+                                                            <button className='bg-[var(--bg-orange)] w-full rounded-md p-2 text-[var(--text-white)] font-semibold' onClick={()=> navigate('/login')}>LOGIN</button>
+                                                            <p className='mt-2 text-[var(--dropdown-text-color)] font-medium text-[15px] flex justify-between'>New Customer? <span className='text-[var(--dropdown-dark-text)] font-semibold cursor-pointer' onClick={()=> navigate('/login', { state: { signup: true } }) } >Sign Up</span> </p>
+                                                        </div>
+                                                    </div>
+                                                )}
 
 
-                                            {/* LogIn user */}
-                                            <ul className="text-[var(--dropdown-text-color)] text-base font-medium relative z-10 py-2">
-                                                <li className="block px-3 py-2 text-[14px] text-[var(--dropdown-dark-text)] font-bold">
-                                                    Hello, JHON FANANDES
-                                                </li>
-                                                <li>
-                                                    <Link
-                                                        onClick={() => setShowUserDropdown(false)}
-                                                        to="/profile/PersonalInformation"
-                                                        className="block px-3 py-2 hover:bg-[var(--dropdown-hover)]"
-                                                    >
-                                                        Account
-                                                    </Link>
-                                                </li>
-                                                <li>
-                                                    <Link
-                                                        onClick={() => setShowUserDropdown(false)}
-                                                        to="/profile/Saveaddress"
-                                                        className="block px-3 py-2 hover:bg-[var(--dropdown-hover)]"
-                                                    >
-                                                        Save address
-                                                    </Link>
-                                                </li>
-                                                <li>
-                                                    <Link
-                                                        onClick={() => setShowUserDropdown(false)}
-                                                        to="/profile/Orders"
-                                                        className="block px-3 py-2 hover:bg-[var(--dropdown-hover)]"
-                                                    >
-                                                        Orders
-                                                    </Link>
-                                                </li>
-                                                <li>
-                                                    <Link
-                                                        onClick={() => setShowUserDropdown(false)}
-                                                        to="/profile/Orders"
-                                                        // to="#"
-                                                        // onClick={ () => setOpenTrackOrderVerify(true) }
-                                                        className="block px-3 py-2 hover:bg-[var(--dropdown-hover)]"
-                                                    >
-                                                        Track Order
-                                                    </Link>
-                                                </li>
-                                                <li>
-                                                    <Link
-                                                        onClick={() => setShowUserDropdown(false)}
-                                                        to="#"
-                                                        className="block px-3 py-2 hover:bg-[var(--dropdown-hover)] text-[var(--text-red)] "
-                                                    >
-                                                        Sign out
-                                                    </Link>
-                                                </li>
-                                            </ul>
+
+
 
                                         </div>
                                     </>
@@ -438,7 +458,7 @@ export default function Header() {
 
 
                             {/* Wishlist */}
-                            <div className="relative" onClick={() => navigte('/wishlist')}   >
+                            <div className="relative" onClick={() => navigate('/wishlist')}   >
                                 <FaRegHeart className="cursor-pointer" />
                                 <span className="absolute -top-2.5 -right-3 bg-[var(--bg-black)] text-[var(--text-white)] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                                     99
@@ -943,7 +963,7 @@ export default function Header() {
                                                                                                         {/* Inside Subcategories */}
                                                                                                         <ul className="space-y-2 text-sm text-[var(--dropdown-mmenu-text)]">
                                                                                                             {insideSubs.map((inside) => (
-                                                                                                                <li key={inside._id} onClick={()=> alert(inside.insideSubCategoryName)}>
+                                                                                                                <li key={inside._id} onClick={() => alert(inside.insideSubCategoryName)}>
                                                                                                                     {inside.insideSubCategoryName}
                                                                                                                 </li>
                                                                                                             ))}
