@@ -8,8 +8,8 @@ const productVariantSchema = new mongoose.Schema({
 
     images: [String],
 
-    color: { type: String, required: true },
-    size: { type: String, required: true },
+    color: { type: String, default: null },
+    size: { type: String, default: null },
 
     price: {
         original: { type: Number, required: true },
@@ -19,7 +19,7 @@ const productVariantSchema = new mongoose.Schema({
 
     stock: { type: Number, default: 0 },
     weight: { type: String },
-    
+
 }, { timestamps: true });
 
 export default mongoose.model("ProductVariant", productVariantSchema);

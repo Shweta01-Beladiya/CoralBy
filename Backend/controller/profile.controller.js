@@ -71,14 +71,23 @@ export const userAddressAddController = async (req, res) => {
     try {
         const { id } = req?.user;
 
-        // ✅ Validate user id
         if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid User Id in Token!");
         }
 
-        const { firstName, lastName, phone, zipcode, address, city, state, saveAs } = req?.body;
+        const {
+            firstName,
+            lastName,
+            phone,
+            zipcode,
+            address,
+            city,
+            state,
+            saveAs,
+            officeOpenOnSaturday,
+            officeOpenOnSunday
+        } = req?.body;
 
-        // ✅ Check required fields
         if (!firstName || !lastName || !phone || !zipcode || !address) {
             return sendBadRequestResponse(
                 res,
@@ -86,12 +95,10 @@ export const userAddressAddController = async (req, res) => {
             );
         }
 
-        // ✅ Verify zipcode (only if Indian zip code, else skip API check)
         let autoCity = city;
         let autoState = state;
 
         if (/^\d{6}$/.test(zipcode)) {
-            // If zipcode is 6-digit (India) -> validate via Postal API
             const pincodeResp = await axios.get(`https://api.postalpincode.in/pincode/${zipcode}`);
             const pinData = pincodeResp.data[0];
 
@@ -103,7 +110,6 @@ export const userAddressAddController = async (req, res) => {
             }
         }
 
-        // ✅ Address object
         const addressData = {
             firstName,
             lastName,
@@ -112,10 +118,11 @@ export const userAddressAddController = async (req, res) => {
             address,
             city: autoCity,
             state: autoState,
-            saveAs: saveAs || "Home"
+            saveAs: saveAs || "Home",
+            officeOpenOnSaturday: saveAs === "Office" ? !!officeOpenOnSaturday : false,
+            officeOpenOnSunday: saveAs === "Office" ? !!officeOpenOnSunday : false
         };
 
-        // ✅ Save address to user
         const updatedUser = await UserModel.findByIdAndUpdate(
             id,
             { $push: { address: addressData } },
@@ -129,49 +136,54 @@ export const userAddressAddController = async (req, res) => {
     }
 };
 
-export const userAddressUpdatecontroller = async (req, res) => {
+export const userAddressUpdateController = async (req, res) => {
     try {
-        const { id } = req?.user; // userId from auth token
+        const { id } = req?.user;
         const { addressId } = req?.params;
-        // ✅ Validate user id
+
         if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid User Id in Token!");
+        }
+
+        if (!addressId || !mongoose.Types.ObjectId.isValid(addressId)) {
+            return sendBadRequestResponse(res, "Valid addressId must be provided!");
         }
 
         const {
             firstName,
             lastName,
             phone,
-            email,
-            houseNo,
-            landmark,
-            pincode,
+            zipcode,
+            address,
             city,
             state,
-            country,
             saveAs,
+            officeOpenOnSaturday,
+            officeOpenOnSunday
         } = req?.body;
 
-        // ✅ Validate addressId
-        if (!addressId || !mongoose.Types.ObjectId.isValid(addressId)) {
-            return sendBadRequestResponse(res, "Valid addressId must be provided!");
-        }
-
-        // ✅ Build update object dynamically (only fields that are provided)
         const updateFields = {};
         if (firstName) updateFields["address.$.firstName"] = firstName;
         if (lastName) updateFields["address.$.lastName"] = lastName;
         if (phone) updateFields["address.$.phone"] = phone;
-        if (email) updateFields["address.$.email"] = String(email).toLowerCase();
-        if (houseNo) updateFields["address.$.houseNo"] = houseNo;
-        if (landmark) updateFields["address.$.landmark"] = landmark;
-        if (pincode) updateFields["address.$.pincode"] = pincode;
+        if (zipcode) updateFields["address.$.zipcode"] = zipcode;
+        if (address) updateFields["address.$.address"] = address;
         if (city) updateFields["address.$.city"] = city;
         if (state) updateFields["address.$.state"] = state;
-        if (country) updateFields["address.$.country"] = country;
         if (saveAs) updateFields["address.$.saveAs"] = saveAs;
 
-        // ✅ Update address using positional operator $
+        if (saveAs === "Office") {
+            if (typeof officeOpenOnSaturday !== "undefined") {
+                updateFields["address.$.officeOpenOnSaturday"] = !!officeOpenOnSaturday;
+            }
+            if (typeof officeOpenOnSunday !== "undefined") {
+                updateFields["address.$.officeOpenOnSunday"] = !!officeOpenOnSunday;
+            }
+        } else {
+            updateFields["address.$.officeOpenOnSaturday"] = false;
+            updateFields["address.$.officeOpenOnSunday"] = false;
+        }
+
         const updatedUser = await UserModel.findOneAndUpdate(
             { _id: id, "address._id": addressId },
             { $set: updateFields },
@@ -182,19 +194,10 @@ export const userAddressUpdatecontroller = async (req, res) => {
             return sendBadRequestResponse(res, "Address not found or update failed!");
         }
 
-        return sendSuccessResponse(
-            res,
-            "User address updated successfully!",
-            updatedUser
-        );
+        return sendSuccessResponse(res, "User address updated successfully!", updatedUser);
     } catch (error) {
         console.error("Error in userAddressUpdateController:", error.message);
-        return sendErrorResponse(
-            res,
-            500,
-            "Something went wrong while updating address!",
-            error.message
-        );
+        return sendErrorResponse(res, 500, "Something went wrong while updating address!", error.message);
     }
 };
 
@@ -203,17 +206,14 @@ export const userAddressDeleteController = async (req, res) => {
         const { id } = req?.user;
         const { addressId } = req?.params;
 
-        // Validate user id
         if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid or missing User ID from token!");
         }
 
-        // Validate address id
         if (!addressId || !mongoose.Types.ObjectId.isValid(addressId)) {
             return sendBadRequestResponse(res, "Invalid or missing Address ID!");
         }
 
-        // First, check if user exists and has that address
         const user = await UserModel.findById(id);
         if (!user) {
             return sendNotFoundResponse(res, "User not found!");
@@ -224,17 +224,17 @@ export const userAddressDeleteController = async (req, res) => {
             return sendNotFoundResponse(res, "Address not found!");
         }
 
-        // Delete address from user's address array
-        const updatedUser = await UserModel.findByIdAndUpdate(
-            id,
-            { $pull: { address: { _id: addressId } } },
-            { new: true }
-        );
+        let updateQuery = { $pull: { address: { _id: addressId } } };
+        if (user.selectedAddress?.toString() === addressId) {
+            updateQuery.$set = { selectedAddress: null };
+        }
+
+        const updatedUser = await UserModel.findByIdAndUpdate(id, updateQuery, { new: true });
 
         return sendSuccessResponse(res, "Address deleted successfully", updatedUser);
     } catch (error) {
         console.error("Error while deleting user address:", error.message);
-        return sendErrorResponse(res, 500, "Error during address deletion!", error);
+        return sendErrorResponse(res, 500, "Error during address deletion!", error.message);
     }
 };
 
@@ -242,14 +242,11 @@ export const getUserAddressController = async (req, res) => {
     try {
         const { id } = req?.user;
 
-        // Validate user id
         if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid or missing User ID from token!");
         }
 
-        // Get user and only select address field
-        const user = await UserModel.findById(id).select("address");
-
+        const user = await UserModel.findById(id).select("address selectedAddress");
         if (!user) {
             return sendNotFoundResponse(res, "User not found!");
         }
@@ -260,28 +257,37 @@ export const getUserAddressController = async (req, res) => {
 
         return sendSuccessResponse(res, "User addresses fetched successfully", {
             total: user.address.length,
+            selectedAddress: user.selectedAddress,
             address: user.address
         });
     } catch (error) {
         console.error("Error while getting user addresses:", error.message);
-        return sendErrorResponse(res, 500, "Error while getting user addresses!", error);
+        return sendErrorResponse(res, 500, "Error while getting user addresses!", error.message);
     }
 };
-
 
 
 export const userBillingAddressAddController = async (req, res) => {
     try {
         const { id } = req?.user;
 
-        // ✅ Validate user id
         if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid User Id in Token!");
         }
 
-        const { firstName, lastName, phone, zipcode, address, city, state, saveAs } = req?.body;
+        const {
+            firstName,
+            lastName,
+            phone,
+            zipcode,
+            address,
+            city,
+            state,
+            saveAs,
+            officeOpenOnSaturday,
+            officeOpenOnSunday
+        } = req?.body;
 
-        // ✅ Check required fields
         if (!firstName || !lastName || !phone || !zipcode || !address) {
             return sendBadRequestResponse(
                 res,
@@ -289,7 +295,6 @@ export const userBillingAddressAddController = async (req, res) => {
             );
         }
 
-        // ✅ Verify zipcode (only if Indian zip code, else skip API check)
         let autoCity = city;
         let autoState = state;
 
@@ -306,7 +311,6 @@ export const userBillingAddressAddController = async (req, res) => {
             }
         }
 
-        // ✅ Address object
         const billingaddressData = {
             firstName,
             lastName,
@@ -315,10 +319,11 @@ export const userBillingAddressAddController = async (req, res) => {
             address,
             city: autoCity,
             state: autoState,
-            saveAs: saveAs || "Home"
+            saveAs: saveAs || "Home",
+            officeOpenOnSaturday: !!officeOpenOnSaturday,
+            officeOpenOnSunday: !!officeOpenOnSunday
         };
 
-        // ✅ Save address to user
         const updatedUser = await UserModel.findByIdAndUpdate(
             id,
             { $push: { billingaddress: billingaddressData } },
@@ -345,36 +350,36 @@ export const userBillingAddressUpdatecontroller = async (req, res) => {
             firstName,
             lastName,
             phone,
-            email,
-            houseNo,
-            landmark,
-            pincode,
+            zipcode,
+            address,
             city,
             state,
-            country,
             saveAs,
+            officeOpenOnSaturday,
+            officeOpenOnSunday
         } = req?.body;
 
-        // Validate billingaddressId
         if (!billingaddressId || !mongoose.Types.ObjectId.isValid(billingaddressId)) {
             return sendBadRequestResponse(res, "Valid billingaddressId must be provided!");
         }
 
-        // Build update object dynamically (only fields that are provided)
         const updateFields = {};
         if (firstName) updateFields["billingaddress.$.firstName"] = firstName;
         if (lastName) updateFields["billingaddress.$.lastName"] = lastName;
         if (phone) updateFields["billingaddress.$.phone"] = phone;
-        if (email) updateFields["billingaddress.$.email"] = String(email).toLowerCase();
-        if (houseNo) updateFields["billingaddress.$.houseNo"] = houseNo;
-        if (landmark) updateFields["billingaddress.$.landmark"] = landmark;
-        if (pincode) updateFields["billingaddress.$.pincode"] = pincode;
+        if (zipcode) updateFields["billingaddress.$.zipcode"] = zipcode;
+        if (address) updateFields["billingaddress.$.address"] = address;
         if (city) updateFields["billingaddress.$.city"] = city;
         if (state) updateFields["billingaddress.$.state"] = state;
-        if (country) updateFields["billingaddress.$.country"] = country;
         if (saveAs) updateFields["billingaddress.$.saveAs"] = saveAs;
 
-        // Update billingaddress using positional operator $
+        if (typeof officeOpenOnSaturday !== "undefined") {
+            updateFields["billingaddress.$.officeOpenOnSaturday"] = !!officeOpenOnSaturday;
+        }
+        if (typeof officeOpenOnSunday !== "undefined") {
+            updateFields["billingaddress.$.officeOpenOnSunday"] = !!officeOpenOnSunday;
+        }
+
         const updatedUser = await UserModel.findOneAndUpdate(
             { _id: id, "billingaddress._id": billingaddressId },
             { $set: updateFields },
@@ -382,20 +387,20 @@ export const userBillingAddressUpdatecontroller = async (req, res) => {
         );
 
         if (!updatedUser) {
-            return sendBadRequestResponse(res, "Billingaddress not found or update failed!");
+            return sendBadRequestResponse(res, "Billing address not found or update failed!");
         }
 
         return sendSuccessResponse(
             res,
-            "User Billingaddress updated successfully!",
+            "User Billing Address updated successfully!",
             updatedUser
         );
     } catch (error) {
-        console.error("Error in userAddressUpdateController:", error.message);
+        console.error("Error in userBillingAddressUpdatecontroller:", error.message);
         return sendErrorResponse(
             res,
             500,
-            "Something went wrong while updating Billingaddress!",
+            "Something went wrong while updating Billing Address!",
             error.message
         );
     }
@@ -406,23 +411,19 @@ export const userBillingAddressDeleteController = async (req, res) => {
         const { id } = req?.user;
         const { billingaddressId } = req?.params;
 
-        // Validate user id
         if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid or missing User ID from token!");
         }
 
-        // Validate billing address id
         if (!billingaddressId || !mongoose.Types.ObjectId.isValid(billingaddressId)) {
             return sendBadRequestResponse(res, "Invalid or missing billing address ID!");
         }
 
-        // Check if user exists
         const user = await UserModel.findById(id);
         if (!user) {
             return sendNotFoundResponse(res, "User not found!");
         }
 
-        // Check if billing address exists in user
         const billingExists = user.billingaddress?.some(
             addr => addr._id.toString() === billingaddressId
         );
@@ -430,44 +431,53 @@ export const userBillingAddressDeleteController = async (req, res) => {
             return sendNotFoundResponse(res, "Billing address not found!");
         }
 
-        // Delete billing address
+        let updateQuery = {
+            $pull: { billingaddress: { _id: billingaddressId } }
+        };
+
+        if (user.selectedBillingAddress?.toString() === billingaddressId) {
+            updateQuery.$set = { selectedBillingAddress: null };
+        }
+
         const updatedUser = await UserModel.findByIdAndUpdate(
             id,
-            { $pull: { billingaddress: { _id: billingaddressId } } },
+            updateQuery,
             { new: true }
-        );
+        ).select("-password");
 
         return sendSuccessResponse(res, "Billing address deleted successfully", updatedUser);
     } catch (error) {
         console.error("Error while deleting user billing address:", error.message);
-        return sendErrorResponse(res, 500, "Error during billing address deletion!", error);
+        return sendErrorResponse(res, 500, "Error during billing address deletion!", error.message);
     }
 };
-
 export const getUserBillingAddressController = async (req, res) => {
     try {
         const { id } = req?.user;
-        if (!id && !mongoose.Types.ObjectId.isValid(id)) {
-            return sendBadRequestResponse(res, "user _id not found! by Token");
+
+        if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+            return sendBadRequestResponse(res, "Invalid or missing User ID from token!");
         }
 
-        const Billingaddress = await UserModel.find({ _id: id }).select("billingaddress");
+        const user = await UserModel.findById(id).select("billingaddress");
 
-        if (!Billingaddress && Billingaddress.length === 0) {
-            return sendNotFoundResponse(res, "No Billingaddress Found For you!!");
+        if (!user) {
+            return sendNotFoundResponse(res, "User not found!");
         }
 
-        return sendSuccessResponse(res, "User Billingaddress Fetch Successfully", {
-            total: Billingaddress.length,
-            Billingaddress: Billingaddress
-        })
+        if (!user.billingaddress || user.billingaddress.length === 0) {
+            return sendNotFoundResponse(res, "No billing addresses found for this user!");
+        }
 
+        return sendSuccessResponse(res, "User billing addresses fetched successfully", {
+            total: user.billingaddress.length,
+            billingaddress: user.billingaddress
+        });
     } catch (error) {
-        console.log("Error While Get user Billingaddress" + error.message);
-        return sendErrorResponse(res, 500, "Error while Get User Billingaddress", error);
+        console.error("Error while getting user billing addresses:", error.message);
+        return sendErrorResponse(res, 500, "Error while getting user billing addresses!", error);
     }
-}
-
+};
 
 
 export const userPasswordChangeController = async (req, res) => {
