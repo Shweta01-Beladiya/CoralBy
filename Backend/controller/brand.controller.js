@@ -292,18 +292,21 @@ export const brandFilterController = async (req, res) => {
         let sortOption = {};
         let query = {};
 
+        // Apply search if provided
         if (search) {
             query.brandName = { $regex: search, $options: "i" };
         }
+
+        // Apply filter logic
         switch (filter) {
             case "az":
-                sortOption = { brandName: 1 }; 
+                sortOption = { brandName: 1 };
                 break;
             case "za":
-                sortOption = { brandName: -1 }; 
+                sortOption = { brandName: -1 };
                 break;
             case "new":
-                sortOption = { createdAt: -1 }; 
+                sortOption = { createdAt: -1 };
                 break;
             case "trustable":
                 query.isTrustable = true;
@@ -313,13 +316,13 @@ export const brandFilterController = async (req, res) => {
                 break;
             case "featured":
                 query.isFeatured = true;
-
                 break;
             default:
+                sortOption = { createdAt: -1 };
                 break;
         }
 
-        // Fetch from DB
+        // Fetch from DB with both query and sort
         const brands = await brandModel.find(query).sort(sortOption);
 
         return res.status(200).json({
@@ -330,7 +333,12 @@ export const brandFilterController = async (req, res) => {
         });
     } catch (error) {
         console.error(error.message);
-        return sendErrorResponse(res, 500, "Error During Sorting/Filtering in Brand", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error During Sorting/Filtering in Brand",
+            error: error.message,
+        });
     }
 };
+
 
