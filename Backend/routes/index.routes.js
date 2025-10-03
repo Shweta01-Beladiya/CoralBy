@@ -11,7 +11,7 @@ import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
 import { createMainCategory, deleteMainCategoryById, getAllMainCategory, getMainCategoryById, updateMainCategoryById } from '../controller/mainCategory.controller.js';
 import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCategoriesByCategoryId, getSubCategoryById, updateSubCategoryById } from '../controller/subCategory.controller.js';
-import { brandFilterController, createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand } from '../controller/brand.controller.js';
+import { createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand } from '../controller/brand.controller.js';
 import { addToWishlist, getWishlist, removeFromWishlist } from '../controller/wishlist.controller.js';
 import { createCoupon, deleteCoupon, getAllCoupon, getCouponById, updateCoupon } from '../controller/coupon.controller.js';
 import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
@@ -93,11 +93,6 @@ indexRouter.patch("/updateBrand/:id", sellerAuth, upload.fields([{ name: "brandI
 indexRouter.delete("/deleteBrand/:id", sellerAuth, deleteBrand)
 indexRouter.get("/getSellerBrands", sellerAuth, getSellerBrands)
 indexRouter.get("/getBrandByMainCategory/:mainCategoryId", getBrandByMainCategory)
-
-// brand.filter.route.js
-indexRouter.get("/filter/brand/sort", UserAuth, brandFilterController);
-
-
 
 // Product
 indexRouter.post("/createProduct", sellerAuth, createProduct);
