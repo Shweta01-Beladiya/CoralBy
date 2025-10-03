@@ -9,9 +9,9 @@ import blog3 from '../images/b-3.jpg'
 import blog4 from '../images/b-4.jpg'
 import blog5 from '../images/b-5.jpg'
 import blog6 from '../images/b-6.jpg'
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchBlogById } from '../Store/Slices/blogcategorySlice';
+import { fetchBlogById, fetchLatestBlogs } from '../Store/Slices/blogcategorySlice';
 
 const BlogDetailsPage = () => {
 
@@ -29,7 +29,6 @@ const BlogDetailsPage = () => {
     }
   }, [id, dispatch]);
 
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   // const latestBlogs = [
   //   {
@@ -63,22 +62,62 @@ const BlogDetailsPage = () => {
   //     date: '01 Sep 2025',
   //     image: blog6,
   //     description: 'Use colors, textures, and lighting to transform any room into a relaxing retreat.'
+  //   },
+  //   {
+  //     id: 5,
+  //     title: 'Decorating Tips to Create a Cozy Home Space',
+  //     category: 'Home & Furniture',
+  //     date: '01 Sep 2025',
+  //     image: blog3,
+  //     description: 'Use colors, textures, and lighting to transform any room into a relaxing retreat.'
   //   }
   // ];
 
-  // const nextSlide = () => {
-  //   setCurrentSlide((prev) => (prev + 1) % Math.ceil(latestBlogs.length / 3));
-  // };
+  const { alllatestblog } = useSelector((state) => state.blogallcategory);
 
-  // const prevSlide = () => {
-  //   setCurrentSlide((prev) => (prev - 1 + Math.ceil(latestBlogs.length / 3)) % Math.ceil(latestBlogs.length / 3));
-  // };
+  useEffect(() => {
+    dispatch(fetchLatestBlogs());
+  }, [dispatch]);
 
-  // const getVisibleBlogs = () => {
-  //   const itemsPerSlide = 3;
-  //   const startIndex = currentSlide * itemsPerSlide;
-  //   return latestBlogs.slice(startIndex, startIndex + itemsPerSlide);
-  // };
+  // Map API fields into UI format here
+  const normalizedLatest = Array.isArray(alllatestblog)
+    ? alllatestblog.map((blog) => ({
+      id: blog._id,
+      image: blog.heroImage,
+      title: blog.blogTitle,
+      description: blog.blogDesc,
+      date: new Date(blog.createdAt).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
+      category: blog.blogCategoryId?.blogCategoryName || "Uncategorized",
+    }))
+    : [];
+
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const itemsPerSlide = 3;
+  const totalSlides = Math.max(1, Math.ceil(normalizedLatest.length / itemsPerSlide));
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
+  };
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
+  };
+
+  const getVisibleBlogs = () => {
+    const startIndex = currentSlide * itemsPerSlide;
+    return normalizedLatest.slice(startIndex, startIndex + itemsPerSlide);
+  };
+
+  const navigate = useNavigate();
+
+  const handleCardClick = (id) => {
+    navigate(`/blog/${id}`); // redirect to detail page
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -101,7 +140,6 @@ const BlogDetailsPage = () => {
           </div>
         </div>
       </div>
-
 
       {/* Main Content */}
       <div className="main_container">
@@ -472,22 +510,21 @@ const BlogDetailsPage = () => {
           </div> */}
 
           {/* Conclusion */}
-          {/* <div className="mb-12">
+          <div className="mb-12">
             <h3 className="text-xl font-semibold text-gray-900 mb-4">CONCLUSION</h3>
             <p className="text-gray-700 leading-relaxed mb-4">
-              The right tech accessories are not just gadgets — they're tools that support a healthier, more productive lifestyle. A well-thought-out setup helps you work more efficiently, reduce workspace clutter, and enjoy enhanced comfort. Whether you're upgrading your home office or just looking for practical solutions that fit seamlessly into your daily routine.
+              {blogbyid.conclusion}
             </p>
-            <p className="text-gray-700 leading-relaxed">
+            {/* <p className="text-gray-700 leading-relaxed">
               Start by identifying your biggest pain points — whether that's clutter, poor posture, or device compatibility — and invest in accessories that address them. Over time, you'll build a workspace that's not only functional but also reflects your style and personality.
-            </p>
-          </div> */}
+            </p> */}
+          </div>
 
         </div>
       </div>
 
-
       {/* Keywords Section */}
-      {/* <div className='main_container'>
+      <div className='main_container'>
         <div className="mb-12">
           <h4 className="font-semibold text-gray-900 mb-4">Primary Keywords</h4>
           <div className="flex flex-wrap text-md">
@@ -509,14 +546,14 @@ const BlogDetailsPage = () => {
             ))}
           </div>
         </div>
-      </div> */}
+      </div>
 
       {/* Latest Blogs Slider Section */}
       <div className="main_container">
         <div className=" mx-auto mb-10">
 
           {/* Title */}
-          {/* <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Latest Blogs</h2>
             <div className="flex space-x-2">
               <button
@@ -532,18 +569,21 @@ const BlogDetailsPage = () => {
                 <ChevronRight className="w-5 h-5 text-gray-600" />
               </button>
             </div>
-          </div> */}
+          </div>
 
           {/* Slider */}
-          {/* <div className="overflow-hidden">
+          <div className="overflow-hidden">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {getVisibleBlogs().map((blog) => (
-                <div key={blog.id} className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-300 group cursor-pointer">
+                <div
+                  key={blog.id}
+                  onClick={() => { handleCardClick(blog.id); window.scrollTo({ top: 0, left: 0, behavior: "smooth" }); }}
+                  className="bg-white rounded-2xl overflow-hidden border border-gray-200 hover:shadow-lg transition-all duration-300 group cursor-pointer">
                   <div className="relative overflow-hidden">
                     <img
                       src={blog.image}
                       alt={blog.title}
-                      className="w-full h-100 object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="w-full h-[250px] object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </div>
                   <div className="p-6">
@@ -566,7 +606,7 @@ const BlogDetailsPage = () => {
                 </div>
               ))}
             </div>
-          </div> */}
+          </div>
 
           {/* Slider Indicators */}
           {/* <div className="flex justify-center mt-8 space-x-2">
@@ -579,6 +619,7 @@ const BlogDetailsPage = () => {
               />
             ))}
           </div> */}
+
         </div>
       </div>
     </div>
