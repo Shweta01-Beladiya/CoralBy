@@ -36,38 +36,80 @@ import f_brand_28 from "../images/fashion-brand (28).png";
 import { Link } from "react-router-dom";
 import Newsletter from "../component/Newsletter";
 import { FAQ } from "../component/FAQ";
+import { useDispatch, useSelector } from "react-redux";
 
 const ShopAllBrands = () => {
-	const [activeCategory, setActiveCategory] = useState("Fashion");
 
-	const categories = [
-		"Home & Furniture",
-		"Fashion",
-		"Electronics",
-		"Mobile & Tablets",
-		"Beauty",
-		"Personal Care",
-		"Grocery",
-	];
+	const mainCategory = useSelector(
+		(state) => state.category.mainCategory.data
+	);
 
-	// Category-wise brands
-	const categoryBrands = {
-		"Home & Furniture": [
-			f_brand_1,
-			f_brand_2,
-			f_brand_3,
-			f_brand_4,
-			f_brand_5,
-			f_brand_6,
-		],
-		"Fashion": [f_brand_27, f_brand_28, f_brand_14, f_brand_21, f_brand_10, f_brand_17, f_brand_3, f_brand_8, f_brand_9, f_brand_11, f_brand_26, f_brand_24, f_brand_6, f_brand_25, f_brand_12, f_brand_15, f_brand_7, f_brand_5, f_brand_19, f_brand_4, f_brand_1, f_brand_20, f_brand_22, f_brand_23, f_brand_13, f_brand_2, f_brand_18, f_brand_16],
-		"Electronics": [f_brand_5, f_brand_10, f_brand_15],
-		"Mobile & Tablets": [f_brand_2, f_brand_8, f_brand_12],
-		"Beauty": [f_brand_9, f_brand_13, f_brand_16],
-		"Personal Care": [f_brand_11, f_brand_14, f_brand_20],
-		"Grocery": [f_brand_18, f_brand_21, f_brand_23],
+	const [activeCategory, setActiveCategory] = useState(null);
+	const [categoryBrands, setCategoryBrands] = useState([]);
+	const [allBrands, setAllBrands] = useState([]);
+	const [searchTerm, setSearchTerm] = useState("");
+	const [visibleCount, setVisibleCount] = useState(35);
+
+	// Auto-load first category
+	useEffect(() => {
+		if (mainCategory?.length > 0 && !activeCategory) {
+			handleCategoryClick(mainCategory[0]);
+		}
+	}, [mainCategory]);
+
+	// Fetch brands for a category
+	const handleCategoryClick = async (cat) => {
+		try {
+			setActiveCategory(cat.mainCategoryName);
+			setSearchTerm("");
+			setVisibleCount(35);
+
+			const res = await fetch(
+				`http://localhost:9000/api/getBrandByMainCategory/${cat._id}`
+			);
+			const data = await res.json();
+			if (data.success && data.result?.brand) {
+				setCategoryBrands(data.result.brand);
+			} else {
+				setCategoryBrands([]);
+			}
+		} catch (err) {
+			console.error("Error fetching category brands:", err);
+		}
 	};
 
+	// Load all brands for search
+	useEffect(() => {
+		const fetchAllBrands = async () => {
+			try {
+				const promises = mainCategory.map((cat) =>
+					fetch(
+						`http://localhost:9000/api/getBrandByMainCategory/${cat._id}`
+					).then((r) => r.json())
+				);
+				const results = await Promise.all(promises);
+				const merged = results
+					.map((res) => (res.success ? res.result.brand : []))
+					.flat();
+				setAllBrands(merged);
+			} catch (err) {
+				console.error("Error fetching all brands:", err);
+			}
+		};
+
+		if (searchTerm.length > 0) {
+			setActiveCategory(null); 
+			fetchAllBrands();
+		}
+	}, [searchTerm, mainCategory]);
+
+	// Filter brands
+	const filteredBrands =
+		searchTerm.length > 0
+			? allBrands.filter((b) =>
+				b.brandName.toLowerCase().includes(searchTerm.toLowerCase())
+			)
+			: categoryBrands;
 
 
 	return <>
@@ -112,6 +154,8 @@ const ShopAllBrands = () => {
 							<input
 								type="search"
 								placeholder="Search all brands here"
+								value={searchTerm}
+								onChange={(e) => setSearchTerm(e.target.value)}
 								className="h_shopAllBrand_search w-full px-4 py-2 pr-10 rounded text-[16px] text-[#6B7280] focus:outline-none focus:ring-1 focus:ring-[#bec1c9]"
 							/>
 							{/* search icon */}
@@ -143,47 +187,62 @@ const ShopAllBrands = () => {
 					</div>
 
 					{/* Category Header */}
-					<div className="flex items-center gap-6 sm:gap-10 border-b border-gray-200 overflow-x-auto no-scrollbar mt-[24px]">
-						{categories.map((cat) => (
+					{searchTerm === "" && (
+						<div className="flex items-center gap-6 sm:gap-10 border-b border-gray-200 overflow-x-auto no-scrollbar mt-[24px]">
+							{mainCategory?.map((cat) => (
+								<button
+									key={cat._id}
+									onClick={() => handleCategoryClick(cat)}
+									className={`relative py-3 text-[16px] text-nowrap font-semibold transition-colors ${activeCategory === cat.mainCategoryName
+											? "text-[#F97316]"
+											: "text-[#6B7280]"
+										}`}
+								>
+									{cat.mainCategoryName}
+									{activeCategory === cat.mainCategoryName && (
+										<span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#F97316] rounded-full"></span>
+									)}
+								</button>
+							))}
+						</div>
+					)}
+
+					{/* Brand Grid */}
+					<div className="h_brands-grid my-10">
+						{filteredBrands.length > 0 ? (
+							filteredBrands.slice(0, visibleCount).map((brand) => (
+								<div
+									key={brand._id}
+									className="border rounded-lg flex justify-center items-center text-center font-semibold hover:bg-[#E5E7EB] hover:scale-[1.03] transition-transform duration-300 cursor-pointer"
+								>
+									<img
+										src={brand.brandImage}
+										alt={brand.brandName}
+										className="max-h-[24px] object-contain"
+									/>
+								</div>
+							))
+						) : (
+							<p className="text-gray-500 text-center my-4">
+								{searchTerm
+									? "Not Found"
+									: "No brands available for this category."}
+							</p>
+						)}
+					</div>
+
+					{/* Load More */}
+					{filteredBrands.length > visibleCount && (
+						<div className="flex justify-center my-10 mb-[24px] sm:mb-[62px]">
 							<button
-								key={cat}
-								onClick={() => setActiveCategory(cat)}
-								className={`relative py-3 text-[16px] text-nowrap font-semibold transition-colors ${activeCategory === cat ? "text-[#F97316]" : "text-[#6B7280]"
-									}`}
+								onClick={() => setVisibleCount((prev) => prev + 35)}
+								className="bg-[#F97316] text-white rounded py-[8px] sm:py-[10px] px-[28px] sm:px-[33px] text-[16px] sm:text-[18px] font-medium"
 							>
-								{cat}
-								{activeCategory === cat && (
-									<span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#F97316] rounded-full"></span>
-								)}
+								Load more
 							</button>
-						))}
-					</div>
+						</div>
+					)}
 
-					{/* Brands Grid */}
-					<div className="h_brands-grid mt-10">
-						{categoryBrands[activeCategory]?.map((brand, idx) => (
-							<div
-								key={idx}
-								className="border rounded-lg flex justify-center items-center text-center font-semibold hover:bg-[#E5E7EB] hover:scale-[1.03] transition-transform duration-300 cursor-pointer"
-							>
-								<img
-									src={brand}
-									alt={`brand-${idx}`}
-									className="max-h-[24px] object-contain"
-								/>
-							</div>
-						))}
-					</div>
-
-					{/* Load More button */}
-					<div className="flex justify-center mt-10 mb-[24px] sm:mb-[62px]">
-						<Link
-							to={"#"}
-							className="bg-[#F97316] text-white rounded py-[8px] sm:py-[10px] px-[28px] sm:px-[33px] text-[16px] sm:text-[18px] font-medium"
-						>
-							Load more
-						</Link>
-					</div>
 
 					{/* Faq */}
 					<FAQ />
