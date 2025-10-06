@@ -286,7 +286,6 @@ export const getBrandByMainCategory = async (req, res) => {
     } catch (error) {
         return sendErrorResponse(res, 500, error.message);
     }
-<<<<<<< HEAD
 };
 
 
@@ -333,6 +332,3 @@ export const brandFilterController = async (req, res) => {
 }
 
 
-=======
-};
->>>>>>> 800d51281c7ba20753755b556ba6d05cf6e9cbaa

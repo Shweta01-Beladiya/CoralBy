@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { nanoid } from "nanoid";
-import { UserAddressSchema, UserBillingAddressSchema } from "./user.model";
-
+import { UserAddressSchema, UserBillingAddressSchema } from "./user.model.js";
 const orderSchema = new mongoose.Schema(
   {
     orderId: {
