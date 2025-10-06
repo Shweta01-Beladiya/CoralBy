@@ -69,8 +69,7 @@ export const userProfileUpdateController = async (req, res) => {
 
 export const userAddressAddController = async (req, res) => {
     try {
-        const { id } = req?.user;
-
+        const { id } = req.user;
         if (!id || !mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid User Id in Token!");
         }
@@ -85,23 +84,20 @@ export const userAddressAddController = async (req, res) => {
             state,
             saveAs,
             officeOpenOnSaturday,
-            officeOpenOnSunday
-        } = req?.body;
+            officeOpenOnSunday,
+            setMyDefultUserAddress,
+        } = req.body;
 
         if (!firstName || !lastName || !phone || !zipcode || !address) {
-            return sendBadRequestResponse(
-                res,
-                "All required fields (firstName, lastName, phone, zipcode, address) must be provided!"
-            );
+            return sendBadRequestResponse(res, "All required fields must be provided!");
         }
 
+        // Auto-fill city/state if missing
         let autoCity = city;
         let autoState = state;
-
         if (/^\d{6}$/.test(zipcode)) {
-            const pincodeResp = await axios.get(`https://api.postalpincode.in/pincode/${zipcode}`);
-            const pinData = pincodeResp.data[0];
-
+            const pinResp = await axios.get(`https://api.postalpincode.in/pincode/${zipcode}`);
+            const pinData = pinResp.data[0];
             if (pinData.Status === "Success" && pinData.PostOffice?.length > 0) {
                 autoCity = city || pinData.PostOffice[0].District;
                 autoState = state || pinData.PostOffice[0].State;
@@ -110,7 +106,8 @@ export const userAddressAddController = async (req, res) => {
             }
         }
 
-        const addressData = {
+        // Build address as Mongoose subdocument
+        const newAddress = {
             firstName,
             lastName,
             phone,
@@ -119,19 +116,29 @@ export const userAddressAddController = async (req, res) => {
             city: autoCity,
             state: autoState,
             saveAs: saveAs || "Home",
-            officeOpenOnSaturday: saveAs === "Office" ? !!officeOpenOnSaturday : false,
-            officeOpenOnSunday: saveAs === "Office" ? !!officeOpenOnSunday : false
+            officeOpenOnSaturday: officeOpenOnSaturday || false,
+            officeOpenOnSunday: officeOpenOnSunday || false,
+            setMyDefultUserAddress
         };
 
-        const updatedUser = await UserModel.findByIdAndUpdate(
-            id,
-            { $push: { address: addressData } },
-            { new: true }
-        );
+        const user = await UserModel.findById(id);
+        if (!user) return sendBadRequestResponse(res, "User not found!");
 
-        return sendSuccessResponse(res, "User Address inserted successfully", updatedUser);
+        // Push the new address and get its subdocument reference
+        const addedAddress = user.address.create(newAddress); // create subdocument
+        user.address.push(addedAddress);
+
+        // If default, set selectedAddress **before saving**
+        if (setMyDefultUserAddress === true) {
+            user.selectedAddress = addedAddress._id;
+            user.setMyDefultUserAddress = true;
+        }
+
+        await user.save(); // Save once
+
+        return sendSuccessResponse(res, "User Address inserted successfully", user);
     } catch (error) {
-        console.error("Error in userAddressAddController:", error.message);
+        console.error("Error in userAddressAddController:", error);
         return sendErrorResponse(res, 500, "Something went wrong while adding address!", error.message);
     }
 };
@@ -451,6 +458,7 @@ export const userBillingAddressDeleteController = async (req, res) => {
         return sendErrorResponse(res, 500, "Error during billing address deletion!", error.message);
     }
 };
+
 export const getUserBillingAddressController = async (req, res) => {
     try {
         const { id } = req?.user;

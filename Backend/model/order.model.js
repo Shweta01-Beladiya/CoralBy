@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { nanoid } from "nanoid";
+import { UserAddressSchema, UserBillingAddressSchema } from "./user.model";
 
 const orderSchema = new mongoose.Schema(
   {
@@ -39,10 +40,8 @@ const orderSchema = new mongoose.Schema(
     couponCode: { type: String, default: null },
     isCouponApplied: { type: Boolean, default: false },
 
-    deliveryAddress: {
-      type: mongoose.Types.ObjectId,
-      required: true,
-    },
+    userAddress: UserAddressSchema,
+    userBillingAddress: UserBillingAddressSchema,
 
     orderStatus: {
       type: String,

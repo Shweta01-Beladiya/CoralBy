@@ -12,6 +12,98 @@ import axios from "axios";
 
 const roundToTwo = (num) => Math.round(num * 100) / 100;
 
+export const selectUserAddressController = async (req, res) => {
+    try {
+        const userId = req?.user?.id;
+        const { addressId } = req?.params;
+
+        // Validate IDs
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            return sendBadRequestResponse(res, "Invalid or missing userId");
+        }
+        if (!addressId || !mongoose.Types.ObjectId.isValid(addressId)) {
+            return sendBadRequestResponse(res, "Invalid or missing addressId");
+        }
+
+        // Find user
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Find address inside user
+        const address = user.address.id(addressId);
+        if (!address) {
+            return res.status(404).json({ message: "Address not found for this user" });
+        }
+
+        // If already selected, skip unnecessary save
+        if (user.selectedAddress?.toString() === addressId) {
+            return sendSuccessResponse(res, "Address already selected", {
+                selectedAddress: user.selectedAddress
+            });
+        }
+
+        // Update selected address
+        user.selectedAddress = addressId;
+        await user.save();
+
+        return sendSuccessResponse(res, "Address selected successfully", {
+            selectedAddress: user.selectedAddress
+        });
+
+    } catch (error) {
+        console.error("Error while selecting address:", error.message);
+        return sendErrorResponse(res, 500, "Error while selecting address", error);
+    }
+};
+
+export const selectUserBillingAddressController = async (req, res) => {
+    try {
+        const userId = req?.user?.id;
+        const { addressId } = req?.params;
+
+        // Validate IDs
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            return sendBadRequestResponse(res, "Invalid or missing userId");
+        }
+        if (!addressId || !mongoose.Types.ObjectId.isValid(addressId)) {
+            return sendBadRequestResponse(res, "Invalid or missing addressId");
+        }
+
+        // Find user
+        const user = await UserModel.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        // Find address inside user
+        const address = user.address.id(addressId);
+        if (!address) {
+            return res.status(404).json({ message: "Address not found for this user" });
+        }
+
+        // If already selected, skip unnecessary save
+        if (user.selectedAddress?.toString() === addressId) {
+            return sendSuccessResponse(res, "Address already selected", {
+                selectedAddress: user.selectedAddress
+            });
+        }
+
+        // Update selected address
+        user.selectedAddress = addressId;
+        await user.save();
+
+        return sendSuccessResponse(res, "Address selected successfully", {
+            selectedAddress: user.selectedAddress
+        });
+
+    } catch (error) {
+        console.error("Error while selecting address:", error.message);
+        return sendErrorResponse(res, 500, "Error while selecting address", error);
+    }
+};
+
 export const newOrderController = async (req, res) => {
     const session = await mongoose.startSession();
 
