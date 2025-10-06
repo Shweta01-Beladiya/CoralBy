@@ -10,7 +10,6 @@ import offerReducer from '../Store/Slices/offerSlice';
 
 export const store = configureStore({
     reducer: {
-
         category: categoryReducer,
         contactUs: contactusReducer,
         careerJob: careerjobReducer,

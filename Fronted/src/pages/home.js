@@ -87,7 +87,7 @@ import '../App.css';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMainCategory } from '../Store/Slices/categorySlice';
-import { simplefetchOffers } from '../Store/Slices/offerSlice';
+import { simplefetchOffers, specialOffers, simplestOffers, offers } from '../Store/Slices/offerSlice';
 
 
 
@@ -284,7 +284,7 @@ export default function Home() {
 	}, [dispatch]);
 
 	const { simpleoffer } = useSelector((state) => state.offer);
-	console.log("simpleoffer", simpleoffer);
+	// console.log("simpleoffer", simpleoffer);
 
 	const normalizedOffers = Array.isArray(simpleoffer?.data)
 		? simpleoffer.data.map((offer) => ({
@@ -366,52 +366,122 @@ export default function Home() {
 	};
 
 	// Product Data for Ends Tonight Section
-	const EndsImages = [
-		{
-			heading: "Ends in",
-			img: MacBook,
-			offer: "Flat 40% OFF",
-			desc: "Ultra-Slim Laptop with Long Battery Life",
-			oldPrice: "AU$1,299",
-			newPrice: "AU$999",
-			istInformation: "Inclusive of IST",
-			btnText: "Grab Deal",
-		},
-	]
+	// const EndsImages = [
+	// 	{
+	// 		heading: "Ends in",
+	// 		img: MacBook,
+	// 		offer: "Flat 40% OFF",
+	// 		desc: "Ultra-Slim Laptop with Long Battery Life",
+	// 		oldPrice: "AU$1,299",
+	// 		newPrice: "AU$999",
+	// 		istInformation: "Inclusive of IST",
+	// 		btnText: "Grab Deal",
+	// 	},
+	// ]
+
+	useEffect(() => {
+		dispatch(specialOffers());
+	}, [dispatch]);
+
+	const { specialoffer } = useSelector((state) => state.offer);
+
+	// Split API data into special & normal offers
+	const specialOffersData = Array.isArray(specialoffer?.data)
+		? specialoffer.data.filter((item) => item.isSpecialOffer === true)
+		: [];
+
+	const normalOffersData = Array.isArray(specialoffer?.data)
+		? specialoffer.data.filter((item) => item.isSpecialOffer === false)
+		: [];
+
+	// Format special offers (for left column)
+	const formattedSpecialOffers = specialOffersData.map((offer) => ({
+		id: offer._id,
+		img: offer.offerImage,
+		offer: offer.offerTitle,
+		desc: offer.offerDesc,
+		oldPrice: offer.subText,
+		newPrice: offer.headline.split(" ")[0] || "",
+		istInformation: offer.headline.includes("Included IST")
+			? "Inclusive of IST"
+			: "",
+		countdown: offer.countdown,
+	}));
+
+	// Format normal offers (for right column)
+	const CategoryCards = normalOffersData.map((offer) => ({
+		id: offer._id,
+		img: offer.offerImage,
+		title: offer.offerDesc,
+		offer: offer.offerTitle,
+	}));
+
 
 	// Category Cards Data
-	const CategoryCards = [
-		{
-			img: MobilesTablets,
-			title: "Mobiles & Tablets",
-			offer: "Up to 30% OFF",
-		},
-		{
-			img: FashionEssentials,
-			title: "Fashion & Essentials",
-			offer: "Flat 50% OFF Styles",
-		},
-		{
-			img: Electronics,
-			title: "Electronics",
-			offer: "Save up to 35%",
-		},
-		{
-			img: HomeFurniture,
-			title: "Home & Furniture",
-			offer: "Up to 40% OFF",
-		},
-		{
-			img: Beauty,
-			title: "Beauty",
-			offer: "Deals from AU$19",
-		},
-		{
-			img: PersonalCareGrocery,
-			title: "Personal Care & Grocery",
-			offer: "20% OFF Combos",
-		},
-	];
+	// const CategoryCards = [
+	// 	{
+	// 		img: MobilesTablets,
+	// 		title: "Mobiles & Tablets",
+	// 		offer: "Up to 30% OFF",
+	// 	},
+	// 	{
+	// 		img: FashionEssentials,
+	// 		title: "Fashion & Essentials",
+	// 		offer: "Flat 50% OFF Styles",
+	// 	},
+	// 	{
+	// 		img: Electronics,
+	// 		title: "Electronics",
+	// 		offer: "Save up to 35%",
+	// 	},
+	// 	{
+	// 		img: HomeFurniture,
+	// 		title: "Home & Furniture",
+	// 		offer: "Up to 40% OFF",
+	// 	},
+	// 	{
+	// 		img: Beauty,
+	// 		title: "Beauty",
+	// 		offer: "Deals from AU$19",
+	// 	},
+	// 	{
+	// 		img: PersonalCareGrocery,
+	// 		title: "Personal Care & Grocery",
+	// 		offer: "20% OFF Combos",
+	// 	},
+	// ];
+
+
+	// *************** 7. Offer  ***************
+
+	// useEffect(() => {
+	// 	dispatch(simplestOffers());
+	// }, [dispatch]);
+
+	// const { simplestoffer } = useSelector((state) => state.offer);
+
+	// const section2Offers = Array.isArray(simplestoffer?.data)
+	// 	? simplestoffer.data.filter((offer) => offer.section === 2)
+	// 	: [];
+
+	// const first = section2Offers[0];
+	// const second = section2Offers[1];
+
+	// useEffect(() => {
+	// 	dispatch(offers());
+	// }, [dispatch]);
+
+	// const { offer } = useSelector((state) => state.offer);
+
+	// const onlyOffers = Array.isArray(offer?.data)
+	// 	? offer.data.map((item) => ({
+	// 		id: item._id,
+	// 		title: item.offerMidText,
+	// 		desc: item.offerDesc,
+	// 		img: item.offerImage,
+	// 	}))
+	// 	: [];
+
 
 
 	// *************** 8. Grand Global Brands ***************
@@ -552,6 +622,9 @@ export default function Home() {
 		startIndex2 + cardsPerPage2
 	);
 
+	// if (!section2Offers.length) return null;
+	// const first = section2Offers[0];
+	// const second = section2Offers[1];
 
 	return (
 		<>
@@ -717,7 +790,7 @@ export default function Home() {
 					<div className='main_container'>
 
 						{/* Title */}
-						<div className="flex flex-wrap  sm:gap-2 gap-0 items-center justify-between mt-8">
+						<div className="flex flex-wrap  sm:gap-2 gap-0 items-center justify-between mt-0">
 							{/* Title */}
 							<h1 className="text-xl md:text-2xl lg:text-[32px] font-bold text-[#0A0E17]">
 								Save More, Shop More
@@ -784,14 +857,14 @@ export default function Home() {
 						<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
 
 							{/* Left Column */}
-							{EndsImages.map((item, index) => (
+							{formattedSpecialOffers.map((item, index) => (
 								<div
 									key={index}
 									className="col-span-1 bg-[#fee3e4] flex flex-col items-center justify-center rounded-xl xl:p-8 py-8 px-4"
 								>
 									{/* Heading */}
 									<p className="text-lg md:text-xl font-extrabold text-[#44506A] mb-1 ">
-										{item.heading}
+										Ends in
 									</p>
 
 									{/* Countdown */}
@@ -802,7 +875,7 @@ export default function Home() {
 									{/* Product Image */}
 									<img
 										src={item.img}
-										alt={item.heading}
+										alt='MacBook'
 										className="w-[75%] md:w-[55%] lg:w-[70%] h-auto mb-3"
 									/>
 
@@ -828,7 +901,7 @@ export default function Home() {
 
 										{/* Button */}
 										<button className="w-full py-2.5 font-semibold text-lg items-center bg-[#F97316] text-white rounded-lg ">
-											{item.btnText}
+											Grab Deal
 										</button>
 									</div>
 								</div>
@@ -905,7 +978,7 @@ export default function Home() {
 					{/* Main Container */}
 					<div className="main_container w-full">
 
-						{/* image */}
+						{/* image ( 2 ) */}
 						<div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
 							{/* Card 1 */}
 							<div className="col-span-1 lg:col-span-3 bg-[#FFF9EE] rounded-xl md:p-8 p-4 flex flex-col sm:flex-col lg:flex-row items-center lg:items-center lg:justify-between gap-4 h-full">
@@ -936,7 +1009,7 @@ export default function Home() {
 							</div>
 
 							{/* Card 2 */}
-							<div className="col-span-1 lg:col-span-2 bg-[#F0F7FF] rounded-xl md:p-8 p-4 flex flex-col sm:flex-col lg:flex-row flex-wrap xl:flex-nowrap lg:items-center lg:justify-center  gap-4 h-full">
+							<div className="col-span-1 lg:col-span-2 bg-[#F0F7FF] rounded-xl md:p-8 p-4 flex flex-col sm:flex-col lg:flex-row flex-wrap xl:flex-nowrap lg:items-center lg:justify-center gap-4 h-full">
 								{/* Image */}
 								<div className="flex-shrink-0 flex justify-center lg:justify-start">
 									<img
@@ -962,10 +1035,9 @@ export default function Home() {
 									</button>
 								</div>
 							</div>
-
 						</div>
 
-						{/* Card */}
+						{/* Card ( 3 ) */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 mb-4">
 							{/* Card 1 */}
 							<div className="relative bg-[#EEF2FF] rounded-xl overflow-hidden flex items-end justify-center text-center aspect-[4/5] w-full h-96">
@@ -1279,7 +1351,6 @@ export default function Home() {
 						</DialogPanel>
 					</div>
 				</Dialog>
-
 
 				{/* ******* 2. Welcome back Modal ( After Login Popup ) ****** */}
 				<Dialog open={openWelcomeback} onClose={setOpenWelcomeback} className="relative z-[999]">
