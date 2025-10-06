@@ -286,59 +286,47 @@ export const getBrandByMainCategory = async (req, res) => {
     }
 };
 
+
 export const brandFilterController = async (req, res) => {
     try {
         const { filter, search } = req.query;
         let sortOption = {};
         let query = {};
 
-        // Apply search if provided
+        // Apply search by brand name
         if (search) {
-            query.brandName = { $regex: search, $options: "i" };
+            query.brandName = { $regex: search, $options: "i" }; // case-insensitive
         }
 
-        // Apply filter logic
-        switch (filter) {
-            case "az":
-                sortOption = { brandName: 1 };
-                break;
-            case "za":
-                sortOption = { brandName: -1 };
-                break;
-            case "new":
-                sortOption = { createdAt: -1 };
-                break;
-            case "trustable":
-                query.isTrustable = true;
-                break;
-            case "popularity":
-                sortOption = { popularity: -1 };
-                break;
-            case "featured":
-                query.isFeatured = true;
-                break;
-            default:
-                sortOption = { createdAt: -1 };
-                break;
+        // Filter logic
+        if (filter) {
+            if (filter === "featured") query.isFeatured = true;
+            else if (filter === "trustable") query.isTrustable = true;
+            else if (filter === "az") sortOption = { brandName: 1 };
+            else if (filter === "za") sortOption = { brandName: -1 };
+            else if (filter === "newest") sortOption = { createdAt: -1 };
+            else if (filter === "oldest") sortOption = { createdAt: 1 };
+        } else {
+            // default sort
+            sortOption = { createdAt: -1 };
         }
 
-        // Fetch from DB with both query and sort
         const brands = await brandModel.find(query).sort(sortOption);
 
         return res.status(200).json({
             success: true,
             message: "Brands fetched successfully",
-            total: brands.length,
             data: brands,
         });
     } catch (error) {
-        console.error(error.message);
+        console.error(error);
         return res.status(500).json({
             success: false,
-            message: "Error During Sorting/Filtering in Brand",
+            message: "Error fetching brands",
             error: error.message,
         });
     }
-};
+
+}
 
 

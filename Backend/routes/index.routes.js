@@ -95,7 +95,7 @@ indexRouter.get("/getSellerBrands", sellerAuth, getSellerBrands)
 indexRouter.get("/getBrandByMainCategory/:mainCategoryId", getBrandByMainCategory)
 
 // brand.filter.route.js
-indexRouter.get("/filter/brand/sort", UserAuth, brandFilterController);
+indexRouter.get("/filter/brand", brandFilterController);
 
 
 

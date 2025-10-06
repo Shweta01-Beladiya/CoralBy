@@ -15,14 +15,10 @@ const brandSchema = mongoose.Schema({
     brandName: {
         type: String
     },
-    isFeatured: {
-        type: Boolean,
-        default: true
-    },
     isTrustable: {
         type: Boolean,
-        default: true
+        default: false
     }
-}, { timestamps: true })
+}, { timestamps: true });
 
 export default mongoose.model("Brand", brandSchema)
