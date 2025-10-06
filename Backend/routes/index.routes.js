@@ -26,7 +26,7 @@ import { createfaqCategory, deletefaqCategoryById, getAllfaqCategory, getfaqCate
 import { createFAQQuestion, deleteFAQQuestion, getAllFAQQuestions, getFAQQuestionById, getFAQQuestionsByCategory, updateFAQQuestion } from '../controller/faqQuestion.controller.js';
 import { addRecentlyView, getRecentlyView } from '../controller/recentlyView.controller.js';
 import { addNewBlogCategoryController, deleteBlogCategoryController, getAllBlogCategoryController, getBlogCategoryByIdController, updateBlogCategoryController } from '../controller/blog.category.controller.js';
-import { addNewBlogController, deleteBlogController, getAllBlogsController, getBlogByIdController, getBlogWithCategoryController, updateBlogController } from '../controller/blog.controller.js';
+import { addNewBlogController, deleteBlogController, getAllBlogsController, getBlogByIdController, getBlogWithCategoryController, getLatestBlogController, updateBlogController } from '../controller/blog.controller.js';
 import { createContactUs, deleteContactUs, getAllContactUs, getContactUsById, updateContactUs } from '../controller/contactUs.controller.js';
 import { createorderfaqCategory, deleteorderfaqCategoryById, getAllorderfaqCategory, getorderfaqCategoryById, updateorderfaqCategoryById } from '../controller/orderfaqCategory.controller.js';
 import { createorderFAQQuestion, deleteorderFAQQuestion, getAllorderFAQQuestions, getorderFAQQuestionById, getorderFAQQuestionsByCategory, updateorderFAQQuestion } from '../controller/orderfaqQuestion.controller.js';
@@ -274,6 +274,7 @@ indexRouter.delete("/delete/blogCategory/:categoryId", UserAuth, isAdmin, delete
 
 //find all blog with category Id
 indexRouter.get("/blogs/with-category", getBlogWithCategoryController)
+indexRouter.get("/latest/blog", getLatestBlogController)
 
 //blog.content*.route.js
 

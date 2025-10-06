@@ -235,56 +235,56 @@ export const myOrderController = async (req, res) => {
 };
 
 export const myHistoryOrderController = async (req, res) => {
-  try {
-    const { id: userId } = req?.user;
+    try {
+        const { id: userId } = req?.user;
 
-    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
-      return sendErrorResponse(res, 400, "Valid UserID is required");
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            return sendErrorResponse(res, 400, "Valid UserID is required");
+        }
+
+        // Fetch all orders for this user where status is NOT Pending
+        const orders = await orderModel
+            .find({ userId, orderStatus: { $ne: "Pending" } })
+            .populate("userId")
+            .sort({ createdAt: -1 });
+
+        if (!orders || orders.length === 0) {
+            return sendErrorResponse(res, 404, "No history orders found for this user");
+        }
+
+        // Format response with delivery address
+        const formattedOrders = orders.map((order) => {
+            const user = order.userId;
+            const deliveryAddress = user?.billingaddress?.find(
+                (addr) => addr._id.toString() === order.deliveryAddress.toString()
+            );
+
+            return {
+                _id: order._id,
+                orderId: order.orderId,
+                products: order.products,
+                billingAmount: order.billingAmount,
+                discountAmount: order.discountAmount,
+                totalAmount: order.totalAmount,
+                couponCode: order.couponCode,
+                isCouponApplied: order.isCouponApplied,
+                orderStatus: order.orderStatus, // will be anything except Pending
+                deliveryExpected: order.deliveryExpected,
+                createdAt: order.createdAt,
+                orderInstruction: order.orderInstruction,
+                payment: order.payment,
+                deliveryAddress: deliveryAddress || null,
+            };
+        });
+
+        return sendSuccessResponse(res, "Order history fetched successfully", {
+            orders: formattedOrders,
+        });
+
+    } catch (error) {
+        console.error("Error fetching order history:", error);
+        return sendErrorResponse(res, 500, "Error fetching order history", error.message);
     }
-
-    // Fetch all orders for this user where status is NOT Pending
-    const orders = await orderModel
-      .find({ userId, orderStatus: { $ne: "Pending" } })
-      .populate("userId")
-      .sort({ createdAt: -1 });
-
-    if (!orders || orders.length === 0) {
-      return sendErrorResponse(res, 404, "No history orders found for this user");
-    }
-
-    // Format response with delivery address
-    const formattedOrders = orders.map((order) => {
-      const user = order.userId;
-      const deliveryAddress = user?.billingaddress?.find(
-        (addr) => addr._id.toString() === order.deliveryAddress.toString()
-      );
-
-      return {
-        _id: order._id,
-        orderId: order.orderId,
-        products: order.products,
-        billingAmount: order.billingAmount,
-        discountAmount: order.discountAmount,
-        totalAmount: order.totalAmount,
-        couponCode: order.couponCode,
-        isCouponApplied: order.isCouponApplied,
-        orderStatus: order.orderStatus, // will be anything except Pending
-        deliveryExpected: order.deliveryExpected,
-        createdAt: order.createdAt,
-        orderInstruction: order.orderInstruction,
-        payment: order.payment,
-        deliveryAddress: deliveryAddress || null,
-      };
-    });
-
-    return sendSuccessResponse(res, "Order history fetched successfully", {
-      orders: formattedOrders,
-    });
-
-  } catch (error) {
-    console.error("Error fetching order history:", error);
-    return sendErrorResponse(res, 500, "Error fetching order history", error.message);
-  }
 };
 
 
@@ -519,20 +519,37 @@ export const getShippingEstimates = async (req, res) => {
     try {
         const { postcode } = req.body;
 
-        if (!postcode || typeof postcode !== 'string' || !/^\d{4}$/.test(postcode.trim())) {
+        // Validate postcode
+        if (!postcode || typeof postcode !== "string" || !/^\d{4}$/.test(postcode.trim())) {
             return sendBadRequestResponse(res, "Please provide a valid 4-digit 'postcode' in the request body.");
         }
 
-        const API_KEY = '92944ac9-842b-46e1-b527-766ddaa48d20';
+        const cleanedPostcode = postcode.trim();
+        const API_KEY = "92944ac9-842b-46e1-b527-766ddaa48d20";
 
-        const fromPostcode = '2000';
-        const toPostcode = postcode.trim();
+        const fromPostcode = "2000";
+        const toPostcode = cleanedPostcode;
         const length = 22;
         const width = 16;
         const height = 7.7;
         const weight = 1.5;
-        const serviceCode = 'AUS_PARCEL_REGULAR';
+        const serviceCode = "AUS_PARCEL_REGULAR";
 
+        // STEP 1: Verify postcode
+        const lookupUrl = `https://australiansuburbs.au/api/lookup_postcode?postcode=${cleanedPostcode}`;
+        const apiRES = await axios.get(lookupUrl);
+
+        if (!apiRES?.data) {
+            return sendNotFoundResponse(res, "No response received from postcode lookup service.");
+        }
+
+        const data = apiRES.data;
+
+        if (!(data.postcode && Array.isArray(data.suburbs))) {
+            return sendNotFoundResponse(res, "This postcode does not exist in Australia.");
+        }
+
+        // STEP 2: Fetch shipping estimate
         const queryParams = new URLSearchParams({
             from_postcode: fromPostcode,
             to_postcode: toPostcode,
@@ -540,26 +557,32 @@ export const getShippingEstimates = async (req, res) => {
             width: width.toString(),
             height: height.toString(),
             weight: weight.toString(),
-            service_code: serviceCode
+            service_code: serviceCode,
         }).toString();
 
-        const url = `https://digitalapi.auspost.com.au/postage/parcel/domestic/calculate.json?${queryParams}`;
+        const ausPostUrl = `https://digitalapi.auspost.com.au/postage/parcel/domestic/calculate.json?${queryParams}`;
 
-        const response = await axios.get(url, {
-            headers: {
-                'AUTH-KEY': API_KEY
-            }
+        const response = await axios.get(ausPostUrl, {
+            headers: { "AUTH-KEY": API_KEY },
         });
 
-        if (response.data && response.data.postage_result) {
-            return sendSuccessResponse(res, "Shipping estimate retrieved successfully.", response.data.postage_result);
+        if (response?.data?.postage_result) {
+            return sendSuccessResponse(res, "Shipping estimate retrieved successfully.", {
+                postcode: data.postcode,
+                suburbs: data.suburbs,
+                state: data.state,
+                estimate: response.data.postage_result,
+            });
         } else {
             return sendErrorResponse(res, 502, "Unexpected response from Australia Post API", response.data);
         }
-
     } catch (error) {
         console.error("Shipping Estimate Error:", error.message);
-        return sendErrorResponse(res, 500, "Error retrieving shipping estimates", error);
+        return sendErrorResponse(res, 500, "Error retrieving shipping estimates", {
+            message: error.message,
+            stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+        });
     }
 };
+
 

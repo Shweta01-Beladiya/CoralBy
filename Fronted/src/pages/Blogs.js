@@ -273,6 +273,8 @@ const BlogPage = () => {
     const handleCardClick = () => {
       navigate(`/blog/${post.id}`); // Navigate to blog details page
       // alert(post.id,"Card Clicked");
+      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+
     };
 
     const handleReadMoreClick = (e) => {

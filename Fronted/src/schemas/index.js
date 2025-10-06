@@ -58,11 +58,5 @@ export const careerJobSchema = Yup.object().shape({
     .matches(/^[0-9+\-\s()]+$/, "Please enter a valid mobile number")
     .required("Mobile number is required"),
   currentCompany: Yup.string().min(2, "Company name must be at least 2 characters").required("Current company is required"),
-  currentCTC: Yup.number()
-    .min(0, "Current CTC must be a positive number")
-    .required("Current CTC is required"),
-  expectedCTC: Yup.number()
-    .min(0, "Expected CTC must be a positive number")
-    .required("Expected CTC is required"),
   resume: Yup.mixed().required("Resume is required"),
 });

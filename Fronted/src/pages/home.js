@@ -87,6 +87,7 @@ import '../App.css';
 import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMainCategory } from '../Store/Slices/categorySlice';
+import { simplefetchOffers } from '../Store/Slices/offerSlice';
 
 
 
@@ -205,78 +206,96 @@ export default function Home() {
 
 	// *************** 4. Save More, Shop More ***************
 	// Card Images
-	const CardImages = [
-		{
-			img: Buye1Get1,
-			heading: "BUY 1 GET 1",
-			desc1: "Trendy Men’s Clothing",
-			desc2: "Shirts, Jackets and Everyday",
-			desc3: "Fashion Essentials",
-		},
-		{
-			img: Flatoff1,
-			heading: "FLAT 25% OFF",
-			desc1: "Cookware & Kitchen",
-			desc2: "Premium Kitchenware for",
-			desc3: "Effortless Healthy Meals",
-		},
-		{
-			img: Upto0ff1,
-			heading: "UP TO 50% OFF",
-			desc1: "Outdoor & Hiking Gear",
-			desc2: "Adventure-Ready Outdoor",
-			desc3: "Gear for Every Journey",
-		},
-		{
-			img: Upto0ff2,
-			heading: "UP TO 70% OFF",
-			desc1: "Shoes & Sneakers",
-			desc2: "Comfortable Shoes Designed",
-			desc3: "for Daily Australian Life",
-		},
-		{
-			img: Flatoff2,
-			heading: "FLAT 40% OFF",
-			desc1: "Furniture & Home Decor",
-			desc2: "Sofas, Tables and Décor for",
-			desc3: "Complete Home Makeover",
-		},
-		{
-			img: Buye1Get1,
-			heading: "BUY 1 GET 1",
-			desc1: "Trendy Men’s Clothing",
-			desc2: "Shirts, Jackets and Everyday",
-			desc3: "Fashion Essentials",
-		},
-		{
-			img: Flatoff1,
-			heading: "FLAT 25% OFF",
-			desc1: "Cookware & Kitchen",
-			desc2: "Premium Kitchenware for",
-			desc3: "Effortless Healthy Meals",
-		},
-		{
-			img: Upto0ff1,
-			heading: "UP TO 50% OFF",
-			desc1: "Outdoor & Hiking Gear",
-			desc2: "Adventure-Ready Outdoor",
-			desc3: "Gear for Every Journey",
-		},
-		{
-			img: Upto0ff2,
-			heading: "UP TO 70% OFF",
-			desc1: "Shoes & Sneakers",
-			desc2: "Comfortable Shoes Designed",
-			desc3: "for Daily Australian Life",
-		},
-		{
-			img: Flatoff2,
-			heading: "FLAT 40% OFF",
-			desc1: "Furniture & Home Decor",
-			desc2: "Sofas, Tables and Décor for",
-			desc3: "Complete Home Makeover",
-		},
-	]
+	// const CardImages = [
+	// 	{
+	// 		img: Buye1Get1,
+	// 		heading: "BUY 1 GET 1",
+	// 		desc1: "Trendy Men’s Clothing",
+	// 		desc2: "Shirts, Jackets and Everyday",
+	// 		desc3: "Fashion Essentials",
+	// 	},
+	// 	{
+	// 		img: Flatoff1,
+	// 		heading: "FLAT 25% OFF",
+	// 		desc1: "Cookware & Kitchen",
+	// 		desc2: "Premium Kitchenware for",
+	// 		desc3: "Effortless Healthy Meals",
+	// 	},
+	// 	{
+	// 		img: Upto0ff1,
+	// 		heading: "UP TO 50% OFF",
+	// 		desc1: "Outdoor & Hiking Gear",
+	// 		desc2: "Adventure-Ready Outdoor",
+	// 		desc3: "Gear for Every Journey",
+	// 	},
+	// 	{
+	// 		img: Upto0ff2,
+	// 		heading: "UP TO 70% OFF",
+	// 		desc1: "Shoes & Sneakers",
+	// 		desc2: "Comfortable Shoes Designed",
+	// 		desc3: "for Daily Australian Life",
+	// 	},
+	// 	{
+	// 		img: Flatoff2,
+	// 		heading: "FLAT 40% OFF",
+	// 		desc1: "Furniture & Home Decor",
+	// 		desc2: "Sofas, Tables and Décor for",
+	// 		desc3: "Complete Home Makeover",
+	// 	},
+	// 	{
+	// 		img: Buye1Get1,
+	// 		heading: "BUY 1 GET 1",
+	// 		desc1: "Trendy Men’s Clothing",
+	// 		desc2: "Shirts, Jackets and Everyday",
+	// 		desc3: "Fashion Essentials",
+	// 	},
+	// 	{
+	// 		img: Flatoff1,
+	// 		heading: "FLAT 25% OFF",
+	// 		desc1: "Cookware & Kitchen",
+	// 		desc2: "Premium Kitchenware for",
+	// 		desc3: "Effortless Healthy Meals",
+	// 	},
+	// 	{
+	// 		img: Upto0ff1,
+	// 		heading: "UP TO 50% OFF",
+	// 		desc1: "Outdoor & Hiking Gear",
+	// 		desc2: "Adventure-Ready Outdoor",
+	// 		desc3: "Gear for Every Journey",
+	// 	},
+	// 	{
+	// 		img: Upto0ff2,
+	// 		heading: "UP TO 70% OFF",
+	// 		desc1: "Shoes & Sneakers",
+	// 		desc2: "Comfortable Shoes Designed",
+	// 		desc3: "for Daily Australian Life",
+	// 	},
+	// 	{
+	// 		img: Flatoff2,
+	// 		heading: "FLAT 40% OFF",
+	// 		desc1: "Furniture & Home Decor",
+	// 		desc2: "Sofas, Tables and Décor for",
+	// 		desc3: "Complete Home Makeover",
+	// 	},
+	// ]
+
+	useEffect(() => {
+		dispatch(simplefetchOffers());
+	}, [dispatch]);
+
+	const { simpleoffer } = useSelector((state) => state.offer);
+	console.log("simpleoffer", simpleoffer);
+
+	const normalizedOffers = Array.isArray(simpleoffer?.data)
+		? simpleoffer.data.map((offer) => ({
+			id: offer._id,
+			img: offer.offerImage,
+			heading: offer.offerTitle,
+			desc1: offer.offerMidText,
+			desc2: offer.offerDesc,
+		}))
+		: [];
+
 
 	// Carousel State and Handlers
 	const [startIndex, setStartIndex] = useState(0);
@@ -300,7 +319,7 @@ export default function Home() {
 	// Next button handler
 	const handleNext = () => {
 		setStartIndex((prev) =>
-			prev + cardsPerPage >= CardImages.length ? 0 : prev + 1
+			prev + cardsPerPage >= normalizedOffers.length ? 0 : prev + 1
 		);
 		gridRef.current?.scrollTo({
 			left: gridRef.current.scrollLeft + 300, // adjust scroll step
@@ -311,7 +330,7 @@ export default function Home() {
 	// Previous button handler
 	const handlePrev = () => {
 		setStartIndex((prev) =>
-			prev === 0 ? CardImages.length - cardsPerPage : prev - 1
+			prev === 0 ? normalizedOffers.length - cardsPerPage : prev - 1
 		);
 		gridRef.current?.scrollTo({
 			left: gridRef.current.scrollLeft - 300,
@@ -320,7 +339,7 @@ export default function Home() {
 	};
 
 	// Determine visible cards based on startIndex and cardsPerPage
-	const visibleCards = CardImages.slice(
+	const visibleCards = normalizedOffers.slice(
 		startIndex,
 		startIndex + cardsPerPage
 	);
@@ -438,8 +457,8 @@ export default function Home() {
 	const mainCategory = useSelector((state) => state.category.mainCategory.data)
 
 	const DealsCardImages = mainCategory?.map((cat) => ({
-		img: cat.mainCategoryImage,  
-		label: cat.mainCategoryName, 
+		img: cat.mainCategoryImage,
+		label: cat.mainCategoryName,
 	}));
 
 	// Card Images
@@ -729,17 +748,18 @@ export default function Home() {
 									key={index}
 									className="flex flex-col text-center items-center mt-6"
 								>
-									<img
-										src={card.img}
-										alt={card.heading}
-										className="w-[70%] md:w-full h-auto object-cover mb-4"
-									/>
+									<div className='w-full h-full'>
+										<img
+											src={card.img}
+											alt={card.heading}
+											className="w-[70%] md:w-[224px] h-[224px] object-cover mb-4 rounded-lg"
+										/>
+									</div>
 									<h1 className="text-2xl font-bold text-[#F97316]">
 										{card.heading}
 									</h1>
 									<p className="text-lg font-bold text-[#111827]">{card.desc1}</p>
 									<p className="text-[15px] text-[#6B7280]">{card.desc2}</p>
-									<p className="text-[15px] text-[#6B7280]">{card.desc3}</p>
 								</div>
 							))}
 						</div>
@@ -944,8 +964,6 @@ export default function Home() {
 							</div>
 
 						</div>
-
-
 
 						{/* Card */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6 mb-4">
