@@ -21,17 +21,22 @@ import { IoMdCloudUpload } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
-import { getAuthData } from '../Store/Slices/authProfileSlice';
+import { addBillingAddress, addNewAddress, getAuthData, updateProfile } from '../Store/Slices/authProfileSlice';
 import { useDispatch, useSelector } from 'react-redux';
-
+import { PersonalInformationSchema } from '../schemas';
+import { addressSchema } from '../schemas';
+import { useFormik } from 'formik';
 
 export default function Profile() {
 
     const [activeTab, setActiveTab] = useState("PersonalInformation");
     const [openAddress, setOpenAddress] = useState(false)
+    const [openEditAddress, setOpenEditAddress] = useState(false)
     const [openReview, setOpenReview] = useState(false)
     const [activeOrdersTab, setActiveOrdersTab] = useState("CurrentOrders")
     const [reviewImages, setReviewImages] = useState([]);
+    const [addHeader, setAddHedaer] = useState('')
+    const [openWeekend, setOpenWeekend] = useState(false);
     const { tab } = useParams();
     const navigate = useNavigate();
     const dispatch = useDispatch()
@@ -71,16 +76,110 @@ export default function Profile() {
     };
 
 
-    const authData = useSelector( (state) => state.authProfie.userData)
-    console.log("Auth Data From Profile ::" , authData);
-    
+    const authData = useSelector((state) => state.authProfie.userData)
+    // console.log("Auth Data From Profile ::", authData);
+
     const token = localStorage.getItem('token');
 
-    useEffect(()=>{
-        if(token){
+    useEffect(() => {
+        if (token) {
             dispatch(getAuthData())
         }
-    },[token])
+    }, [token, dispatch])
+
+
+    // Perosnal information form handle
+    const personalData = {
+        firstName: authData.firstName || "",
+        lastName: authData.lastName || "",
+        MobileNo: authData.mobileNo || ""
+    }
+
+    const perInfoFormik = useFormik({
+        initialValues: personalData,
+        enableReinitialize: true,
+        validationSchema: PersonalInformationSchema,
+        onSubmit: async (values) => {
+
+            // alert("Update Profile Successfully")
+            let sendUpdateData = { firstName: values.firstName, lastName: values.lastName, mobileNo: values.MobileNo }
+            // console.log("Update Data ::" , sendUpdateData)
+
+            await dispatch(updateProfile(sendUpdateData))
+
+            // Fetch Data
+            await dispatch(getAuthData());
+
+        },
+    });
+
+
+    // New + Billing  Address Form handle 
+    const initialAddressData = {
+        firstName: "",
+        lastName: "",
+        MobileNo: "",
+        zipCode: "",
+        address: "",
+        city: "",
+        state: "",
+        addressType: "home", 
+        openSat: false,
+        openSun: false,
+        defaultAddress: false,
+    };
+
+
+    const addressFormik = useFormik({
+        initialValues: initialAddressData,
+        enableReinitialize: true,
+        validationSchema: addressSchema,
+        onSubmit: async (values, actions) => {
+
+
+            const sendAddNewData = {
+                firstName: values.firstName,
+                lastName: values.lastName,
+                phone: values.MobileNo,
+                zipcode: values.zipCode,
+                address: values.address,
+                city: values.city,
+                state: values.state,
+                saveAs: values.addressType,
+                ...(values.addressType === "office" && {
+                    officeOpenOnSaturday: values.openSat,
+                    officeOpenOnSunday: values.openSun,
+                }),
+            }
+
+
+            // Add New Address
+            if (addHeader === "New") {
+
+                // alert("Add New Address Saved Successfully");
+
+                await dispatch(addNewAddress(sendAddNewData))
+                await dispatch(getAuthData())
+
+                setOpenAddress(false)
+                actions.resetForm();
+            }
+
+            // Add Billing Address
+            if (addHeader === "Billing") {
+
+                // alert("Add Billing address Saved Successfully");
+
+                await dispatch(addBillingAddress(sendAddNewData))
+                await  dispatch(getAuthData())
+
+                setOpenAddress(false)
+                actions.resetForm();
+            }
+
+
+        },
+    });
 
 
 
@@ -164,76 +263,101 @@ export default function Profile() {
                             {/* Personal Information */}
                             {activeTab === "PersonalInformation" && (
 
-                                <div className="p-5 bg-[var(--profile-bg)] rounded-md ">
 
-                                    <div className="flex flex-col md:flex-row w-full gap-4 mb-4">
+                                <form action="" onSubmit={perInfoFormik.handleSubmit}>
 
-                                        {/* First Name */}
-                                        <div className="flex-1">
-                                            <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">
-                                                First Name <span className="text-[var(--text-orange)]">*</span>
-                                            </p>
-                                            <input
-                                                type="text"
-                                                placeholder="Ex. John"
-                                                value={authData.firstName}
-                                                className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
-                                            />
+                                    <div className="p-5 bg-[var(--profile-bg)] rounded-md ">
+
+                                        <div className="flex flex-col md:flex-row w-full gap-4 mb-4">
+
+                                            {/* First Name */}
+                                            <div className="flex-1">
+                                                <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">
+                                                    First Name <span className="text-[var(--text-orange)]">*</span>
+                                                </p>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ex. John"
+                                                    name='firstName'
+                                                    // value={authData.firstName}
+                                                    value={perInfoFormik.values.firstName}
+                                                    onChange={perInfoFormik.handleChange}
+                                                    onBlur={perInfoFormik.handleBlur}
+                                                    className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                />
+                                                {perInfoFormik.errors.firstName && perInfoFormik.touched.firstName ? (<p className='mt-2 text-red-600 text-xs sm:text-sm ms:text-base'> {perInfoFormik.errors.firstName} </p>) : null}
+
+
+                                            </div>
+
+                                            {/* Last Name */}
+                                            <div className="flex-1">
+                                                <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">
+                                                    Last Name <span className="text-[var(--text-orange)]">*</span>
+                                                </p>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ex. Fernandez"
+                                                    name='lastName'
+                                                    // value={authData.lastName}
+                                                    value={perInfoFormik.values.lastName}
+                                                    onChange={perInfoFormik.handleChange}
+                                                    onBlur={perInfoFormik.handleBlur}
+                                                    className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                />
+                                                {perInfoFormik.errors.lastName && perInfoFormik.touched.lastName ? (<p className='mt-2 text-red-600 text-xs sm:text-sm ms:text-base'> {perInfoFormik.errors.lastName} </p>) : null}
+
+                                            </div>
+
                                         </div>
 
-                                        {/* Last Name */}
-                                        <div className="flex-1">
-                                            <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">
-                                                Last Name <span className="text-[var(--text-orange)]">*</span>
-                                            </p>
-                                            <input
-                                                type="text"
-                                                placeholder="Ex. Fernandez"
-                                                value={authData.lastName}
-                                                className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
-                                            />
+
+                                        <div className="flex flex-col md:flex-row w-full gap-4 mb-4">
+
+                                            {/* Email */}
+                                            <div className="flex-1">
+                                                <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">
+                                                    Email <span className="text-[var(--text-orange)]">*</span>
+                                                </p>
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ex. Jhon89@example.com"
+                                                    name='Email'
+                                                    value={authData.email}
+                                                    readOnly
+                                                    className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full text-[var(--profile-darkgray-text)] placeholder:text-[var(--profile-darkgray-text)]"
+                                                />
+                                            </div>
+
+                                            {/* Mobile Number */}
+                                            <div className="flex-1">
+                                                <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">
+                                                    Mobile Number <span className="text-[var(--text-orange)]">*</span>
+                                                </p>
+                                                <input
+                                                    type="text"
+                                                    placeholder="+61 999 222 444"
+                                                    name='MobileNo'
+                                                    value={perInfoFormik.values.MobileNo}
+                                                    onChange={perInfoFormik.handleChange}
+                                                    onBlur={perInfoFormik.handleBlur}
+                                                    className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                />
+                                                {perInfoFormik.errors.MobileNo && perInfoFormik.touched.MobileNo ? (<p className='mt-2 text-red-600 text-xs sm:text-sm ms:text-base'> {perInfoFormik.errors.MobileNo} </p>) : null}
+
+                                            </div>
+
                                         </div>
+
+                                        {/* Button - Update - Cancel */}
+                                        <div className='text-base font-semibold flex gap-4 text-[var(--profile-darkgray-text)] '>
+                                            <button type='submit' className="bg-[#E5E7EB] px-5 py-2 rounded-md sm:w-fit w-full " >Update</button>
+                                            <button type='button' onClick={() => perInfoFormik.resetForm()} className='border border-[var(--profile-darkgray-text)] px-5 py-2 rounded-md sm:w-fit w-full'>Cancel</button>
+                                        </div>
+
 
                                     </div>
-
-                                    <div className="flex flex-col md:flex-row w-full gap-4 mb-4">
-
-                                        {/* Email */}
-                                        <div className="flex-1">
-                                            <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">
-                                                Email <span className="text-[var(--text-orange)]">*</span>
-                                            </p>
-                                            <input
-                                                type="text"
-                                                placeholder="Ex. Jhon89@example.com"
-                                                value={authData.email}
-                                                className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
-                                            />
-                                        </div>
-
-                                        {/* Mobile Number */}
-                                        <div className="flex-1">
-                                            <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">
-                                                Mobile Number <span className="text-[var(--text-orange)]">*</span>
-                                            </p>
-                                            <input
-                                                type="text"
-                                                placeholder="+61 999 222 444"
-                                                className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
-                                            />
-                                        </div>
-
-                                    </div>
-
-                                    {/* Button - Update - Cancel */}
-                                    <div className='text-base font-semibold flex gap-4 text-[var(--profile-darkgray-text)] '>
-                                        <button className='bg-[#E5E7EB] px-5 py-2 rounded-md sm:w-fit w-full'>Update</button>
-                                        <button className='border border-[var(--profile-darkgray-text)] px-5 py-2 rounded-md sm:w-fit w-full'>Cancel</button>
-                                    </div>
-
-
-
-                                </div>
+                                </form>
 
                             )}
 
@@ -245,44 +369,48 @@ export default function Profile() {
 
                                     {/* Add New Address */}
                                     <div className='mb-5 bg-[var(--profile-bg)] rounded-md p-5'>
-                                        <h3 onClick={() => setOpenAddress(true)} command="show-modal" commandfor="dialog" className='text-[var(--profile-dark-text)] bg-[var(--bg-white)] p-3 rounded-md text-lg font-semibold flex items-center gap-2 cursor-pointer'> <span> <FaPlus className='text-[var(--text-orange)]' /> </span> Add New Address </h3>
+                                        <h3 onClick={() => { setOpenAddress(true); setAddHedaer('New') }} command="show-modal" commandfor="dialog" className='text-[var(--profile-dark-text)] bg-[var(--bg-white)] p-3 rounded-md text-lg font-semibold flex items-center gap-2 cursor-pointer'> <span> <FaPlus className='text-[var(--text-orange)]' /> </span> Add New Address </h3>
 
                                         {/* Exist Address */}
                                         <div className='mt-5 space-y-5'>
 
-                                            {/* Add:1 */}
-                                            <div className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
+                                            {authData.address && authData.address.map((add) => (
 
-                                                <div>
-                                                    <input
-                                                        type="radio"
-                                                        name="address"
-                                                        className=" mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
-                                                    />
-                                                </div>
+                                                <div key={add._id} className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
 
-                                                <div className="flex-1">
-                                                    <h4 className="text-[var(--profile-dark-text)] sm:text-lg text-base font-semibold mb-2">Emily Thompson</h4>
-                                                    <div className='text-[var(--profile-darkgray-text)] font-medium te'>
-                                                        <p>24 Victoria Street, Sydney,</p>
-                                                        <p>NSW 2000, Australia</p>
-                                                    </div>
-                                                    <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> +61 412 345 678 </span></p>
-                                                    <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
-                                                        <button className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Remove</button>
-                                                        <button onClick={() => setOpenAddress(true)} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
+                                                    <div>
+                                                        <input
+                                                            type="radio"
+                                                            name="address"
+                                                            className=" mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
+                                                        />
                                                     </div>
 
+                                                    <div className="flex-1">
+                                                        <h4 className="text-[var(--profile-dark-text)] sm:text-lg text-base font-semibold mb-2">{add.firstName} {add.lastName}</h4>
+                                                        <div className='text-[var(--profile-darkgray-text)] font-medium te'>
+                                                            <p>{add.address},</p>
+                                                            <p>{add.city} {add.zipcode}, {add.state}</p>
+                                                        </div>
+                                                        <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> {add.phone} </span></p>
+                                                        <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
+                                                            <button className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Remove</button>
+                                                            <button onClick={() => { setOpenEditAddress(true); setAddHedaer('New') }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div className="text-[var(--text-red)] font-medium text-base w-auto">
+                                                        <h6>{add.saveAs}</h6>
+                                                    </div>
+
                                                 </div>
+                                            ))}
 
-                                                <div className="text-[var(--text-red)] font-medium text-base w-auto">
-                                                    <h6>Office</h6>
-                                                </div>
 
-                                            </div>
 
-                                            {/* Add: 2 */}
-                                            <div className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
+                                            {/* Add : 2 */}
+                                            {/* <div className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
 
                                                 <div>
                                                     <input
@@ -302,7 +430,7 @@ export default function Profile() {
                                                     <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> +61 999 900 005 </span></p>
                                                     <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
                                                         <button className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Remove</button>
-                                                        <button onClick={() => setOpenAddress(true)} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
+                                                        <button onClick={() => { setOpenEditAddress(true); setAddHedaer('New') }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
                                                     </div>
 
                                                 </div>
@@ -311,7 +439,7 @@ export default function Profile() {
                                                     <h6>Home</h6>
                                                 </div>
 
-                                            </div>
+                                            </div> */}
 
 
                                         </div>
@@ -320,13 +448,47 @@ export default function Profile() {
 
                                     {/* Add Billing Address */}
                                     <div className='bg-[var(--profile-bg)] rounded-md p-5'>
-                                        <h3 onClick={() => setOpenAddress(true)} className='text-[var(--profile-dark-text)] bg-[var(--bg-white)] p-3 rounded-md text-lg font-semibold flex items-center gap-2 cursor-pointer'> <span> <FaPlus className='text-[var(--text-orange)]' /> </span> Add Billing Address </h3>
+                                        <h3 onClick={() => { setOpenAddress(true); setAddHedaer('Billing') }} className='text-[var(--profile-dark-text)] bg-[var(--bg-white)] p-3 rounded-md text-lg font-semibold flex items-center gap-2 cursor-pointer'> <span> <FaPlus className='text-[var(--text-orange)]' /> </span> Add Billing Address </h3>
 
                                         {/* Exist Billing Address */}
                                         <div className='mt-5 space-y-5'>
 
+                                            {authData.billingaddress && authData.billingaddress.map((add) => (
+
+                                                <div className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
+
+                                                    <div>
+                                                        <input
+                                                            type="radio"
+                                                            name="address"
+                                                            className=" mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
+                                                        />
+                                                    </div>
+
+                                                    <div className="flex-1">
+                                                        <h4 className="text-[var(--profile-dark-text)] sm:text-lg text-base font-semibold mb-2">{add.firstName} {add.lastName}</h4>
+                                                        <div className='text-[var(--profile-darkgray-text)] font-medium te'>
+                                                            <p>{add.address}, {add.city}</p>
+                                                            <p>{add.zipcode}, {add.state}</p>
+                                                        </div>
+                                                        <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> {add.phone} </span></p>
+                                                        <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
+                                                            <button className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Remove</button>
+                                                            <button onClick={() => { setOpenEditAddress(true); setAddHedaer('Billing') }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
+                                                        </div>
+
+                                                    </div>
+
+                                                    <div className="text-[var(--text-red)] font-medium text-base w-auto">
+                                                        <h6>{add.saveAs}</h6>
+                                                    </div>
+
+                                                </div>
+                                            ))}
+
+
                                             {/* Add:1 */}
-                                            <div className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
+                                            {/* <div className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
 
                                                 <div>
                                                     <input
@@ -345,7 +507,7 @@ export default function Profile() {
                                                     <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> +61 418 654 321 </span></p>
                                                     <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
                                                         <button className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Remove</button>
-                                                        <button onClick={() => setOpenAddress(true)} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
+                                                        <button onClick={() => { setOpenEditAddress(true); setAddHedaer('Billing') }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
                                                     </div>
 
                                                 </div>
@@ -354,15 +516,23 @@ export default function Profile() {
                                                     <h6>Office</h6>
                                                 </div>
 
-                                            </div>
+                                            </div> */}
 
 
                                         </div>
 
+
+
                                     </div>
 
-                                    {/* ***** Modal - Address ******* */}
-                                    <Dialog open={openAddress} onClose={setOpenAddress} className="relative z-[999]">
+
+
+
+
+
+
+                                    {/* ***** Modal - Add Address ******* */}
+                                    <Dialog open={openAddress} onClose={() => { setOpenAddress(false); addressFormik.resetForm() }} className="relative z-[999]">
                                         {/* Backdrop */}
                                         <DialogBackdrop
                                             transition
@@ -378,9 +548,253 @@ export default function Profile() {
                                                 {/* Header */}
                                                 <div className="flex justify-between items-center py-3 shrink-0">
                                                     <DialogTitle className="text-lg font-semibold text-[var(--profile-dark-text,#111)]">
-                                                        Add New & Billing Address
+                                                        Add {addHeader} Address
                                                     </DialogTitle>
-                                                    <IoMdClose onClick={() => setOpenAddress(false)} className="text-[24px] text-[var(--profile-dark-text)] cursor-pointer bg-[var(--profile-gray-text)] p-1 rounded-full" />
+                                                    <IoMdClose onClick={() => { setOpenAddress(false); addressFormik.resetForm() }} className="text-[24px] text-[var(--profile-dark-text)] cursor-pointer bg-[var(--profile-gray-text)] p-1 rounded-full" />
+                                                </div>
+
+                                                <div className="border-b border-[var(--profile-border,#ddd)]"></div>
+
+
+
+                                                <form onSubmit={addressFormik.handleSubmit}>
+                                                    <div className="flex-1 overflow-y-auto py-5 px-1 space-y-4 custoom-scrllbar-modal h-[500px]">
+
+                                                        {/* First + Last Name */}
+                                                        <div className="flex flex-col md:flex-row gap-4">
+                                                            {/* First Name */}
+                                                            <div className="flex-1">
+                                                                <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">First Name</p>
+                                                                <input
+                                                                    type="text"
+                                                                    name="firstName"
+                                                                    placeholder="Enter Your First Name"
+                                                                    value={addressFormik.values.firstName}
+                                                                    onChange={addressFormik.handleChange}
+                                                                    onBlur={addressFormik.handleBlur}
+                                                                    className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                                />
+                                                                {addressFormik.errors.firstName && addressFormik.touched.firstName && (
+                                                                    <p className="text-red-600 text-sm mt-2 ms-1">{addressFormik.errors.firstName}</p>
+                                                                )}
+                                                            </div>
+
+                                                            {/* Last Name */}
+                                                            <div className="flex-1">
+                                                                <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">Last Name</p>
+                                                                <input
+                                                                    type="text"
+                                                                    name="lastName"
+                                                                    placeholder="Enter Your Last Name"
+                                                                    value={addressFormik.values.lastName}
+                                                                    onChange={addressFormik.handleChange}
+                                                                    onBlur={addressFormik.handleBlur}
+                                                                    className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                                />
+                                                                {addressFormik.errors.lastName && addressFormik.touched.lastName && (
+                                                                    <p className="text-red-600 text-sm mt-2 ms-1">{addressFormik.errors.lastName}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Mobile Number */}
+                                                        <div>
+                                                            <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">Mobile Number</p>
+                                                            <input
+                                                                type="text"
+                                                                name="MobileNo"
+                                                                placeholder="Enter Your Number"
+                                                                value={addressFormik.values.MobileNo}
+                                                                onChange={addressFormik.handleChange}
+                                                                onBlur={addressFormik.handleBlur}
+                                                                className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                            />
+                                                            {addressFormik.errors.MobileNo && addressFormik.touched.MobileNo && (
+                                                                <p className="text-red-600 text-sm mt-2 ms-1">{addressFormik.errors.MobileNo}</p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* ZIP Code */}
+                                                        <div>
+                                                            <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">ZIP Code</p>
+                                                            <input
+                                                                type="text"
+                                                                name="zipCode"
+                                                                placeholder="Enter Your ZIP Code"
+                                                                value={addressFormik.values.zipCode}
+                                                                onChange={addressFormik.handleChange}
+                                                                onBlur={addressFormik.handleBlur}
+                                                                className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                            />
+                                                            {addressFormik.errors.zipCode && addressFormik.touched.zipCode && (
+                                                                <p className="text-red-600 text-sm mt-2 ms-1">{addressFormik.errors.zipCode}</p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Address */}
+                                                        <div>
+                                                            <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">Address</p>
+                                                            <input
+                                                                type="text"
+                                                                name="address"
+                                                                placeholder="(locality, building, street)"
+                                                                value={addressFormik.values.address}
+                                                                onChange={addressFormik.handleChange}
+                                                                onBlur={addressFormik.handleBlur}
+                                                                className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                            />
+                                                            {addressFormik.errors.address && addressFormik.touched.address && (
+                                                                <p className="text-red-600 text-sm mt-2 ms-1">{addressFormik.errors.address}</p>
+                                                            )}
+                                                        </div>
+
+                                                        {/* City + State */}
+                                                        <div className="flex flex-col md:flex-row gap-4">
+                                                            <div className="flex-1">
+                                                                <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">City</p>
+                                                                <input
+                                                                    type="text"
+                                                                    name="city"
+                                                                    placeholder="City"
+                                                                    value={addressFormik.values.city}
+                                                                    onChange={addressFormik.handleChange}
+                                                                    onBlur={addressFormik.handleBlur}
+                                                                    className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                                />
+                                                                {addressFormik.errors.city && addressFormik.touched.city && (
+                                                                    <p className="text-red-600 text-sm mt-2 ms-1">{addressFormik.errors.city}</p>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1">
+                                                                <p className="text-[var(--profile-light-text)] font-semibold text-base mb-1">State</p>
+                                                                <input
+                                                                    type="text"
+                                                                    name="state"
+                                                                    placeholder="State"
+                                                                    value={addressFormik.values.state}
+                                                                    onChange={addressFormik.handleChange}
+                                                                    onBlur={addressFormik.handleBlur}
+                                                                    className="focus:outline-none border border-[var(--profile-border)] rounded-md p-2 w-full placeholder:text-[var(--profile-darkgray-text)]"
+                                                                />
+                                                                {addressFormik.errors.state && addressFormik.touched.state && (
+                                                                    <p className="text-red-600 text-sm mt-2 ms-1">{addressFormik.errors.state}</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        {/* Address Type */}
+                                                        <h4 className="text-[var(--profile-dark-text)] font-semibold text-lg">Address Type</h4>
+                                                        <div className='flex items-center gap-4'>
+                                                            <div className='flex items-center gap-2' onClick={() => setOpenWeekend(false)}>
+                                                                <input
+                                                                    id='mHome'
+                                                                    type='radio'
+                                                                    name='addressType'
+                                                                    value='Home'
+                                                                    checked={addressFormik.values.addressType === 'Home'}
+                                                                    onChange={addressFormik.handleChange}
+                                                                    className='appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]'
+                                                                />
+                                                                <label htmlFor='mHome'>Home</label>
+                                                            </div>
+
+                                                            <div className='flex items-center gap-2' onClick={() => setOpenWeekend(true)}>
+                                                                <input
+                                                                    id='mOffice'
+                                                                    type='radio'
+                                                                    name='addressType'
+                                                                    value='Office'
+                                                                    checked={addressFormik.values.addressType === 'Office'}
+                                                                    onChange={addressFormik.handleChange}
+                                                                    // onClick={}
+                                                                    className='appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]'
+                                                                />
+                                                                <label htmlFor='mOffice'>Office</label>
+                                                            </div>
+                                                        </div>
+
+                                                        {openWeekend && (
+                                                            <>
+                                                                {/* Weekends */}
+                                                                <p className='text-[var(--profile-light-text)] font-medium text-sm'>If your office open on weekends?</p>
+                                                                <div className='flex flex-col gap-2'>
+                                                                    <div className='flex items-center gap-2'>
+                                                                        <input
+                                                                            id='mOpenSat'
+                                                                            type="checkbox"
+                                                                            name="openSat"
+                                                                            checked={addressFormik.values.openSat}
+                                                                            onChange={addressFormik.handleChange}
+                                                                            className="h-4 w-4 accent-[var(--text-orange)]"
+                                                                        />
+                                                                        <label htmlFor="mOpenSat" className='text-[var(--profile-darkgray-text)] text-sm font-medium'>Open on Saturday</label>
+                                                                    </div>
+                                                                    <div className='flex items-center gap-2'>
+                                                                        <input
+                                                                            id='mOpenSun'
+                                                                            type="checkbox"
+                                                                            name="openSun"
+                                                                            checked={addressFormik.values.openSun}
+                                                                            onChange={addressFormik.handleChange}
+                                                                            className="h-4 w-4 accent-[var(--text-orange)]"
+                                                                        />
+                                                                        <label htmlFor="mOpenSun" className='text-[var(--profile-darkgray-text)] text-sm font-medium'>Open on Sunday</label>
+                                                                    </div>
+                                                                </div>
+                                                            </>
+                                                        )}
+
+
+                                                    </div>
+
+                                                    {/* Footer */}
+                                                    <div className="flex flex-col gap-3 py-5 px-1 shrink-0 border-t border-[var(--profile-border,#ddd)]">
+                                                        <div className='flex items-center gap-2'>
+                                                            <input
+                                                                id='defAdd'
+                                                                type="checkbox"
+                                                                name="defaultAddress"
+                                                                checked={addressFormik.values.defaultAddress}
+                                                                onChange={addressFormik.handleChange}
+                                                                className="h-4 w-4 accent-[var(--text-orange)]"
+                                                            />
+                                                            <label htmlFor="defAdd" className='text-[var(--profile-darkgray-text)] text-sm font-medium'>Set my default address</label>
+                                                        </div>
+
+                                                        <button type='submit' className='bg-[var(--bg-orange)] text-[var(--text-white)] p-2 rounded-md text-lg font-semibold'>Save</button>
+                                                        <button type='button' onClick={() => { setOpenAddress(false); addressFormik.resetForm() }} className='p-2 rounded-md text-lg font-semibold text-[var(--profile-darkgray-text)] border border-[var(--profile-darkgray-text)]'> Cancel </button>
+                                                    </div>
+                                                </form>
+
+
+                                            </DialogPanel>
+                                        </div>
+
+
+                                    </Dialog>
+
+
+
+                                    {/* ***** Modal - Edit Address ******* */}
+                                    <Dialog open={openEditAddress} onClose={setOpenEditAddress} className="relative z-[999]">
+                                        {/* Backdrop */}
+                                        <DialogBackdrop
+                                            transition
+                                            className="fixed inset-0 bg-black/50 transition-opacity duration-300 data-[closed]:opacity-0"
+                                        />
+
+                                        {/* Centered modal */}
+                                        <div className="fixed inset-0 flex items-center justify-center p-4">
+                                            <DialogPanel
+                                                transition
+                                                className="w-full p-4 max-w-md lg:max-w-lg xl:max-w-xl max-h-[90vh] rounded-xl bg-[var(--profile-bg,#fff)] shadow-lg transform transition-all duration-300 ease-out data-[closed]:scale-95 data-[closed]:opacity-0 flex flex-col"
+                                            >
+                                                {/* Header */}
+                                                <div className="flex justify-between items-center py-3 shrink-0">
+                                                    <DialogTitle className="text-lg font-semibold text-[var(--profile-dark-text,#111)]">
+                                                        Edit {addHeader} Address
+                                                    </DialogTitle>
+                                                    <IoMdClose onClick={() => setOpenEditAddress(false)} className="text-[24px] text-[var(--profile-dark-text)] cursor-pointer bg-[var(--profile-gray-text)] p-1 rounded-full" />
                                                 </div>
 
                                                 <div className="border-b border-[var(--profile-border,#ddd)]"></div>
@@ -482,7 +896,7 @@ export default function Profile() {
                                                     </h4>
 
                                                     <div className='flex items-center gap-4'>
-                                                     
+
                                                         <div className='flex items-center gap-2'>
                                                             <input
                                                                 id='mHome'
@@ -496,7 +910,7 @@ export default function Profile() {
                                                             <label htmlFor='mHome'>Home</label>
                                                         </div>
 
-                                                     
+
                                                         <div className='flex items-center gap-2'>
                                                             <input
                                                                 id='mOffice'
@@ -552,7 +966,7 @@ export default function Profile() {
                                                     </div>
 
                                                     <button className='bg-[var(--bg-orange)] text-[var(--text-white)] p-2 rounded-md text-lg font-semibold'>Save</button>
-                                                    <button onClick={() => setOpenAddress(false)} className='p-2 rounded-md text-lg font-semibold text-[var(--profile-darkgray-text)] border border-[var(--profile-darkgray-text)]'> Cancel </button>
+                                                    <button onClick={() => setOpenEditAddress(false)} className='p-2 rounded-md text-lg font-semibold text-[var(--profile-darkgray-text)] border border-[var(--profile-darkgray-text)]'> Cancel </button>
 
                                                 </div>
 

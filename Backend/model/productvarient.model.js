@@ -10,6 +10,14 @@ const productVariantSchema = new mongoose.Schema({
 
     color: { type: String, default: null },
     size: { type: String, default: null },
+    Occasion: { type: String, default: null },
+    Artical_Number: { type: String, unique: true },
+    Outer_material: { type: String, default: null },
+    Model_name: { type: String, default: null },
+    Ideal_for: { type: String, default: null },
+    Type_For_Casual: { type: String, default: null },
+    Euro_Size: { type: String, default: null },
+    Heel_Height: { type: String, default: null },
 
     price: {
         original: { type: Number, required: true },
@@ -18,6 +26,7 @@ const productVariantSchema = new mongoose.Schema({
     },
 
     stock: { type: Number, default: 0 },
+
     weight: { type: String },
 
 }, { timestamps: true });

@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit"
-import axios from "axios";
+import axios, { all } from "axios";
 
 const BaseUrl = "http://localhost:9000";
 
-// All blog category fetch
+// 1. All blog category fetch
 export const fetchBlogAllCategories = createAsyncThunk(
     "blogallcategory/fetchAll",
     async () => {
@@ -15,7 +15,7 @@ export const fetchBlogAllCategories = createAsyncThunk(
     }
 );
 
-// All blog card fetch
+// 2. All blog card fetch
 export const fetchAllBlog = createAsyncThunk(
     "blogall/fetchAll",
     async () => {
@@ -27,7 +27,7 @@ export const fetchAllBlog = createAsyncThunk(
     }
 );
 
-
+// 3. Blog card fetch by id
 export const fetchBlogById = createAsyncThunk(
     "blogall/fetchById",
     async (id) => {
@@ -35,6 +35,18 @@ export const fetchBlogById = createAsyncThunk(
         const response = await axios.get(`${BaseUrl}/api/blog/${id}`);
         console.log("Blog By ID Response:", response.data);
         return response.data.blog;
+
+    }
+);
+
+// 4. Latest blog fetch
+export const fetchLatestBlogs = createAsyncThunk(
+    "blogall/fetchLatest",
+    async () => {
+
+        const response = await axios.get(`${BaseUrl}/api/latest/blog`);
+        console.log("Latest Blog Response:", response.data);
+        return response.data.result;
 
     }
 );
@@ -47,6 +59,7 @@ const blogallcategorySlice = createSlice({
         categories: [],
         allblog: [],
         blogbyid: [],
+        alllatestblog: [],
         error: null,
         success: false,
     },
@@ -100,6 +113,23 @@ const blogallcategorySlice = createSlice({
                 state.success = true;
             })
             .addCase(fetchBlogById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.error.message;
+                state.success = false;
+            })
+
+            // Fetch Latest Blogs
+            .addCase(fetchLatestBlogs.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+                state.success = false;
+            })
+            .addCase(fetchLatestBlogs.fulfilled, (state, action) => {
+                state.loading = false;
+                state.alllatestblog = action.payload || [];
+                state.success = true;
+            })
+            .addCase(fetchLatestBlogs.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.error.message;
                 state.success = false;

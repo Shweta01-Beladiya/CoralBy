@@ -7,7 +7,6 @@ import { uploadFile } from "../middleware/imageupload.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../utils/aws.config.js";
 import mainCategoryModel from "../model/mainCategory.model.js";
-import brandModel from "../model/brand.model.js";
 
 export const createBrand = async (req, res) => {
     try {
@@ -17,10 +16,10 @@ export const createBrand = async (req, res) => {
             return sendBadRequestResponse(res, "Invalid sellerId in token!");
         }
 
-        const { brandName, mainCategoryId } = req.body;
+        const { brandName, brandColor, mainCategoryId } = req.body;
 
-        if (!brandName || !mainCategoryId) {
-            return sendBadRequestResponse(res, "brandName & mainCategoryId are required!");
+        if (!brandName || !mainCategoryId || !brandColor) {
+            return sendBadRequestResponse(res, "brandName & mainCategoryId & brandColor are required!");
         }
 
         if (!mongoose.Types.ObjectId.isValid(mainCategoryId)) {
@@ -35,7 +34,8 @@ export const createBrand = async (req, res) => {
         const existingBrand = await BrandModel.findOne({
             sellerId,
             mainCategoryId,
-            brandName: { $regex: new RegExp(`^${brandName}$`, "i") } // case-insensitive
+            brandName: { $regex: new RegExp(`^${brandName}$`, "i") },
+            brandColor
         });
 
         if (existingBrand) {
@@ -53,6 +53,7 @@ export const createBrand = async (req, res) => {
             sellerId,
             mainCategoryId,
             brandName,
+            brandColor,
             brandImage
         });
 
@@ -123,7 +124,7 @@ export const updateBrand = async (req, res) => {
             return sendNotFoundResponse(res, "Brand not found or unauthorized!");
         }
 
-        const { brandName, mainCategoryId } = req.body;
+        const { brandName,brandColor, mainCategoryId } = req.body;
 
         // === validate mainCategoryId if provided ===
         if (mainCategoryId && !mongoose.Types.ObjectId.isValid(mainCategoryId)) {
@@ -181,6 +182,7 @@ export const updateBrand = async (req, res) => {
             id,
             {
                 brandName: brandName || checkBrand.brandName,
+                brandColor: brandColor || checkBrand.brandColor,
                 mainCategoryId: mainCategoryId || checkBrand.mainCategoryId,
                 brandImage
             },
@@ -272,7 +274,7 @@ export const getBrandByMainCategory = async (req, res) => {
 
         // Fetch brand for this mainCategory
         const brand = await BrandModel.find({ mainCategoryId })
-            .select("brandName brandImage ")
+            .select("brandName brandColor brandImage ")
             .lean();
 
         return sendSuccessResponse(res, `Brand for MainCategory fetched successfully`, {
@@ -284,6 +286,7 @@ export const getBrandByMainCategory = async (req, res) => {
     } catch (error) {
         return sendErrorResponse(res, 500, error.message);
     }
+<<<<<<< HEAD
 };
 
 
@@ -330,3 +333,6 @@ export const brandFilterController = async (req, res) => {
 }
 
 
+=======
+};
+>>>>>>> 800d51281c7ba20753755b556ba6d05cf6e9cbaa

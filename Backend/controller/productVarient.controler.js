@@ -7,32 +7,47 @@ import { uploadFile } from "../middleware/imageupload.js";
 import { DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { s3 } from "../utils/aws.config.js";
 
-// SKU generator
 const generateSKU = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let sku = "";
-    for (let i = 0; i < 8; i++) {
-        sku += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return sku;
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const prefix = letters.charAt(Math.floor(Math.random() * letters.length)) +
+        letters.charAt(Math.floor(Math.random() * letters.length));
+    const number = Math.floor(100000 + Math.random() * 900000); // 6-digit
+    return `${prefix}-${number}`;
 };
 
+// === Artical Number generator (CD5010-401) ===
+const generateArticalNumber = () => {
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const prefix = letters.charAt(Math.floor(Math.random() * letters.length)) +
+        letters.charAt(Math.floor(Math.random() * letters.length));
+    const mainDigits = Math.floor(1000 + Math.random() * 9000); // 4-digit
+    const subDigits = Math.floor(100 + Math.random() * 900);    // 3-digit
+    return `${prefix}${mainDigits}-${subDigits}`;
+};
+
+// === Create Product Variant ===
 export const createProductVariant = async (req, res) => {
     try {
-        const { productId, sku, color, size, price, stock, weight } = req.body;
+        const { productId, sku, Artical_Number, color, size, price, stock, weight } = req.body;
         const sellerId = req.user?._id;
 
-        // Validate seller
         if (!sellerId || !mongoose.Types.ObjectId.isValid(sellerId)) {
             return sendBadRequestResponse(res, "Invalid or missing seller ID. Please login first!");
         }
 
-        // Ensure price object exists
+        if (!mongoose.Types.ObjectId.isValid(productId)) {
+            return sendBadRequestResponse(res, "Invalid product ID!");
+        }
+
+        const product = await Product.findOne({ _id: productId, sellerId });
+        if (!product) {
+            return sendNotFoundResponse(res, "Product not found or unauthorized!");
+        }
+
         if (!price || !price.original) {
             return sendBadRequestResponse(res, "productId, color, size and price.original are required!");
         }
 
-        // Convert price values to numbers (form-data sends strings)
         const originalPrice = Number(price.original);
         const discountedPrice = price.discounted ? Number(price.discounted) : undefined;
 
@@ -43,18 +58,6 @@ export const createProductVariant = async (req, res) => {
             return sendBadRequestResponse(res, "Discounted price cannot be greater than original price.");
         }
 
-        // ObjectId validation
-        if (!mongoose.Types.ObjectId.isValid(productId)) {
-            return sendBadRequestResponse(res, "Invalid product ID!");
-        }
-
-        // Check product existence & ownership
-        const product = await Product.findOne({ _id: productId, sellerId });
-        if (!product) {
-            return sendNotFoundResponse(res, "Product not found or unauthorized!");
-        }
-
-        // Generate SKU if not provided
         let finalSKU = sku;
         if (!finalSKU) {
             let isUnique = false;
@@ -70,13 +73,26 @@ export const createProductVariant = async (req, res) => {
             }
         }
 
-        // Stock validation
+        let finalArticalNumber = Artical_Number;
+        if (!finalArticalNumber) {
+            let isUnique = false;
+            while (!isUnique) {
+                finalArticalNumber = generateArticalNumber();
+                const existingArtical = await ProductVariant.findOne({ Artical_Number: finalArticalNumber });
+                if (!existingArtical) isUnique = true;
+            }
+        } else {
+            const existingArtical = await ProductVariant.findOne({ Artical_Number: finalArticalNumber });
+            if (existingArtical) {
+                return sendBadRequestResponse(res, "Artical Number already exists! Please use a unique one.");
+            }
+        }
+
         const stockNumber = stock ? Number(stock) : 0;
         if (stock && isNaN(stockNumber)) {
             return sendBadRequestResponse(res, "Stock must be a number.");
         }
 
-        // === Upload images to S3 ===
         const images = [];
         const mainFile = req.file || req.files?.mainImage?.[0];
         if (mainFile) {
@@ -90,11 +106,11 @@ export const createProductVariant = async (req, res) => {
             }
         }
 
-        // Create variant
         const newVariant = await ProductVariant.create({
             productId,
             sellerId,
             sku: finalSKU,
+            Artical_Number: finalArticalNumber,
             images,
             color,
             size,
@@ -103,15 +119,7 @@ export const createProductVariant = async (req, res) => {
             weight
         });
 
-        // ✅ NEW CODE: Update product with variantId
-        await Product.findByIdAndUpdate(
-            productId,
-            { 
-                $push: { 
-                    varientId: newVariant._id 
-                } 
-            }
-        );
+        await Product.findByIdAndUpdate(productId, { $push: { varientId: newVariant._id } });
 
         return sendSuccessResponse(res, "✅ Product variant created successfully!", newVariant);
 

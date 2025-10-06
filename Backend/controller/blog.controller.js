@@ -308,7 +308,7 @@ export const getBlogWithCategoryController = async (req, res) => {
 
 export const getLatestBlogController = async (req, res) => {
     try {
-        const limit = parseInt(req.query.limit, 10) || 5;
+        const limit = parseInt(req.query.limit, 10) || 6;
 
         const blogs = await blogModel
             .find({})
