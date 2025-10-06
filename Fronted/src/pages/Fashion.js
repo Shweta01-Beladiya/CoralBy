@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import "../styles/h_style.css";
 import products from "../pages/ProductList";
 import { SingleProduct } from "../component/Single_product_card";
@@ -10,8 +10,13 @@ import { FaAngleDown, FaAngleUp } from "react-icons/fa";
 import Pagination from "../component/Pagination";
 import { Link } from "react-router-dom";
 import QuickView from "../component/QuickView";
+import { useSelector, useDispatch } from "react-redux";
+import { getProduct, getProductVarient } from "../Store/Slices/categorySlice";
 
 const Fashion = () => {
+
+	const dispatch = useDispatch();
+
 	const [showFilter, setShowFilter] = useState(false);
 	const [openSection, setOpenSection] = useState(null);
 	const [expandedSections, setExpandedSections] = useState({});
@@ -27,19 +32,19 @@ const Fashion = () => {
 		Brands: [],
 	});
 	const [focusedSection, setFocusedSection] = useState(null);
-const [quickViewProduct, setQuickViewProduct] = useState(null);
-const [showQuickView, setShowQuickView] = useState(false);
+	const [quickViewProduct, setQuickViewProduct] = useState(null);
+	const [showQuickView, setShowQuickView] = useState(false);
 
-// QuickView handlers
-const openQuickView = (product) => {
-    setQuickViewProduct(product);
-    setShowQuickView(true);
-};
+	// QuickView handlers
+	const openQuickView = (product) => {
+		setQuickViewProduct(product);
+		setShowQuickView(true);
+	};
 
-const closeQuickView = () => {
-    setShowQuickView(false);
-    setQuickViewProduct(null);
-};
+	const closeQuickView = () => {
+		setShowQuickView(false);
+		setQuickViewProduct(null);
+	};
 	const handleSearch = (section, value) =>
 		setSearchTerms({ ...searchTerms, [section]: value });
 
@@ -172,6 +177,17 @@ const closeQuickView = () => {
 		Rating: ["4★ & above", "3★ & above"],
 	};
 
+	useEffect(() => {
+		dispatch(getProduct());
+		dispatch(getProductVarient());
+	}, []);
+
+
+	const product = useSelector((state) => state.category.product.data);
+	const productVarient = useSelector((state) => state.category.productVarient.data);
+	// console.log("productVarient",productVarient);
+	
+
 	// Filtered products based on selected filters
 	const filteredProducts = products.filter((product) => {
 		return Object.keys(selectedFilters).every((section) => {
@@ -191,7 +207,7 @@ const closeQuickView = () => {
 			return selectedItems.includes(productValue);
 		});
 	});
-    
+
 	// State
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 16;
@@ -298,7 +314,7 @@ const closeQuickView = () => {
 						{/* Product grid */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 							{currentProducts.map((product) => (
-<SingleProduct key={product.id} product={product} onQuickView={openQuickView} />							))}
+								<SingleProduct key={product.id} product={product} onQuickView={openQuickView} />))}
 						</div>
 
 						{/* Pagination */}
@@ -462,9 +478,9 @@ const closeQuickView = () => {
 				></div>
 			)}
 			{/* Global QuickView Modal */}
-{showQuickView && quickViewProduct && (
-    <QuickView product={quickViewProduct} onClose={closeQuickView} />
-)}
+			{showQuickView && quickViewProduct && (
+				<QuickView product={quickViewProduct} onClose={closeQuickView} />
+			)}
 		</>
 	);
 };

@@ -24,7 +24,15 @@ export const getInsideSubCategory = createAsyncThunk('category/fetchInsideSubCat
     return response.data.result;
 })
 
+export const getProduct = createAsyncThunk('category/fetchProduct', async () => {
+    const response = await axios.get(`${BaseUrl}/api/getAllProduct`);
+    return response.data.result;
+})
 
+export const getProductVarient = createAsyncThunk('category/fetchProductVariant', async () => {
+    const response = await axios.get(`${BaseUrl}/api/getAllProductVariant`);
+    return response.data.result;
+})
 
 const categorySlice = createSlice({
     name: "category",
@@ -32,7 +40,9 @@ const categorySlice = createSlice({
         mainCategory: { isLoading: false, data: [], isError: false },
         category: { isLoading: false, data: [], isError: false },
         subCategory: { isLoading: false, data: [], isError: false },
-        inSubCategory: { isLoading: false, data: [], isError: false }
+        inSubCategory: { isLoading: false, data: [], isError: false },
+        product: { isLoading: false, data: [], isError: false },
+        productVarient: { isLoading: false, data: [], isError: false }
     },
     reducers: {},
     extraReducers: (builder) => {
@@ -46,7 +56,7 @@ const categorySlice = createSlice({
             .addCase(getMainCategory.fulfilled, (state, action) => {
                 state.mainCategory.isLoading = false;
                 state.mainCategory.data = action.payload;
-        
+
             })
             .addCase(getMainCategory.rejected, (state) => {
                 state.mainCategory.isLoading = false;
@@ -60,7 +70,7 @@ const categorySlice = createSlice({
             .addCase(getCategory.fulfilled, (state, action) => {
                 state.category.isLoading = false;
                 state.category.data = action.payload;
-        
+
             })
             .addCase(getCategory.rejected, (state) => {
                 state.category.isLoading = false;
@@ -74,7 +84,7 @@ const categorySlice = createSlice({
             .addCase(getSubCategory.fulfilled, (state, action) => {
                 state.subCategory.isLoading = false;
                 state.subCategory.data = action.payload;
-        
+
             })
             .addCase(getSubCategory.rejected, (state) => {
                 state.subCategory.isLoading = false;
@@ -88,13 +98,38 @@ const categorySlice = createSlice({
             .addCase(getInsideSubCategory.fulfilled, (state, action) => {
                 state.inSubCategory.isLoading = false;
                 state.inSubCategory.data = action.payload;
-        
+
             })
             .addCase(getInsideSubCategory.rejected, (state) => {
                 state.inSubCategory.isLoading = false;
                 state.inSubCategory.isError = true;
             })
 
+            //Product 
+            .addCase(getProduct.pending, (state) => {
+                state.product.isLoading = true;
+            })
+            .addCase(getProduct.fulfilled, (state, action) => {
+                state.product.isLoading = false;
+                state.product.data = action.payload;
+            })
+            .addCase(getProduct.rejected, (state) => {
+                state.product.isLoading = false;
+                state.product.isError = true;
+            })
+
+            //Product Varient
+            .addCase(getProductVarient.pending, (state) => {
+                state.productVarient.isLoading = true;
+            })
+            .addCase(getProductVarient.fulfilled, (state, action) => {
+                state.productVarient.isLoading = false;
+                state.productVarient.data = action.payload;
+            })
+            .addCase(getProductVarient.rejected, (state) => {
+                state.productVarient.isLoading = false;
+                state.productVarient.isError = true;
+            })
     },
 });
 
