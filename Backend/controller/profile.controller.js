@@ -84,8 +84,7 @@ export const userAddressAddController = async (req, res) => {
             state,
             saveAs,
             officeOpenOnSaturday,
-            officeOpenOnSunday,
-            setMyDefultUserAddress,
+            officeOpenOnSunday
         } = req.body;
 
         if (!firstName || !lastName || !phone || !zipcode || !address) {
@@ -117,8 +116,7 @@ export const userAddressAddController = async (req, res) => {
             state: autoState,
             saveAs: saveAs || "Home",
             officeOpenOnSaturday: officeOpenOnSaturday || false,
-            officeOpenOnSunday: officeOpenOnSunday || false,
-            setMyDefultUserAddress
+            officeOpenOnSunday: officeOpenOnSunday || false
         };
 
         const user = await UserModel.findById(id);
@@ -128,21 +126,7 @@ export const userAddressAddController = async (req, res) => {
         const addedAddress = user.address.create(newAddress); // create subdocument
         user.address.push(addedAddress);
 
-        // If default, set selectedAddress **before saving**
-        if (setMyDefultUserAddress === true) {
-            user.selectedAddress = addedAddress._id;
-            user.setMyDefultUserAddress = true;
-        }
-
         await user.save(); // Save once
-
-        // After saving, get the actual saved address ID and update selectedAddress if needed
-        if (setMyDefultUserAddress === true) {
-            const savedUser = await UserModel.findById(id);
-            const savedAddress = savedUser.address[savedUser.address.length - 1]; // Get the last added address
-            savedUser.selectedAddress = savedAddress._id;
-            await savedUser.save();
-        }
 
         return sendSuccessResponse(res, "User Address inserted successfully", user);
     } catch (error) {
@@ -174,8 +158,7 @@ export const userAddressUpdateController = async (req, res) => {
             state,
             saveAs,
             officeOpenOnSaturday,
-            officeOpenOnSunday,
-            setMyDefultUserAddress
+            officeOpenOnSunday
         } = req?.body;
 
         const updateFields = {};
@@ -202,12 +185,6 @@ export const userAddressUpdateController = async (req, res) => {
 
         // Prepare update query
         let updateQuery = { $set: updateFields };
-        
-        // If setMyDefultUserAddress is true, also update selectedAddress
-        if (setMyDefultUserAddress === true) {
-            updateQuery.$set.selectedAddress = addressId;
-            updateQuery.$set.setMyDefultUserAddress = true;
-        }
 
         const updatedUser = await UserModel.findOneAndUpdate(
             { _id: id, "address._id": addressId },
@@ -252,8 +229,7 @@ export const userAddressDeleteController = async (req, res) => {
         let updateQuery = { $pull: { address: { _id: addressId } } };
         if (user.selectedAddress?.toString() === addressId) {
             updateQuery.$set = { 
-                selectedAddress: null,
-                setMyDefultUserAddress: false 
+                selectedAddress: null
             };
         }
 
@@ -313,8 +289,7 @@ export const userBillingAddressAddController = async (req, res) => {
             state,
             saveAs,
             officeOpenOnSaturday,
-            officeOpenOnSunday,
-            setMyDefultUserBillingAddress
+            officeOpenOnSunday
         } = req?.body;
 
         if (!firstName || !lastName || !phone || !zipcode || !address) {
@@ -360,21 +335,7 @@ export const userBillingAddressAddController = async (req, res) => {
         const addedBillingAddress = user.billingaddress.create(billingaddressData);
         user.billingaddress.push(addedBillingAddress);
 
-        // If default, set selectedBillingAddress **before saving**
-        if (setMyDefultUserBillingAddress === true) {
-            user.selectedBillingAddress = addedBillingAddress._id;
-            user.setMyDefultUserBillingAddress = true;
-        }
-
         await user.save(); // Save once
-
-        // After saving, get the actual saved billing address ID and update selectedBillingAddress if needed
-        if (setMyDefultUserBillingAddress === true) {
-            const savedUser = await UserModel.findById(id);
-            const savedBillingAddress = savedUser.billingaddress[savedUser.billingaddress.length - 1]; // Get the last added address
-            savedUser.selectedBillingAddress = savedBillingAddress._id;
-            await savedUser.save();
-        }
 
         return sendSuccessResponse(res, "User Billing Address inserted successfully", user);
     } catch (error) {
@@ -402,8 +363,7 @@ export const userBillingAddressUpdatecontroller = async (req, res) => {
             state,
             saveAs,
             officeOpenOnSaturday,
-            officeOpenOnSunday,
-            setMyDefultUserBillingAddress
+            officeOpenOnSunday
         } = req?.body;
 
         if (!billingaddressId || !mongoose.Types.ObjectId.isValid(billingaddressId)) {
@@ -429,12 +389,6 @@ export const userBillingAddressUpdatecontroller = async (req, res) => {
 
         // Prepare update query
         let updateQuery = { $set: updateFields };
-        
-        // If setMyDefultUserBillingAddress is true, also update selectedBillingAddress
-        if (setMyDefultUserBillingAddress === true) {
-            updateQuery.$set.selectedBillingAddress = billingaddressId;
-            updateQuery.$set.setMyDefultUserBillingAddress = true;
-        }
 
         const updatedUser = await UserModel.findOneAndUpdate(
             { _id: id, "billingaddress._id": billingaddressId },
@@ -493,8 +447,7 @@ export const userBillingAddressDeleteController = async (req, res) => {
 
         if (user.selectedBillingAddress?.toString() === billingaddressId) {
             updateQuery.$set = { 
-                selectedBillingAddress: null,
-                setMyDefultUserBillingAddress: false 
+                selectedBillingAddress: null
             };
         }
 

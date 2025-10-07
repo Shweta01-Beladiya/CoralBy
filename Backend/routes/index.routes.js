@@ -14,7 +14,7 @@ import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCate
 import { createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand } from '../controller/brand.controller.js';
 import { addToWishlist, getWishlist, removeFromWishlist } from '../controller/wishlist.controller.js';
 import { createCoupon, deleteCoupon, getAllCoupon, getCouponById, updateCoupon } from '../controller/coupon.controller.js';
-import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
+import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, selectUserAddressController, selectUserBillingAddressController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
 import { createReview, deleteReview, dislikeReview, getProductReviews, likeReview, updateReview } from '../controller/review.controller.js';
 import { addProductBannerController, deleteProductBannerController, getProductBannerController, updateProductBannerController } from '../controller/product.banner.controller.js';
 import { applyJobController, currentJobController, deleteJobApplicationController, getCurrentJobByIdController, getMyJobapplicationsController } from '../controller/job.application.controller.js';
@@ -169,12 +169,14 @@ indexRouter.post("/user/address", UserAuth, userAddressAddController);
 indexRouter.patch("/user/address/update/:addressId", UserAuth, userAddressUpdateController);
 indexRouter.delete("/user/address/delete/:addressId", UserAuth, userAddressDeleteController);
 indexRouter.get("/user/address", UserAuth, getUserAddressController);
+indexRouter.put("/user/selectUserAddressController/:addressId", UserAuth, selectUserAddressController);
 
 //user Billingaddress
 indexRouter.post("/user/billingaddress", UserAuth, userBillingAddressAddController);
 indexRouter.patch("/user/billingaddress/update/:billingaddressId", UserAuth, userBillingAddressUpdatecontroller);
 indexRouter.delete("/user/billingaddress/delete/:billingaddressId", UserAuth, userBillingAddressDeleteController);
 indexRouter.get("/user/billingaddress", UserAuth, getUserBillingAddressController);
+indexRouter.put("/user/selectUserBillingAddressController/:addressId", UserAuth, selectUserBillingAddressController);
 
 //cart.route.js
 indexRouter.post("/add/cart/:productId", UserAuth, toggleCartItemController);

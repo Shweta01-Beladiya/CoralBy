@@ -70,10 +70,6 @@ const UserSchema = new mongoose.Schema({
     selectedAddress: { type: mongoose.Schema.Types.ObjectId, default: null },
     selectedBillingAddress: { type: mongoose.Schema.Types.ObjectId, default: null },
 
-    // Flags
-    setMyDefultUserAddress: { type: Boolean, default: false },
-    setMyDefultUserBillingAddress: { type: Boolean, default: false },
-
     // Misc fields
     otp: { type: Number, default: null },
     avatar: { type: String, default: null },
