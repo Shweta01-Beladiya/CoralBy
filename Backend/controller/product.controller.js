@@ -28,7 +28,7 @@ export const assignBadges = async () => {
                 .limit(3);
 
             for (let p of last3) {
-                
+
                 if (!p.badge) {
                     p.badge = "NEW";
                     await p.save();
@@ -55,7 +55,7 @@ export const assignBadges = async () => {
 
         for (let id of topSellingIds) {
             const p = await Product.findById(id);
-    
+
             if (p && !p.badge) {
                 p.badge = "TRENDING";
                 await p.save();
@@ -223,18 +223,39 @@ export const createProduct = async (req, res) => {
 
 export const getAllProduct = async (req, res) => {
     try {
-        const product = await Product.find()
+        const products = await Product.find()
+            .populate({
+                path: "varientId",
+                model: "ProductVariant",
+                select: "-__v -createdAt -updatedAt"
+            })
+            .populate("brand", "brandName")
+            .populate("mainCategory", "mainCategoryName")
+            .populate("category", "categoryName")
+            .populate("subCategory", "subCategoryName");
 
-        if (!product || !product.length === 0) {
-            return sendNotFoundResponse(res, 500, error.message)
+        if (!products || products.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No products found.",
+            });
         }
 
-        return sendSuccessResponse(res, "Product fetched Successfully...", product)
+        return res.status(200).json({
+            success: true,
+            message: "Product fetched Successfully...",
+            result: products,
+        });
 
     } catch (error) {
-        return ThrowError(res, 500, error.message)
+        console.error("Error fetching products:", error);
+        return res.status(500).json({
+            success: false,
+            message: "Error fetching products.",
+            error: error.message,
+        });
     }
-}
+};
 
 export const getProductById = async (req, res) => {
     try {
@@ -257,7 +278,7 @@ export const getProductById = async (req, res) => {
             .populate("insideSubCategory", "name")
             .populate({
                 path: "varientId",
-                select: "sku images color size price stock weight isActive createdAt",
+                select: "sku images color size price stock weight Occasion Artical_Number Outer_material Model_name Ideal_for Type_For_Casual Euro_Size Heel_Height isActive createdAt",
             });
 
         if (!product) {
@@ -1054,5 +1075,42 @@ export const getSalesAnalytics = async (req, res) => {
 
     } catch (error) {
         return sendErrorResponse(res, 500, error.message);
+    }
+};
+
+export const addBadgeToProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: "Invalid product id" });
+        }
+
+        const product = await Product.findById(id);
+        if (!product) {
+            return res.status(404).json({ success: false, message: "Product not found" });
+        }
+
+        const badgeToAdd = "CORALBAY CHOICE";
+
+        if (product.badge === badgeToAdd) {
+            return res.status(200).json({
+                success: true,
+                message: `Product already has badge "${badgeToAdd}".`,
+                result: product,
+            });
+        }
+
+        product.badge = badgeToAdd;
+        await product.save();
+
+        return res.status(200).json({
+            success: true,
+            message: `Badge "${badgeToAdd}" added to product successfully.`,
+            result: product,
+        });
+    } catch (err) {
+        console.error("addBadgeToProduct error:", err);
+        return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };

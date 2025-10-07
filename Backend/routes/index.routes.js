@@ -5,7 +5,7 @@ import { createCategory, deleteCategoryById, getAllCategory, getCategoriesByMain
 import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdateController, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
-import { createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
+import { addBadgeToProduct, createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
 import { getMyCartController, toggleCartItemController } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
@@ -108,6 +108,7 @@ indexRouter.get("/getSimilarProducts/:productId", getSimilarProducts);
 indexRouter.get("/getMostWishlistedProducts", getMostWishlistedProducts);
 indexRouter.get("/getTrendingProducts", getTrendingProducts);
 indexRouter.get("/getSalesAnalytics", getSalesAnalytics);
+indexRouter.post("/addBadgeToProduct/:id", UserAuth, isAdmin, addBadgeToProduct);
 
 // discover new product
 indexRouter.get("/discover/product", UserAuth, discoverProductController)
@@ -132,9 +133,6 @@ indexRouter.delete("/seller/delete/product/banner/:productId", sellerAuth, delet
 indexRouter.post("/create/offer", UserAuth, isAdmin, upload.single("offerImage"), createOfferController);
 indexRouter.get("/get/offer/:section", getOffersBySection)
 indexRouter.delete("/delete/offer/:offerId", UserAuth, isAdmin, deleteOfferController)
-
-
-
 
 
 // Coupon

@@ -58,7 +58,6 @@ export const createFAQQuestion = async (req, res) => {
             faqCategoryId,
             faqQuestion: trimmedQuestion,
             faqAnswer: faqAnswer.trim(),
-            faqQuestionLower: trimmedQuestion.toLowerCase()
         });
 
         await newFAQQuestion.populate('faqCategoryId');
