@@ -84,8 +84,7 @@ export const userAddressAddController = async (req, res) => {
             state,
             saveAs,
             officeOpenOnSaturday,
-            officeOpenOnSunday,
-            setMyDefultUserAddress,
+            officeOpenOnSunday
         } = req.body;
 
         if (!firstName || !lastName || !phone || !zipcode || !address) {
@@ -117,8 +116,7 @@ export const userAddressAddController = async (req, res) => {
             state: autoState,
             saveAs: saveAs || "Home",
             officeOpenOnSaturday: officeOpenOnSaturday || false,
-            officeOpenOnSunday: officeOpenOnSunday || false,
-            setMyDefultUserAddress
+            officeOpenOnSunday: officeOpenOnSunday || false
         };
 
         const user = await UserModel.findById(id);
@@ -127,12 +125,6 @@ export const userAddressAddController = async (req, res) => {
         // Push the new address and get its subdocument reference
         const addedAddress = user.address.create(newAddress); // create subdocument
         user.address.push(addedAddress);
-
-        // If default, set selectedAddress **before saving**
-        if (setMyDefultUserAddress === true) {
-            user.selectedAddress = addedAddress._id;
-            user.setMyDefultUserAddress = true;
-        }
 
         await user.save(); // Save once
 
@@ -191,9 +183,12 @@ export const userAddressUpdateController = async (req, res) => {
             updateFields["address.$.officeOpenOnSunday"] = false;
         }
 
+        // Prepare update query
+        let updateQuery = { $set: updateFields };
+
         const updatedUser = await UserModel.findOneAndUpdate(
             { _id: id, "address._id": addressId },
-            { $set: updateFields },
+            updateQuery,
             { new: true }
         );
 
@@ -233,7 +228,9 @@ export const userAddressDeleteController = async (req, res) => {
 
         let updateQuery = { $pull: { address: { _id: addressId } } };
         if (user.selectedAddress?.toString() === addressId) {
-            updateQuery.$set = { selectedAddress: null };
+            updateQuery.$set = { 
+                selectedAddress: null
+            };
         }
 
         const updatedUser = await UserModel.findByIdAndUpdate(id, updateQuery, { new: true });
@@ -331,13 +328,16 @@ export const userBillingAddressAddController = async (req, res) => {
             officeOpenOnSunday: !!officeOpenOnSunday
         };
 
-        const updatedUser = await UserModel.findByIdAndUpdate(
-            id,
-            { $push: { billingaddress: billingaddressData } },
-            { new: true }
-        );
+        const user = await UserModel.findById(id);
+        if (!user) return sendBadRequestResponse(res, "User not found!");
 
-        return sendSuccessResponse(res, "User Address inserted successfully", updatedUser);
+        // Push the new billing address and get its subdocument reference
+        const addedBillingAddress = user.billingaddress.create(billingaddressData);
+        user.billingaddress.push(addedBillingAddress);
+
+        await user.save(); // Save once
+
+        return sendSuccessResponse(res, "User Billing Address inserted successfully", user);
     } catch (error) {
         console.error("Error in userAddressAddController:", error.message);
         return sendErrorResponse(res, 500, "Something went wrong while adding address!", error.message);
@@ -387,9 +387,12 @@ export const userBillingAddressUpdatecontroller = async (req, res) => {
             updateFields["billingaddress.$.officeOpenOnSunday"] = !!officeOpenOnSunday;
         }
 
+        // Prepare update query
+        let updateQuery = { $set: updateFields };
+
         const updatedUser = await UserModel.findOneAndUpdate(
             { _id: id, "billingaddress._id": billingaddressId },
-            { $set: updateFields },
+            updateQuery,
             { new: true }
         );
 
@@ -443,7 +446,9 @@ export const userBillingAddressDeleteController = async (req, res) => {
         };
 
         if (user.selectedBillingAddress?.toString() === billingaddressId) {
-            updateQuery.$set = { selectedBillingAddress: null };
+            updateQuery.$set = { 
+                selectedBillingAddress: null
+            };
         }
 
         const updatedUser = await UserModel.findByIdAndUpdate(

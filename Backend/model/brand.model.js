@@ -15,10 +15,6 @@ const brandSchema = mongoose.Schema({
     brandName: {
         type: String
     },
-    isTrustable: {
-        type: Boolean,
-        default: false
-    },
     brandColor: {
         type: String
     }

@@ -1,6 +1,10 @@
 import mongoose from "mongoose";
 
 const faqCategorySchema = mongoose.Schema({
+    mainFaqCategoryId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "mainFaqCategory"
+    },
     faqCategoryName: {
         type: String
     }
