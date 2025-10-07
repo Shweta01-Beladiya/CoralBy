@@ -485,37 +485,90 @@ export default function Home() {
 
 
 	// *************** 8. Grand Global Brands ***************
-	// Active Category State
-	const [activeCategory, setActiveCategory] = useState("Fashion");
 
-	// All Categories
-	const categories = [
-		"Home & Furniture",
-		"Fashion",
-		"Electronics",
-		"Mobile & Tablets",
-		"Beauty",
-		"Personal Care",
-		"Grocery",
-	];
+	// // Active Category State
+	// const [activeCategory, setActiveCategory] = useState("Fashion");
 
-	// Brand Images by Category
-	const categoryBrands = {
-		"Home & Furniture": [
-			f_brand_1,
-			f_brand_2,
-			f_brand_3,
-			f_brand_4,
-			f_brand_5,
-			f_brand_6,
-		],
-		"Fashion": [f_brand_27, f_brand_28, f_brand_14, f_brand_21, f_brand_10, f_brand_17, f_brand_3, f_brand_8, f_brand_9, f_brand_11, f_brand_26, f_brand_24, f_brand_6, f_brand_25, f_brand_12, f_brand_15, f_brand_7, f_brand_5, f_brand_19, f_brand_4, f_brand_1, f_brand_20, f_brand_22, f_brand_23, f_brand_13, f_brand_2, f_brand_18, f_brand_16],
-		Electronics: [f_brand_5, f_brand_10, f_brand_15],
-		"Mobile & Tablets": [f_brand_2, f_brand_8, f_brand_12],
-		Beauty: [f_brand_9, f_brand_13, f_brand_16],
-		"Personal Care": [f_brand_11, f_brand_14, f_brand_20],
-		Grocery: [f_brand_18, f_brand_21, f_brand_23],
+	// // All Categories
+	// const categories = [
+	// 	"Home & Furniture",
+	// 	"Fashion",
+	// 	"Electronics",
+	// 	"Mobile & Tablets",
+	// 	"Beauty",
+	// 	"Personal Care",
+	// 	"Grocery",
+	// ];
+
+	// // Brand Images by Category
+	// const categoryBrands = {
+	// 	"Home & Furniture": [
+	// 		f_brand_1,
+	// 		f_brand_2,
+	// 		f_brand_3,
+	// 		f_brand_4,
+	// 		f_brand_5,
+	// 		f_brand_6,
+	// 	],
+	// 	"Fashion": [f_brand_27, f_brand_28, f_brand_14, f_brand_21, f_brand_10, f_brand_17, f_brand_3, f_brand_8, f_brand_9, f_brand_11, f_brand_26, f_brand_24, f_brand_6, f_brand_25, f_brand_12, f_brand_15, f_brand_7, f_brand_5, f_brand_19, f_brand_4, f_brand_1, f_brand_20, f_brand_22, f_brand_23, f_brand_13, f_brand_2, f_brand_18, f_brand_16],
+	// 	Electronics: [f_brand_5, f_brand_10, f_brand_15],
+	// 	"Mobile & Tablets": [f_brand_2, f_brand_8, f_brand_12],
+	// 	Beauty: [f_brand_9, f_brand_13, f_brand_16],
+	// 	"Personal Care": [f_brand_11, f_brand_14, f_brand_20],
+	// 	Grocery: [f_brand_18, f_brand_21, f_brand_23],
+	// };
+
+
+	// *************** 8. Grand Global Brands ***************
+
+	const mainCategory = useSelector(
+		(state) => state.category.mainCategory.data
+	);
+
+	const [activeCategory, setActiveCategory] = useState(null);
+	const [categoryBrands, setCategoryBrands] = useState([]);
+	const [visibleCount, setVisibleCount] = useState(35);
+
+	// Auto-load "Fashion" category by default
+	useEffect(() => {
+		if (mainCategory?.length > 0 && !activeCategory) {
+			// Find the category whose name includes or equals "Fashion"
+			const fashionCategory = mainCategory.find(
+				(cat) =>
+					cat.mainCategoryName?.toLowerCase() === "fashion"
+			);
+
+			// If found, load it; otherwise, load the first category
+			if (fashionCategory) {
+				handleCategoryClick(fashionCategory);
+			} else {
+				handleCategoryClick(mainCategory[0]);
+			}
+		}
+	}, [mainCategory]);
+
+	// Fetch brands for a category
+	const handleCategoryClick = async (cat) => {
+		try {
+			setActiveCategory(cat.mainCategoryName);
+			setVisibleCount(35);
+
+			const res = await fetch(
+				`http://localhost:9000/api/getBrandByMainCategory/${cat._id}`
+			);
+			const data = await res.json();
+			if (data.success && data.result?.brand) {
+				setCategoryBrands(data.result.brand);
+			} else {
+				setCategoryBrands([]);
+			}
+		} catch (err) {
+			console.error("Error fetching category brands:", err);
+		}
 	};
+
+	// No search filtering — just use category brands
+	const filteredBrands = categoryBrands;
 
 
 	// *************** 10. Deals For You ***************
@@ -524,7 +577,7 @@ export default function Home() {
 		getMainCategory()
 	}, [dispatch])
 
-	const mainCategory = useSelector((state) => state.category.mainCategory.data)
+	// const mainCategory = useSelector((state) => state.category.mainCategory.data)
 
 	const DealsCardImages = mainCategory?.map((cat) => ({
 		img: cat.mainCategoryImage,
@@ -1114,7 +1167,9 @@ export default function Home() {
 
 							{/* Shop All Brands Button */}
 							<div>
-								<Link to={"/ShopAllBrands"}>
+								<Link
+									onClick={() => window.scrollTo(0, 0)}
+									to={"/ShopAllBrands"}>
 									<button className="bg-[#F97316] md:px-8 px-4 py-2 text-white md:text-lg text-base font-semibold rounded-lg ">
 										Shop All Brands
 									</button>
@@ -1123,16 +1178,18 @@ export default function Home() {
 						</div>
 
 						{/* Category Header */}
-						<div className="flex items-center gap-6 sm:gap-10 overflow-x-auto no-scrollbar mt-6">
-							{categories.map((cat) => (
+						<div className="flex items-center gap-6 sm:gap-10 border-b border-gray-200 overflow-x-auto no-scrollbar mt-[24px]">
+							{mainCategory?.map((cat) => (
 								<button
-									key={cat}
-									onClick={() => setActiveCategory(cat)}
-									className={`relative py-2 text-[16px] text-nowrap font-semibold transition-colors ${activeCategory === cat ? "text-[#F97316]" : "text-[#6B7280]"
+									key={cat._id}
+									onClick={() => handleCategoryClick(cat)}
+									className={`relative py-3 text-[16px] text-nowrap font-semibold transition-colors ${activeCategory === cat.mainCategoryName
+										? "text-[#F97316]"
+										: "text-[#6B7280]"
 										}`}
 								>
-									{cat}
-									{activeCategory === cat && (
+									{cat.mainCategoryName}
+									{activeCategory === cat.mainCategoryName && (
 										<span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#F97316] rounded-full"></span>
 									)}
 								</button>
@@ -1140,20 +1197,39 @@ export default function Home() {
 						</div>
 
 						{/* Brands Grid */}
-						<div className="h_brands-grid mt-6 ">
-							{categoryBrands[activeCategory]?.map((brand, idx) => (
-								<div
-									key={idx}
-									className="border rounded-lg flex justify-center items-center text-center font-semibold hover:bg-[#E5E7EB] hover:scale-[1.03] transition-transform duration-300 cursor-pointer"
-								>
-									<img
-										src={brand}
-										alt={`brand-${idx}`}
-										className="max-h-[60px] object-contain"
-									/>
-								</div>
-							))}
+						<div className="h_brands-grid my-10">
+							{filteredBrands.length > 0 ? (
+								filteredBrands.slice(0, visibleCount).map((brand) => (
+									<div
+										key={brand._id}
+										className="border rounded-lg flex justify-center items-center text-center font-semibold hover:bg-[#E5E7EB] hover:scale-[1.03] transition-transform duration-300 cursor-pointer"
+									>
+										<img
+											src={brand.brandImage}
+											alt={brand.brandName}
+											className="max-h-[24px] object-contain"
+										/>
+									</div>
+								))
+							) : (
+								<p className="text-gray-500 text-center my-4">
+									No brands available for this category.
+								</p>
+							)}
 						</div>
+
+						{/* Load More */}
+						{filteredBrands.length > visibleCount && (
+							<div className="flex justify-center my-10 mb-[24px] sm:mb-[62px]">
+								<button
+									onClick={() => setVisibleCount((prev) => prev + 35)}
+									className="bg-[#F97316] text-white rounded py-[8px] sm:py-[10px] px-[28px] sm:px-[33px] text-[16px] sm:text-[18px] font-medium"
+								>
+									Load more
+								</button>
+							</div>
+						)}
+
 					</div>
 				</section>
 
