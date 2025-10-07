@@ -9,6 +9,7 @@ import UserModel from "../model/user.model.js";
 import sellerModel from "../model/seller.model.js";
 import couponModel from "../model/coupon.model.js";
 import axios from "axios";
+import cartModel from "../model/cart.model.js";
 
 const roundToTwo = (num) => Math.round(num * 100) / 100;
 
@@ -110,214 +111,205 @@ export const newOrderController = async (req, res) => {
     try {
         session.startTransaction();
 
-        const { id: userId } = req?.user;
-        const {
-            productId,
-            variantId,
-            quantity,
-            couponCode,
-            isCouponApplied,
-            sku,
-            billingAddressId,
-            method,
-        } = req.body;
+        const { id: userId } = req.user;
+        const { billingAddressId, paymentMethod, couponCode, isCouponApplied } = req.body;
 
-        // --- Validations ---
-        if (!productId || !variantId || !quantity || !sku) {
-            return sendErrorResponse(res, 400, "Missing required product details");
-        }
-        if (!billingAddressId || !mongoose.Types.ObjectId.isValid(billingAddressId)) {
-            return sendErrorResponse(res, 400, "Valid billing address ID is required");
-        }
-        if (!["COD", "Card", "UPI", "PayPal", "Bank"].includes(method)) {
-            return sendErrorResponse(res, 400, "Invalid payment method");
-        }
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return sendErrorResponse(res, 400, "Invalid user ID");
-        }
-        if (!Number.isInteger(quantity) || quantity <= 0) {
-            return sendErrorResponse(res, 400, "Quantity must be a positive integer");
+        if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+            return sendBadRequestResponse(res, "Invalid user ID");
         }
 
-        // --- Fetch DB records ---
-        const user = await UserModel.findById(userId).session(session);
-        if (!user) return sendErrorResponse(res, 404, "User not found");
-
-        const billingAddress = user.billingaddress.id(billingAddressId);
-        if (!billingAddress) return sendErrorResponse(res, 404, "Billing address not found");
-
-        const product = await Product.findById(productId).session(session);
-        if (!product) return sendErrorResponse(res, 404, "Product not found");
-
-        const variant = await ProductVariant.findById(variantId).session(session);
-        if (!variant) return sendErrorResponse(res, 404, "Product variant not found");
-
-        if (variant.productId.toString() !== productId) {
-            return sendErrorResponse(res, 400, "Variant does not belong to product");
-        }
-        if (variant.stock < quantity) {
-            return sendErrorResponse(res, 400, `Insufficient stock. Available: ${variant.stock}`);
-        }
-        if (variant.sku !== sku) {
-            return sendErrorResponse(res, 400, "SKU does not match variant");
+        if (!["COD", "Card", "UPI", "PayPal", "Bank"].includes(paymentMethod)) {
+            return sendBadRequestResponse(res, "Invalid payment method");
         }
 
-        // --- Prepare product object ---
-        const orderProduct = {
-            productId,
-            variantId,
-            sku: variant.sku,
-            name: product.name,
-            quantity,
-            price: variant.price.original,
-        };
-        const unitPrice = Number(variant.price.original);
-        if (isNaN(unitPrice)) {
-            return sendErrorResponse(res, 400, "Invalid variant price");
+        // --- Fetch cart ---
+        const cart = await cartModel.findOne({ userId })
+            .populate([
+                { path: "items.productId", select: "name sellerId" },
+                { path: "items.productVarientId", select: "price stock sku" }
+            ])
+            .session(session);
+
+        if (!cart || cart.items.length === 0) {
+            return sendBadRequestResponse(res, "Cart is empty");
         }
 
-        // --- Coupon logic ---
+        let billingAmount = 0;
         let discountAmount = 0;
-        const productSubtotal = roundToTwo(unitPrice * quantity);
+        const orderProducts = [];
+        let sellerId = null;
 
+        // --- Validate stock & prepare product snapshots ---
+        for (const item of cart.items) {
+            const product = item.productId;
+            const variant = item.productVarientId;
+
+            if (!variant || variant.stock < item.quantity) {
+                return sendBadRequestResponse(res, `Product ${product.name} insufficient stock`);
+            }
+
+            const unitPrice = variant.price.discounted && variant.price.discounted > 0 ? variant.price.discounted : variant.price.original;
+            const subtotal = roundToTwo(unitPrice * item.quantity);
+            billingAmount += subtotal;
+
+            // Set sellerId (assuming all products are from same seller)
+            if (product.sellerId && !sellerId) {
+                sellerId = product.sellerId;
+            }
+
+            orderProducts.push({
+                productId: product._id,
+                variantId: variant._id,
+                sku: variant.sku,
+                name: product.name,
+                quantity: item.quantity,
+                price: unitPrice,
+                subtotal
+            });
+        }
+
+        // Check if we have valid seller ID
+        if (!sellerId) {
+            return sendBadRequestResponse(res, "No valid seller found for products");
+        }
+
+        // --- Apply coupon if any ---
         if (isCouponApplied && couponCode) {
             const coupon = await couponModel.findOne({ code: couponCode.toUpperCase() }).session(session);
-            if (!coupon) return sendErrorResponse(res, 400, "Invalid coupon code");
-            if (!coupon.isActive) return sendErrorResponse(res, 400, "Coupon is inactive");
-            if (coupon.expiryDate < new Date()) return sendErrorResponse(res, 400, "Coupon expired");
-            if (coupon.minOrderValue > productSubtotal) {
-                return sendErrorResponse(res, 400, `Minimum order value is ₹${coupon.minOrderValue}`);
-            }
-            if (coupon.sellerId && coupon.sellerId.toString() !== product.sellerId.toString()) {
-                return sendErrorResponse(res, 400, "Coupon not valid for this seller");
+            if (!coupon) return sendBadRequestResponse(res, "Invalid coupon code");
+            if (!coupon.isActive) return sendBadRequestResponse(res, "Coupon inactive");
+            if (coupon.expiryDate < new Date()) return sendBadRequestResponse(res, "Coupon expired");
+
+            if (coupon.discountType === "percentage") {
+                discountAmount = roundToTwo((coupon.discountValue / 100) * billingAmount);
+                if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) discountAmount = coupon.maxDiscount;
+            } else if (coupon.discountType === "fixed") {
+                discountAmount = Math.min(coupon.discountValue, billingAmount);
             }
 
-            const discountValue = Number(coupon.discountValue || 0);
-            if (discountValue > 0) {
-                if (coupon.discountType === "percentage") {
-                    discountAmount = roundToTwo((discountValue / 100) * productSubtotal);
-                    if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) {
-                        discountAmount = Number(coupon.maxDiscount);
-                    }
-                } else if (coupon.discountType === "fixed") {
-                    discountAmount = Math.min(discountValue, productSubtotal);
-                }
-            }
-
-            // Track usage
-            await couponModel.findByIdAndUpdate(
-                coupon._id,
-                { $addToSet: { usedBy: userId } },
-                { session }
-            );
+            await couponModel.findByIdAndUpdate(coupon._id, { $addToSet: { usedBy: userId } }, { session });
         }
 
-        const totalAmount = roundToTwo(productSubtotal - discountAmount);
+        const totalAmount = roundToTwo(billingAmount - discountAmount);
 
-        // --- Delivery ---
+        // --- Prepare delivery ---
         const deliveryExpected = new Date();
         deliveryExpected.setDate(deliveryExpected.getDate() + 7);
 
         // --- Create Order ---
         const newOrder = new Order({
             userId,
-            sellerId: product.sellerId,
-            products: [orderProduct],
+            sellerId: sellerId,
+            products: orderProducts,
+            billingAmount,
             discountAmount,
+            totalAmount,
             couponCode: couponCode || null,
             isCouponApplied: !!(isCouponApplied && couponCode),
-            totalAmount,
-            deliveryAddress: { ...billingAddress.toObject() }, // snapshot
             deliveryExpected,
             payment: {
-                method,
-                status: method === "COD" ? "Pending" : "Paid",
-                transactionId: method !== "COD" ? `TXN-${Date.now()}-${nanoid(8)}` : null,
-            },
+                method: paymentMethod,
+                status: paymentMethod === "COD" ? "Pending" : "Paid",
+                transactionId: paymentMethod !== "COD" ? `TXN-${Date.now()}-${nanoid(8)}` : null
+            }
         });
 
         const savedOrder = await newOrder.save({ session });
 
-        // --- Update stock & seller ---
-        const stockUpdate = await ProductVariant.updateOne(
-            { _id: variantId, stock: { $gte: quantity } },
-            { $inc: { stock: -quantity } },
-            { session }
-        );
-        if (stockUpdate.modifiedCount === 0) {
-            throw new Error("Stock update failed due to concurrency");
+        for (const item of cart.items) {
+            const stockUpdate = await ProductVariant.updateOne(
+                { _id: item.productVarientId._id, stock: { $gte: item.quantity } },
+                { $inc: { stock: -item.quantity } },
+                { session }
+            );
+            if (stockUpdate.modifiedCount === 0) throw new Error(`Stock update failed for variant ${item.variantId}`);
         }
 
-        await sellerModel.findByIdAndUpdate(
-            product.sellerId,
-            { $push: { orders: savedOrder._id } },
-            { session }
-        );
+        await sellerModel.findByIdAndUpdate(sellerId, { $push: { orders: savedOrder._id } }, { session });
+
+        cart.items = [];
+        await cart.save({ session });
 
         await session.commitTransaction();
 
-        return sendSuccessResponse(res, 201, "Order placed successfully", {
+        return sendSuccessResponse(res, "Order placed successfully", {
             orderId: savedOrder._id,
-            totalAmount: savedOrder.totalAmount,
-            payment: savedOrder.payment,
-            products: savedOrder.products,
-            deliveryExpected: savedOrder.deliveryExpected,
+            totalAmount,
+            products: orderProducts,
+            deliveryExpected,
+            sellerId: sellerId
         });
 
     } catch (error) {
         await session.abortTransaction();
-        console.error("Order Error:", error);
+        console.error("Order creation error:", error);
         return sendErrorResponse(res, 500, "Error placing order", error.message);
     } finally {
         session.endSession();
     }
 };
+// ======================================================================================
 
 export const myOrderController = async (req, res) => {
     try {
-        const { id: userId } = req?.user;
+        const { id: userId } = req.user;
 
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return sendErrorResponse(res, 400, "Valid UserID is required");
         }
 
-        // Fetch only PENDING orders for this user
+        // Fetch active orders (excluding completed/cancelled statuses)
         const orders = await orderModel
-            .find({ userId, orderStatus: "Pending" })
-            .populate("userId")
+            .find({
+                userId,
+                orderStatus: {
+                    $in: ["Pending", "Order Confirmed", "Processing", "Shipped", "Out For Delivery"]
+                }
+            })
+            .populate("userId", "name email billingAddress")
+            .populate("sellerId", "mobileNo businessName pickUpAddr")
+            .populate([
+                {
+                    path: "products.productId",
+                    model: "Product",
+                    select: "title mainCategory category subCategory brand sellerId"
+                },
+                {
+                    path: "products.variantId",
+                    model: "ProductVariant"
+                }
+            ])
             .sort({ createdAt: -1 });
 
         if (!orders || orders.length === 0) {
-            return sendErrorResponse(res, 404, "No pending orders found for this user");
+            return sendSuccessResponse(res, "No active orders found", { orders: [] });
         }
 
-        // Format orders with delivery address
-        const formattedOrders = orders.map((order) => {
-            const user = order.userId;
-            const deliveryAddress = user?.billingaddress?.find(
-                (addr) => addr._id.toString() === order.deliveryAddress.toString()
-            );
+        // Format orders
+        // const formattedOrders = orders.map((order) => ({
+        //     _id: order._id,
+        //     orderId: order.orderId,
+        //     products: order.products,
+        //     billingAmount: order.billingAmount,
+        //     discountAmount: order.discountAmount,
+        //     totalAmount: order.totalAmount,
+        //     couponCode: order.couponCode,
+        //     isCouponApplied: order.isCouponApplied,
+        //     orderStatus: order.orderStatus,
+        //     deliveryExpected: order.deliveryExpected,
+        //     deliveredAt: order.deliveredAt,
+        //     createdAt: order.createdAt,
+        //     orderInstruction: order.orderInstruction,
+        //     payment: order.payment,
+        //     seller: order.sellerId, // Include seller info
+        //     timeline: order.timeline, // Include timeline
+        //     userAddress: order.userAddress, // From order model
+        //     userBillingAddress: order.userBillingAddress // From order model
+        // }));
 
-            return {
-                _id: order._id,
-                orderId: order.orderId,
-                products: order.products,
-                billingAmount: order.billingAmount,
-                discountAmount: order.discountAmount,
-                totalAmount: order.totalAmount,
-                couponCode: order.couponCode,
-                isCouponApplied: order.isCouponApplied,
-                orderStatus: order.orderStatus, // will always be "Pending" here
-                deliveryExpected: order.deliveryExpected,
-                createdAt: order.createdAt,
-                orderInstruction: order.orderInstruction,
-                payment: order.payment,
-                deliveryAddress: deliveryAddress || null,
-            };
-        });
-
-        return sendSuccessResponse(res, "Pending orders fetched successfully", {
-            orders: formattedOrders,
+        return sendSuccessResponse(res, "Active orders fetched successfully", {
+            orders: orders,
+            count: orders.length
         });
 
     } catch (error) {
@@ -328,49 +320,55 @@ export const myOrderController = async (req, res) => {
 
 export const myHistoryOrderController = async (req, res) => {
     try {
-        const { id: userId } = req?.user;
+        const { id: userId } = req.user;
 
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return sendErrorResponse(res, 400, "Valid UserID is required");
         }
 
-        // Fetch all orders for this user where status is NOT Pending
+        // Fetch completed/cancelled orders
         const orders = await orderModel
-            .find({ userId, orderStatus: { $ne: "Pending" } })
-            .populate("userId")
+            .find({
+                userId,
+                orderStatus: {
+                    $in: ["Delivered", "Cancelled", "Returned"]
+                }
+            })
+            .populate("userId", "name email")
+            .populate("sellerId", "businessName")
             .sort({ createdAt: -1 });
 
         if (!orders || orders.length === 0) {
-            return sendErrorResponse(res, 404, "No history orders found for this user");
+            return sendSuccessResponse(res, "No order history found", { orders: [] });
         }
 
-        // Format response with delivery address
-        const formattedOrders = orders.map((order) => {
-            const user = order.userId;
-            const deliveryAddress = user?.billingaddress?.find(
-                (addr) => addr._id.toString() === order.deliveryAddress.toString()
-            );
-
-            return {
-                _id: order._id,
-                orderId: order.orderId,
-                products: order.products,
-                billingAmount: order.billingAmount,
-                discountAmount: order.discountAmount,
-                totalAmount: order.totalAmount,
-                couponCode: order.couponCode,
-                isCouponApplied: order.isCouponApplied,
-                orderStatus: order.orderStatus, // will be anything except Pending
-                deliveryExpected: order.deliveryExpected,
-                createdAt: order.createdAt,
-                orderInstruction: order.orderInstruction,
-                payment: order.payment,
-                deliveryAddress: deliveryAddress || null,
-            };
-        });
+        // Format response
+        const formattedOrders = orders.map((order) => ({
+            _id: order._id,
+            orderId: order.orderId,
+            products: order.products,
+            billingAmount: order.billingAmount,
+            discountAmount: order.discountAmount,
+            totalAmount: order.totalAmount,
+            couponCode: order.couponCode,
+            isCouponApplied: order.isCouponApplied,
+            orderStatus: order.orderStatus,
+            deliveryExpected: order.deliveryExpected,
+            deliveredAt: order.deliveredAt,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+            orderInstruction: order.orderInstruction,
+            payment: order.payment,
+            seller: order.sellerId,
+            timeline: order.timeline,
+            reasonForCancel: order.reasonForCancel,
+            userAddress: order.userAddress,
+            userBillingAddress: order.userBillingAddress
+        }));
 
         return sendSuccessResponse(res, "Order history fetched successfully", {
             orders: formattedOrders,
+            count: formattedOrders.length
         });
 
     } catch (error) {

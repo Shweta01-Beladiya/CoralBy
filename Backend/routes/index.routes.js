@@ -6,7 +6,7 @@ import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middle
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdateController, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
 import { createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
-import { getMyCartController, toggleCartItemController } from '../controller/cart.controller.js';
+import { getMyCartController, addToCartController, removeCartController  } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
 import { createMainCategory, deleteMainCategoryById, getAllMainCategory, getMainCategoryById, updateMainCategoryById } from '../controller/mainCategory.controller.js';
@@ -177,8 +177,9 @@ indexRouter.delete("/user/billingaddress/delete/:billingaddressId", UserAuth, us
 indexRouter.get("/user/billingaddress", UserAuth, getUserBillingAddressController);
 
 //cart.route.js
-indexRouter.post("/add/cart/:productId", UserAuth, toggleCartItemController);
-indexRouter.get("/my/cart", UserAuth, getMyCartController)
+indexRouter.post("/add/cart/:productId", UserAuth, addToCartController );
+indexRouter.get("/my/cart", UserAuth, getMyCartController);
+indexRouter.delete("/remove/cart/:productId",UserAuth,removeCartController)
 
 //wishlist.route.js
 indexRouter.post("/addToWishlist/:productId", UserAuth, addToWishlist)
