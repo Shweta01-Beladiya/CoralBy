@@ -20,8 +20,8 @@ const generateArticalNumber = () => {
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     const prefix = letters.charAt(Math.floor(Math.random() * letters.length)) +
         letters.charAt(Math.floor(Math.random() * letters.length));
-    const mainDigits = Math.floor(1000 + Math.random() * 9000); // 4-digit
-    const subDigits = Math.floor(100 + Math.random() * 900);    // 3-digit
+    const mainDigits = Math.floor(1000 + Math.random() * 9000);
+    const subDigits = Math.floor(100 + Math.random() * 900);
     return `${prefix}${mainDigits}-${subDigits}`;
 };
 
