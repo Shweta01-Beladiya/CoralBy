@@ -35,7 +35,8 @@ const orderSchema = new mongoose.Schema(
 
     billingAmount: { type: Number, required: true, default: 0 }, // before discount
     discountAmount: { type: Number, default: 0 },
-    totalAmount: { type: String, required: true, default: 0 }, // after discount
+    giftWrapAmount: { type: Number, default: 0 },
+    totalAmount: { type: Number, required: true, default: 0 }, // after discount
     couponCode: { type: String, default: null },
     isCouponApplied: { type: Boolean, default: false },
 
@@ -70,6 +71,10 @@ const orderSchema = new mongoose.Schema(
     deliveryExpected: { type: Date },
     deliveredAt: { type: Date }, // actual delivered date
     orderInstruction: { type: String, default: null },
+    isGiftWrap: {
+      type: Boolean,
+      default: false,
+    },
     payment: {
       method: {
         type: String,
@@ -108,7 +113,7 @@ orderSchema.pre("save", function (next) {
 
   // Auto-calc billing & total
   this.billingAmount = this.products.reduce((sum, p) => sum + p.subtotal, 0);
-  this.totalAmount = this.billingAmount - this.discountAmount;
+  this.totalAmount = this.billingAmount - this.discountAmount + (this.giftWrapAmount || 0);
 
   // Update timeline based on status
   if (this.isModified("orderStatus")) {

@@ -110,9 +110,10 @@ export const newOrderController = async (req, res) => {
 
     try {
         session.startTransaction();
+        const giftWrapCharge = 20;
 
         const { id: userId } = req.user;
-        const { billingAddressId, paymentMethod, couponCode, isCouponApplied } = req.body;
+        const { billingAddressId, orderInstruction, isGiftWrap, paymentMethod, couponCode, isCouponApplied } = req.body;
 
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return sendBadRequestResponse(res, "Invalid user ID");
@@ -136,6 +137,7 @@ export const newOrderController = async (req, res) => {
 
         let billingAmount = 0;
         let discountAmount = 0;
+        let giftWrapAmount = 0;
         const orderProducts = [];
         let sellerId = null;
 
@@ -173,6 +175,11 @@ export const newOrderController = async (req, res) => {
             return sendBadRequestResponse(res, "No valid seller found for products");
         }
 
+        // --- Apply gift wrap charge if selected ---
+        if (isGiftWrap === true) {
+            giftWrapAmount = giftWrapCharge;
+        }
+
         // --- Apply coupon if any ---
         if (isCouponApplied && couponCode) {
             const coupon = await couponModel.findOne({ code: couponCode.toUpperCase() }).session(session);
@@ -190,7 +197,8 @@ export const newOrderController = async (req, res) => {
             await couponModel.findByIdAndUpdate(coupon._id, { $addToSet: { usedBy: userId } }, { session });
         }
 
-        const totalAmount = roundToTwo(billingAmount - discountAmount);
+        // Calculate final total amount (billing - discount + gift wrap)
+        const totalAmount = roundToTwo(billingAmount - discountAmount + giftWrapAmount);
 
         // --- Prepare delivery ---
         const deliveryExpected = new Date();
@@ -203,7 +211,10 @@ export const newOrderController = async (req, res) => {
             products: orderProducts,
             billingAmount,
             discountAmount,
+            giftWrapAmount, // Add gift wrap amount to order
+            isGiftWrap: !!isGiftWrap, // Store gift wrap preference
             totalAmount,
+            orderInstruction: orderInstruction,
             couponCode: couponCode || null,
             isCouponApplied: !!(isCouponApplied && couponCode),
             deliveryExpected,
@@ -216,6 +227,7 @@ export const newOrderController = async (req, res) => {
 
         const savedOrder = await newOrder.save({ session });
 
+        // --- Update stock for all variants ---
         for (const item of cart.items) {
             const stockUpdate = await ProductVariant.updateOne(
                 { _id: item.productVarientId._id, stock: { $gte: item.quantity } },
@@ -225,8 +237,10 @@ export const newOrderController = async (req, res) => {
             if (stockUpdate.modifiedCount === 0) throw new Error(`Stock update failed for variant ${item.variantId}`);
         }
 
+        // --- Add order to seller ---
         await sellerModel.findByIdAndUpdate(sellerId, { $push: { orders: savedOrder._id } }, { session });
 
+        // --- Clear user cart ---
         cart.items = [];
         await cart.save({ session });
 
@@ -234,10 +248,14 @@ export const newOrderController = async (req, res) => {
 
         return sendSuccessResponse(res, "Order placed successfully", {
             orderId: savedOrder._id,
+            billingAmount,
+            discountAmount,
+            giftWrapAmount,
             totalAmount,
             products: orderProducts,
             deliveryExpected,
-            sellerId: sellerId
+            sellerId: sellerId,
+            isGiftWrap: !!isGiftWrap
         });
 
     } catch (error) {
@@ -479,7 +497,6 @@ export const cancelMyOrderController = async (req, res) => {
         return sendErrorResponse(res, 500, "Error during cancelMyOrderController", error.message);
     }
 };
-
 
 
 export const orderSummeryController = async (req, res) => {

@@ -233,7 +233,6 @@ indexRouter.post('/likeReview/:reviewId', UserAuth, likeReview);
 indexRouter.post('/dislikeReview/:reviewId', UserAuth, dislikeReview);
 
 //career  routes beginning
-
 // Admin jobs handle +
 indexRouter.get("/jobs/admin", UserAuth, isAdmin, adminJobsController);
 indexRouter.post("/create/job", UserAuth, isAdmin, createJobController);
