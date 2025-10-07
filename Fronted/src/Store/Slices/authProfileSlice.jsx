@@ -100,11 +100,113 @@ export const addBillingAddress = createAsyncThunk('authProfile/addBillingAdd', a
   }
 })
 
+export const removeAddress = createAsyncThunk('authProfile/removeAdd', async (id, { rejectWithValue }) => {
+  try {
+
+    const token = localStorage.getItem('token');
+    const response = await axios.delete(`${BaseUrl}/api/user/address/delete/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    if (response.data) {
+      return response.data.result;
+    }
+
+    return rejectWithValue("Remove addereess failed")
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Remove address failed');
+  }
+})
 
 
+export const removeBillingAddress = createAsyncThunk('authProfile/removeBillingAdd', async (id, { rejectWithValue }) => {
+  try {
+
+    const token = localStorage.getItem('token');
+    const response = await axios.delete(`${BaseUrl}/api/user/billingaddress/delete/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    if (response.data) {
+      return response.data.result;
+    }
+
+    return rejectWithValue("Remove Billing adderess failed")
+  } catch (error) {
+    return rejectWithValue(error.response?.data?.message || 'Remove Billing address failed');
+  }
+})
 
 
+export const updateNewAddress = createAsyncThunk('authProfile/updateNewAdd', async ({ id, data }, { rejectWithValue }) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.patch(`${BaseUrl}/api/user/address/update/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
 
+
+    if (response.data) {
+      return response.data.result
+    }
+
+
+    return rejectWithValue("Update New Address Failed")
+  } catch (error) {
+    return rejectWithValue(error?.response?.data?.message || 'Update New Address Failed')
+  }
+})
+
+
+export const updateBillingAddress = createAsyncThunk('authProfile/updateBillAdd', async ({ id, data }, { rejectWithValue }) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await axios.patch(`${BaseUrl}/api/user/billingaddress/update/${id}`, data, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+
+    if (response.data) {
+      return response.data.result
+    }
+
+
+    return rejectWithValue("Update Billing Address Failed")
+  } catch (error) {
+    return rejectWithValue(error?.response?.data?.message || 'Update Billing Address Failed')
+  }
+})
+
+
+export const selectNewAddress = createAsyncThunk('authProfile/selectNewAdd', async (id, { rejectWithValue }) => {
+
+  try {
+
+    const token = localStorage.getItem('token');
+    const response = await axios.put(`${BaseUrl}/api/users/select-address/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    if (response.data) {
+      return response.data.result
+    }
+
+    return rejectWithValue('Select New Address Failed')
+  } catch (error) {
+    return rejectWithValue(error?.response?.data?.message || 'Select New Address Failed')
+  }
+
+})
 
 
 
@@ -175,6 +277,63 @@ const authProfile = createSlice({
       .addCase(addBillingAddress.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || "Faild to add Billing Add";
+      })
+
+      // Remove Address
+      .addCase(removeAddress.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(removeAddress.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(removeAddress.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Faild to Remove Add";
+      })
+
+      // Remove Billing Address
+      .addCase(removeBillingAddress.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(removeBillingAddress.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(removeBillingAddress.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Faild to Remove removeBillingAddress";
+      })
+
+      // Update New Address 
+      .addCase(updateNewAddress.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateNewAddress.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(updateNewAddress.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Update New Address Failed";
+      })
+
+
+      // Update Billing Address 
+      .addCase(updateBillingAddress.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateBillingAddress.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(updateBillingAddress.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Update Billing Address Failed";
       })
 
 
