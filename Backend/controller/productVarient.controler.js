@@ -28,7 +28,23 @@ const generateArticalNumber = () => {
 // === Create Product Variant ===
 export const createProductVariant = async (req, res) => {
     try {
-        const { productId, sku, Artical_Number, color, size, price, stock, weight } = req.body;
+        const { 
+            productId, 
+            sku, 
+            Artical_Number, 
+            color, 
+            size, 
+            Occasion,
+            Outer_material,
+            Model_name,
+            Ideal_for,
+            Type_For_Casual,
+            Euro_Size,
+            Heel_Height,
+            price, 
+            stock, 
+            weight 
+        } = req.body;
         const sellerId = req.user?._id;
 
         if (!sellerId || !mongoose.Types.ObjectId.isValid(sellerId)) {
@@ -114,6 +130,13 @@ export const createProductVariant = async (req, res) => {
             images,
             color,
             size,
+            Occasion,
+            Outer_material,
+            Model_name,
+            Ideal_for,
+            Type_For_Casual,
+            Euro_Size,
+            Heel_Height,
             price: { original: originalPrice, discounted: discountedPrice },
             stock: stockNumber,
             weight
@@ -184,6 +207,13 @@ export const updateProductVariant = async (req, res) => {
         const {
             color,
             size,
+            Occasion,
+            Outer_material,
+            Model_name,
+            Ideal_for,
+            Type_For_Casual,
+            Euro_Size,
+            Heel_Height,
             price,
             stock,
             weight,
@@ -228,6 +258,13 @@ export const updateProductVariant = async (req, res) => {
 
         if (color) variant.color = color;
         if (size) variant.size = size;
+        if (Occasion) variant.Occasion = Occasion;
+        if (Outer_material) variant.Outer_material = Outer_material;
+        if (Model_name) variant.Model_name = Model_name;
+        if (Ideal_for) variant.Ideal_for = Ideal_for;
+        if (Type_For_Casual) variant.Type_For_Casual = Type_For_Casual;
+        if (Euro_Size) variant.Euro_Size = Euro_Size;
+        if (Heel_Height) variant.Heel_Height = Heel_Height;
         if (weight) variant.weight = weight;
 
         if (stock !== undefined) {
@@ -343,7 +380,7 @@ export const getProductWiseProductVarientdata = async (req, res) => {
 
         // Find variants of that product
         const variants = await ProductVariant.find({ productId })
-            .select("color size price stock weight sku images");
+            .select("color size Occasion Outer_material Model_name Ideal_for Type_For_Casual Euro_Size Heel_Height price stock weight sku images Artical_Number");
 
         return sendSuccessResponse(res, "✅ Product with variants fetched successfully!", {
             product,

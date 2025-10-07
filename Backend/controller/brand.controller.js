@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import BrandModel from "../model/brand.model.js";
+import Product from "../model/product.model.js";
+import Order from "../model/order.model.js";
 import sellerModel from "../model/seller.model.js";
 import { ThrowError } from "../utils/Error.utils.js";
 import { sendBadRequestResponse, sendErrorResponse, sendNotFoundResponse, sendSuccessResponse } from "../utils/Response.utils.js";
@@ -57,7 +59,7 @@ export const createBrand = async (req, res) => {
             brandImage
         });
 
-        // Add brand reference to seller
+
         await sellerModel.findByIdAndUpdate(
             sellerId,
             { $push: { brandId: newBrand._id } },
@@ -124,7 +126,7 @@ export const updateBrand = async (req, res) => {
             return sendNotFoundResponse(res, "Brand not found or unauthorized!");
         }
 
-        const { brandName,brandColor, mainCategoryId } = req.body;
+        const { brandName, brandColor, mainCategoryId } = req.body;
 
         // === validate mainCategoryId if provided ===
         if (mainCategoryId && !mongoose.Types.ObjectId.isValid(mainCategoryId)) {
@@ -288,47 +290,136 @@ export const getBrandByMainCategory = async (req, res) => {
     }
 };
 
-
 export const brandFilterController = async (req, res) => {
     try {
-        const { filter, search } = req.query;
+        let { sortBy = "popularity", search } = req.query;
         let sortOption = {};
         let query = {};
 
-        // Apply search by brand name
+
+        if (search && ["az", "za", "newly_launched", "trustable_brands", "popularity"].includes(search.toLowerCase())) {
+            sortBy = search.toLowerCase();
+            search = null;
+        }
+
+
         if (search) {
-            query.brandName = { $regex: search, $options: "i" }; // case-insensitive
+            query.brandName = { $regex: search, $options: "i" };
         }
 
-        // Filter logic
-        if (filter) {
-            if (filter === "featured") query.isFeatured = true;
-            else if (filter === "trustable") query.isTrustable = true;
-            else if (filter === "az") sortOption = { brandName: 1 };
-            else if (filter === "za") sortOption = { brandName: -1 };
-            else if (filter === "newest") sortOption = { createdAt: -1 };
-            else if (filter === "oldest") sortOption = { createdAt: 1 };
+
+        switch (sortBy) {
+            case "az":
+                sortOption = { brandName: 1 };
+                break;
+            case "za":
+                sortOption = { brandName: -1 };
+                break;
+            case "newly_launched":
+                sortOption = { createdAt: -1 };
+                break;
+            case "trustable_brands":
+                sortOption = { brandName: 1 };
+                break;
+            case "popularity":
+            default:
+                sortOption = { brandName: 1 };
+                break;
+        }
+
+        let brands = [];
+        let totalBrands = 0;
+
+
+        if (sortBy === "trustable_brands") {
+            const trustableBrandIds = await Product.distinct('brand', { badge: 'CORALBAY CHOICE' });
+            query._id = trustableBrandIds.length > 0 ? { $in: trustableBrandIds } : { $in: [] };
+
+            totalBrands = await BrandModel.countDocuments(query);
+            brands = await BrandModel
+                .find(query)
+                .sort(sortOption)
+                .populate('mainCategoryId', 'mainCategoryName')
+                .select('-__v');
+
+
+        } else if (sortBy === "popularity") {
+            const completedOrders = await Order.aggregate([
+                { $match: { 'payment.status': 'Paid' } },
+                { $unwind: '$products' },
+                {
+                    $lookup: {
+                        from: 'products',
+                        localField: 'products.productId',
+                        foreignField: '_id',
+                        as: 'productDetails'
+                    }
+                },
+                { $unwind: '$productDetails' },
+                {
+                    $group: {
+                        _id: '$productDetails.brand',
+                        orderCount: { $sum: '$products.quantity' }
+                    }
+                },
+                { $sort: { orderCount: -1 } }
+            ]);
+
+            const brandIds = completedOrders.map(order => order._id);
+
+            if (brandIds.length > 0) {
+                const brandOrderMap = {};
+                completedOrders.forEach((order, index) => {
+                    brandOrderMap[order._id?.toString()] = index;
+                });
+
+                totalBrands = await BrandModel.countDocuments({ ...query, _id: { $in: brandIds } });
+                brands = await BrandModel
+                    .find({ ...query, _id: { $in: brandIds } })
+                    .populate('mainCategoryId', 'mainCategoryName')
+                    .select('-__v');
+
+
+                brands.sort((a, b) => {
+                    const aIndex = brandOrderMap[a._id.toString()] || 999;
+                    const bIndex = brandOrderMap[b._id.toString()] || 999;
+                    return aIndex - bIndex;
+                });
+            } else {
+                totalBrands = await BrandModel.countDocuments(query);
+                brands = await BrandModel
+                    .find(query)
+                    .sort(sortOption)
+                    .populate('mainCategoryId', 'mainCategoryName')
+                    .select('-__v');
+            }
+
+
         } else {
-            // default sort
-            sortOption = { createdAt: -1 };
+            totalBrands = await BrandModel.countDocuments(query);
+            brands = await BrandModel
+                .find(query)
+                .sort(sortOption)
+                .populate('mainCategoryId', 'mainCategoryName')
+                .select('-__v');
         }
-
-        const brands = await brandModel.find(query).sort(sortOption);
 
         return res.status(200).json({
             success: true,
-            message: "Brands fetched successfully",
-            data: brands,
+            message: `Brands fetched successfully (sorted by ${sortBy})`,
+            data: {
+                brands,
+                totalBrands,
+                sortBy,
+                search: search || null
+            }
         });
     } catch (error) {
-        console.error(error);
+        console.error("Brand Filter Error:", error);
         return res.status(500).json({
             success: false,
             message: "Error fetching brands",
             error: error.message,
         });
     }
-
-}
-
-
+};

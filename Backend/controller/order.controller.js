@@ -78,30 +78,30 @@ export const selectUserBillingAddressController = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // Find address inside user
-        const address = user.address.id(addressId);
-        if (!address) {
-            return res.status(404).json({ message: "Address not found for this user" });
+        // Find billing address inside user
+        const billingAddress = user.billingaddress.id(addressId);
+        if (!billingAddress) {
+            return res.status(404).json({ message: "Billing address not found for this user" });
         }
 
         // If already selected, skip unnecessary save
-        if (user.selectedAddress?.toString() === addressId) {
-            return sendSuccessResponse(res, "Address already selected", {
-                selectedAddress: user.selectedAddress
+        if (user.selectedBillingAddress?.toString() === addressId) {
+            return sendSuccessResponse(res, "Billing address already selected", {
+                selectedBillingAddress: user.selectedBillingAddress
             });
         }
 
-        // Update selected address
-        user.selectedAddress = addressId;
+        // Update selected billing address
+        user.selectedBillingAddress = addressId;
         await user.save();
 
-        return sendSuccessResponse(res, "Address selected successfully", {
-            selectedAddress: user.selectedAddress
+        return sendSuccessResponse(res, "Billing address selected successfully", {
+            selectedBillingAddress: user.selectedBillingAddress
         });
 
     } catch (error) {
-        console.error("Error while selecting address:", error.message);
-        return sendErrorResponse(res, 500, "Error while selecting address", error);
+        console.error("Error while selecting billing address:", error.message);
+        return sendErrorResponse(res, 500, "Error while selecting billing address", error);
     }
 };
 
