@@ -294,7 +294,7 @@ export const deleteReview = async (req, res) => {
         return ThrowError(res, 500, error.message);
     }
 };
-``
+
 const updateProductRating = async (productId) => {
     try {
         const reviews = await Review.find({ productId });
@@ -316,24 +316,35 @@ const updateProductRating = async (productId) => {
 export const getProductReviews = async (req, res) => {
     try {
         const { productId } = req.params;
-        const { page = 1, limit = 10, sort = "latest" } = req.query;
+        const { page = 1, limit = 10, sort = "latest", rating } = req.query;
 
         if (!mongoose.Types.ObjectId.isValid(productId)) {
             return sendBadRequestResponse(res, "Invalid product ID!");
         }
 
+        // Validate rating filter if provided
+        if (rating && (isNaN(rating) || rating < 1 || rating > 5 || !Number.isInteger(Number(rating)))) {
+            return sendBadRequestResponse(res, "Rating filter must be an integer between 1 and 5!");
+        }
+
         const skip = (page - 1) * limit;
 
+        // 🔸 Build query with rating filter
+        const query = { productId };
+        if (rating) {
+            query.overallRating = Number(rating);
+        }
+
         // 🔸 Fetch reviews
-        const reviews = await Review.find({ productId })
+        const reviews = await Review.find(query)
             .populate("userId", "name avatar")
             .sort(sort === "latest" ? { createdAt: -1 } : { overallRating: -1 })
             .skip(skip)
             .limit(Number(limit))
             .lean();
 
-        // 🔸 Count total reviews
-        const totalReviews = await Review.countDocuments({ productId });
+        // 🔸 Count total reviews (filtered if rating is provided)
+        const totalReviews = await Review.countDocuments(query);
 
         // 🔸 Rating distribution (1–5 stars)
         const distribution = {};
@@ -373,7 +384,8 @@ export const getProductReviews = async (req, res) => {
             summary: {
                 average: Number(average),
                 totalReviews,
-                distribution
+                distribution,
+                filteredBy: rating ? `Rating: ${rating} stars` : null
             },
             reviews: formattedReviews,
             page: Number(page),
