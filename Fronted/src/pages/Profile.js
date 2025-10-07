@@ -21,7 +21,7 @@ import { IoMdCloudUpload } from "react-icons/io";
 import { IoClose } from "react-icons/io5";
 import { useParams } from "react-router-dom";
 import { useNavigate } from 'react-router-dom';
-import { addBillingAddress, addNewAddress, getAuthData, removeAddress, removeBillingAddress, updateBillingAddress, updateNewAddress, updateProfile } from '../Store/Slices/authProfileSlice';
+import { addBillingAddress, addNewAddress, getAuthData, removeAddress, removeBillingAddress, selectBillingAddress, selectNewAddress, updateBillingAddress, updateNewAddress, updateProfile } from '../Store/Slices/authProfileSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { PersonalInformationSchema } from '../schemas';
 import { addressSchema } from '../schemas';
@@ -116,6 +116,14 @@ export default function Profile() {
     });
 
 
+
+    const isFirstAddress =
+        addHeader === "New"
+            ? authData?.address?.length === 0
+            : addHeader === "Billing"
+                ? authData?.billingaddress?.length === 0
+                : false;
+
     // New + Billing  Address Form handle 
     const initialAddressData = {
         firstName: "",
@@ -130,6 +138,8 @@ export default function Profile() {
         openSun: false,
         defaultAddress: false,
     };
+
+
 
 
 
@@ -150,7 +160,7 @@ export default function Profile() {
                 city: values.city,
                 state: values.state,
                 saveAs: values.addressType,
-                ...(values.addressType === "office" && {
+                ...(values.addressType === "Office" && {
                     officeOpenOnSaturday: values.openSat,
                     officeOpenOnSunday: values.openSun,
                 }),
@@ -161,18 +171,18 @@ export default function Profile() {
             if (addHeader === "New") {
 
                 // alert("Add New Address Saved Successfully");
+                // console.log("New Add ::", sendAddNewData)
+                const response = await dispatch(addNewAddress(sendAddNewData))
 
-                // await dispatch(addNewAddress(sendAddNewData))
+                const addressId = response?.payload?.address?.slice(-1)[0]?._id;
+                // console.log("New Id Address :",addressId)
+
+                // console.log("Default in new :", values.defaultAddress)
+                if (values.defaultAddress || isFirstAddress) {
+                    await dispatch(selectNewAddress(addressId))
+                }
+
                 await dispatch(getAuthData())
-                
-
-
-                console.log("defaultaddress:", sendAddNewData)
-                console.log("defaultaddress:", values.defaultAddress)
-
-                // if (values.defaultAddress) {
-                // }
-                
                 setOpenAddress(false)
                 actions.resetForm();
                 setOpenWeekend(false)
@@ -182,7 +192,15 @@ export default function Profile() {
             if (addHeader === "Billing") {
 
                 // alert("Add Billing address Saved Successfully");
-                await dispatch(addBillingAddress(sendAddNewData))
+                // console.log("Billing Add ::", sendAddNewData)
+
+                const response = await dispatch(addBillingAddress(sendAddNewData));
+                const addressId = response?.payload?.billingaddress?.slice(-1)[0]?._id;
+
+                if (values.defaultAddress || isFirstAddress) {
+                    await dispatch(selectBillingAddress(addressId))
+                }
+
                 await dispatch(getAuthData())
 
                 setOpenAddress(false)
@@ -203,10 +221,10 @@ export default function Profile() {
         address: selectedAddress?.address || "",
         city: selectedAddress?.city || "",
         state: selectedAddress?.state || "",
-        addressType: selectedAddress?.saveAs || "home",
+        addressType: selectedAddress?.saveAs || "Home",
         openSat: selectedAddress?.officeOpenOnSaturday || false,
         openSun: selectedAddress?.officeOpenOnSunday || false,
-        defaultAddress: selectedAddress?.defaultAddress || false,
+        defaultAddress: selectedAddress?.defaultAddress ?? isFirstAddress,
     }
 
     const editAddressFormik = useFormik({
@@ -224,7 +242,7 @@ export default function Profile() {
                 city: values.city,
                 state: values.state,
                 saveAs: values.addressType,
-                ...(values.addressType === "office" && {
+                ...(values.addressType === "Office" && {
                     officeOpenOnSaturday: values.openSat,
                     officeOpenOnSunday: values.openSun,
                 }),
@@ -237,13 +255,20 @@ export default function Profile() {
             if (addHeader === "New") {
 
                 // alert("Edit New Address Saved Successfully");
-                await dispatch(updateNewAddress({id: updateAddID, data: sendAddNewData }))   
+                const response = await dispatch(updateNewAddress({ id: updateAddID, data: sendAddNewData }))
+                const addressId = response?.payload?.address?.slice(-1)[0]?._id;
+
+
+                console.log("New : edit : default ::", values.defaultAddress)
+                if (values.defaultAddress || isFirstAddress) {
+                    await dispatch(selectNewAddress(addressId))
+                }
+
                 await dispatch(getAuthData())
-
-
                 setOpenEditAddress(false)
                 actions.resetForm();
-                setOpenWeekend(false)
+                setOpenWeekend(false);
+
             }
 
 
@@ -252,9 +277,15 @@ export default function Profile() {
             if (addHeader === "Billing") {
 
                 // alert("Edit Billing address Saved Successfully");
-                await dispatch(updateBillingAddress({id: updateAddID, data: sendAddNewData }))
-                await dispatch(getAuthData())
+                const response = await dispatch(updateBillingAddress({ id: updateAddID, data: sendAddNewData }))
 
+                const addressId = response?.payload?.billingaddress?.slice(-1)[0]?._id;
+
+                if (values.defaultAddress || isFirstAddress) {
+                    await dispatch(selectBillingAddress(addressId))
+                }
+
+                await dispatch(getAuthData())
                 setOpenEditAddress(false)
                 actions.resetForm();
                 setOpenWeekend(false)
@@ -267,36 +298,42 @@ export default function Profile() {
     // Remove Address
     const handleRemoveAddress = async (id) => {
 
-        console.log("handle remove id", id)
+        // console.log("handle remove id", id)
 
-        if (addHeader === "New") {
+        if (addHeader == "New") {
             await dispatch(removeAddress(id))
+            await dispatch(getAuthData())
             console.log("New Header api call")
             setAddHedaer('')
-            await dispatch(getAuthData())
         }
 
-        if (addHeader === 'Billing') {
+        if (addHeader == 'Billing') {
             await dispatch(removeBillingAddress(id))
+            await dispatch(getAuthData())
             console.log("Billing Header api call")
             setAddHedaer('')
-            await dispatch(getAuthData())
         }
 
 
     }
 
     // Select Address 
-    const handleSelectAddress = (id) => {
-        console.log("handle New add" , id)
+    const handleSelectAddress = async (addressId) => {
+        // console.log("Header new", addHeader)
 
-        
+        console.log("handle New add", addressId)
+        await dispatch(selectNewAddress(addressId))
+        await dispatch(getAuthData());
 
     }
 
     // Select Billing Address
-    const handleSelectBillAddress = (id) => {
-        console.log("handle Bill add" , id)
+    const handleSelectBillAddress = async (addressId) => {
+        // console.log("Header bill", addHeader)
+
+        console.log("handle Bill add", addressId)
+        await dispatch(selectBillingAddress(addressId))
+        await dispatch(getAuthData());
 
     }
 
@@ -500,6 +537,7 @@ export default function Profile() {
                                                         <input
                                                             type="radio"
                                                             name="address"
+                                                            checked={authData?.selectedAddress === add._id}
                                                             onClick={() => handleSelectAddress(add._id)}
                                                             className=" mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
                                                         />
@@ -513,7 +551,7 @@ export default function Profile() {
                                                         </div>
                                                         <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> {add.phone} </span></p>
                                                         <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
-                                                            <button className="border border-gray-400 px-3 py-2 rounded-md w-24" onClick={() => { handleRemoveAddress(add._id); setAddHedaer('New'); }} >Remove</button>
+                                                            <button className="border border-gray-400 px-3 py-2 rounded-md w-24" onClick={() => { setAddHedaer('New'); handleRemoveAddress(add._id); }}>Remove</button>
                                                             <button onClick={() => { setOpenEditAddress(true); setAddHedaer('New'); setSelectedAddress(add); setUpdateAddID(add._id) }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
                                                         </div>
 
@@ -525,40 +563,6 @@ export default function Profile() {
 
                                                 </div>
                                             ))}
-
-
-
-                                            {/* Add : 2 */}
-                                            {/* <div className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
-
-                                                <div>
-                                                    <input
-                                                        type="radio"
-                                                        name="address"
-                                                        className=" mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
-                                                    />
-                                                </div>
-
-                                                <div className="flex-1">
-                                                    <h4 className="text-[var(--profile-dark-text)] sm:text-lg text-base font-semibold mb-2">Liam Mitchell</h4>
-                                                    <div className='text-[var(--profile-darkgray-text)] font-medium te'>
-                                                        <p>88 George Street, </p>
-                                                        <p>Melbourne, VIC 3000,</p>
-                                                        <p>Australia</p>
-                                                    </div>
-                                                    <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> +61 999 900 005 </span></p>
-                                                    <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
-                                                        <button className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Remove</button>
-                                                        <button onClick={() => { setOpenEditAddress(true); setAddHedaer('New') }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
-                                                    </div>
-
-                                                </div>
-
-                                                <div className="text-[var(--text-red)] font-medium text-base w-auto">
-                                                    <h6>Home</h6>
-                                                </div>
-
-                                            </div> */}
 
 
                                         </div>
@@ -579,8 +583,9 @@ export default function Profile() {
                                                     <div>
                                                         <input
                                                             type="radio"
-                                                            name="address"
-                                                            onClick={ ()=>  handleSelectBillAddress(add._id)  }
+                                                            name="billaddress"
+                                                            checked={authData?.selectedBillingAddress === add._id}
+                                                            onClick={() => handleSelectBillAddress(add._id)}
                                                             className=" mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
                                                         />
                                                     </div>
@@ -593,8 +598,8 @@ export default function Profile() {
                                                         </div>
                                                         <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> {add.phone} </span></p>
                                                         <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
-                                                            <button className="border border-gray-400 px-3 py-2 rounded-md w-24 " onClick={() => { handleRemoveAddress(add._id); setAddHedaer('Billing'); }}>Remove</button>
-                                                            <button onClick={() => { setOpenEditAddress(true); setAddHedaer('Billing'); setSelectedAddress(add); setUpdateAddID(add._id)  }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
+                                                            <button className="border border-gray-400 px-3 py-2 rounded-md w-24 " onClick={() => { setAddHedaer('Billing'); handleRemoveAddress(add._id);  }}>Remove</button>
+                                                            <button onClick={() => { setOpenEditAddress(true); setAddHedaer('Billing'); setSelectedAddress(add); setUpdateAddID(add._id) }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
                                                         </div>
 
                                                     </div>
@@ -605,38 +610,6 @@ export default function Profile() {
 
                                                 </div>
                                             ))}
-
-
-                                            {/* Add:1 */}
-                                            {/* <div className="flex flex-row items-start gap-2 p-3 bg-[var(--bg-white)] rounded-md">
-
-                                                <div>
-                                                    <input
-                                                        type="radio"
-                                                        name="address"
-                                                        className=" mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-2 checked:ring-[var(--text-orange)] checked:ring-offset-2 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
-                                                    />
-                                                </div>
-
-                                                <div className="flex-1">
-                                                    <h4 className="text-[var(--profile-dark-text)] sm:text-lg text-base font-semibold mb-2">Chloe Harrison</h4>
-                                                    <div className='text-[var(--profile-darkgray-text)] font-medium te'>
-                                                        <p>12 Green Lane, Brisbane, QLD</p>
-                                                        <p>4000, Australia</p>
-                                                    </div>
-                                                    <p className='flex flex-wrap gap-1 mt-2 text-[var(--profile-darkgray-text)] text-base'>Mobile: <span className='text-[var(--profile-dark-text)]'> +61 418 654 321 </span></p>
-                                                    <div className="mt-2 text-[var(--profile-darkgray-text)] text-base font-semibold flex gap-2 flex-wrap ">
-                                                        <button className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Remove</button>
-                                                        <button onClick={() => { setOpenEditAddress(true); setAddHedaer('Billing') }} className="border border-gray-400 px-3 py-2 rounded-md w-24 ">Edit</button>
-                                                    </div>
-
-                                                </div>
-
-                                                <div className="text-[var(--text-red)] font-medium text-base w-auto">
-                                                    <h6>Office</h6>
-                                                </div>
-
-                                            </div> */}
 
 
                                         </div>
@@ -652,7 +625,7 @@ export default function Profile() {
 
 
                                     {/* ***** Modal - Add Address ******* */}
-                                    <Dialog open={openAddress} onClose={() => { setOpenAddress(false); addressFormik.resetForm() }} className="relative z-[999]">
+                                    <Dialog open={openAddress} onClose={() => { }} className="relative z-[999]">
                                         {/* Backdrop */}
                                         <DialogBackdrop
                                             transition
@@ -874,7 +847,7 @@ export default function Profile() {
                                                                 id='defAdd'
                                                                 type="checkbox"
                                                                 name="defaultAddress"
-                                                                checked={addressFormik.values.defaultAddress}
+                                                                checked={addressFormik.values.defaultAddress || isFirstAddress}
                                                                 onChange={addressFormik.handleChange}
                                                                 className="h-4 w-4 accent-[var(--text-orange)]"
                                                             />
@@ -894,9 +867,8 @@ export default function Profile() {
                                     </Dialog>
 
 
-
                                     {/* ***** Modal - Edit Address ******* */}
-                                    <Dialog open={openEditAddress} onClose={()=> editAddressFormik.resetForm()} className="relative z-[999]">
+                                    <Dialog open={openEditAddress} onClose={() => { }} className="relative z-[999]">
                                         {/* Backdrop */}
                                         <DialogBackdrop
                                             transition
@@ -914,7 +886,7 @@ export default function Profile() {
                                                     <DialogTitle className="text-lg font-semibold text-[var(--profile-dark-text,#111)]">
                                                         Edit {addHeader} Address
                                                     </DialogTitle>
-                                                    <IoMdClose onClick={() => {editAddressFormik.resetForm(); setOpenEditAddress(false)}} className="text-[24px] text-[var(--profile-dark-text)] cursor-pointer bg-[var(--profile-gray-text)] p-1 rounded-full" />
+                                                    <IoMdClose onClick={() => { editAddressFormik.resetForm(); setOpenEditAddress(false) }} className="text-[24px] text-[var(--profile-dark-text)] cursor-pointer bg-[var(--profile-gray-text)] p-1 rounded-full" />
                                                 </div>
 
                                                 <div className="border-b border-[var(--profile-border,#ddd)]"></div>
@@ -1048,7 +1020,7 @@ export default function Profile() {
                                                         {/* Address Type */}
                                                         <h4 className="text-[var(--profile-dark-text)] font-semibold text-lg">Address Type</h4>
                                                         <div className='flex items-center gap-4'>
-                                                            <div className='flex items-center gap-2'  onClick={() => setOpenWeekend(false)}>
+                                                            <div className='flex items-center gap-2' onClick={() => setOpenWeekend(false)}>
                                                                 <input
                                                                     id='mHome'
                                                                     type='radio'
@@ -1061,7 +1033,7 @@ export default function Profile() {
                                                                 <label htmlFor='mHome'>Home</label>
                                                             </div>
 
-                                                            <div className='flex items-center gap-2'  onClick={() => setOpenWeekend(true)} >
+                                                            <div className='flex items-center gap-2' onClick={() => setOpenWeekend(true)} >
                                                                 <input
                                                                     id='mOffice'
                                                                     type='radio'
@@ -1076,7 +1048,7 @@ export default function Profile() {
                                                             </div>
                                                         </div>
 
-                                                        { editAddressData.addressType === "Office" && (
+                                                        {(editAddressData.addressType === "Office" && openWeekend) && (
                                                             <>
                                                                 {/* Weekends */}
                                                                 <p className='text-[var(--profile-light-text)] font-medium text-sm'>If your office open on weekends?</p>
@@ -1112,17 +1084,18 @@ export default function Profile() {
 
                                                     {/* Footer */}
                                                     <div className="flex flex-col gap-3 py-5 px-1 shrink-0 border-t border-[var(--profile-border,#ddd)]">
-                                                        <div className='flex items-center gap-2'>
+                                                        {/* <div className='flex items-center gap-2'>
                                                             <input
-                                                                id='defAdd'
+                                                                id='defAdd2'
                                                                 type="checkbox"
-                                                                name="defaultAddress"
-                                                                checked={editAddressFormik.values.defaultAddress}
+                                                                name="defaultAdd"
+                                                                checked={editAddressFormik.values.defaultAddress || isFirstAddress }
+                                                                disabled
                                                                 onChange={editAddressFormik.handleChange}
                                                                 className="h-4 w-4 accent-[var(--text-orange)]"
                                                             />
-                                                            <label htmlFor="defAdd" className='text-[var(--profile-darkgray-text)] text-sm font-medium'>Set my default address</label>
-                                                        </div>
+                                                            <label htmlFor="defAdd2" className='text-[var(--profile-darkgray-text)] text-sm font-medium'>Set my default address</label>
+                                                        </div> */}
 
                                                         <button type='submit' className='bg-[var(--bg-orange)] text-[var(--text-white)] p-2 rounded-md text-lg font-semibold'>Save</button>
                                                         <button type='button' onClick={() => { setOpenEditAddress(false); editAddressFormik.resetForm(); setOpenWeekend(false) }} className='p-2 rounded-md text-lg font-semibold text-[var(--profile-darkgray-text)] border border-[var(--profile-darkgray-text)]'> Cancel </button>
