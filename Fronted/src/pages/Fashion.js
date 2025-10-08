@@ -185,7 +185,8 @@ const Fashion = () => {
 
 	const product = useSelector((state) => state.category.product.data);
 	const productVarient = useSelector((state) => state.category.productVarient.data);
-	// console.log("productVarient",productVarient);
+	console.log("Product",product);
+	console.log("productVarient",productVarient);
 	
 
 	// Filtered products based on selected filters

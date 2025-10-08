@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Minus, Plus, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '../images/rlogo.png';
@@ -14,15 +14,39 @@ import { X, Tag } from 'lucide-react';
 import '../styles/r_style.css';
 import cart from '../images/cart.jpg';
 import fram from '../images/Frame.jpg';
+import {
+    Dialog,
+    DialogBackdrop,
+    DialogPanel,
+    DialogTitle,
+} from "@headlessui/react";
+import { IoMdClose } from "react-icons/io";
+import { useDispatch, useSelector } from 'react-redux';
+import { getAllCoupen } from '../Store/Slices/coupenSlice';
+
+
 function Addtocart() {
+
+    const dispatch = useDispatch()
     const [viewState, setViewState] = useState('add-first');
     const [savedAddress, setSavedAddress] = useState(null);
     const [billingAddress, setBillingAddress] = useState(null);
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit');
     const [selectedDigitalPayment, setSelectedDigitalPayment] = useState('');
+    const [openCoupen, setOpenCoupen] = useState(false);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     //   const [discountCode, setDiscountCode] = useState('');
+
+    const coupenData = useSelector((state) => state.coupen.allCoupen);
+    // console.log(coupenData);
+
+
+    useEffect(() => {
+        dispatch(getAllCoupen());
+    }, [dispatch]);
+
+
 
     const discountCodes = [
         {
@@ -30,7 +54,7 @@ function Addtocart() {
             code: 'DRIGULE20',
             description: 'Get 20% OFF',
             subtitle: '$10 OFF on orders above $799',
-            minOrder: '(Limited Time)',
+            // minOrder: '(Limited Time)',
             color: 'bg-green-500',
             textColor: 'text-white'
         },
@@ -215,6 +239,7 @@ function Addtocart() {
         } else {
             alert('Invalid discount code');
         }
+
     };
 
     const calculateDiscountAmount = () => {
@@ -320,358 +345,476 @@ function Addtocart() {
                         <span>AU$ {total.toLocaleString()}</span>
                     </div>
                 </div>
-               
+
             </div>
         </div>
     );
 
-const renderBagTab = () => {
-    
-    if (cartItems.length === 0) {
-        return renderEmptyCart();
-    }
-    
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 main_container">
-            
-            <div className="lg:col-span-2">
-                <div className="space-y-6">
-                    <table className="hidden sm:table min-w-full border border-gray-200 rounded-lg overflow-hidden">
-                        <thead>
-                            <tr className="divide-y divide-gray-200 bg-gray-50">
-                                <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Product</th>
-                                <th className="px-4 py-2 text-sm font-medium text-gray-700">Price</th>
-                                <th className="px-4 py-2 text-sm font-medium text-gray-700">Quantity</th>
-                                <th className="px-4 py-2 text-sm font-medium text-gray-700">Total</th>
-                                <th className="px-4 py-2 text-sm font-medium text-gray-700"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-200">
+
+
+    const renderBagTab = () => {
+
+        if (cartItems.length === 0) {
+            return renderEmptyCart();
+        }
+
+
+
+
+        return (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 main_container">
+
+                <div className="lg:col-span-2">
+                    <div className="space-y-6">
+                        <table className="hidden sm:table min-w-full border border-gray-200 rounded-lg overflow-hidden">
+                            <thead>
+                                <tr className="divide-y divide-gray-200 bg-gray-50">
+                                    <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Product</th>
+                                    <th className="px-4 py-2 text-sm font-medium text-gray-700">Price</th>
+                                    <th className="px-4 py-2 text-sm font-medium text-gray-700">Quantity</th>
+                                    <th className="px-4 py-2 text-sm font-medium text-gray-700">Total</th>
+                                    <th className="px-4 py-2 text-sm font-medium text-gray-700"></th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-200">
+                                {cartItems.map((item) => (
+                                    <tr key={item.id}>
+                                        <td className="px-4 py-3 flex items-center space-x-3">
+                                            <img
+                                                src={item.image}
+                                                className="w-16 h-16 bg-cover rounded-lg bg-gray-100 border-none"
+                                            />
+                                            <div>
+                                                <h3 className="font-medium text-gray-900">{item.name}</h3>
+                                                <p className="text-sm text-gray-500">
+                                                    {item.color} | {item.size}
+                                                </p>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 font-medium">AU$ {item.price.toLocaleString()}</td>
+                                        <td className="px-4 py-3">
+                                            <div className="flex items-center justify-center bg-gray-50 rounded">
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, -1)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-50"
+                                                >
+                                                    <Minus className="w-4 h-4" />
+                                                </button>
+                                                <span className="w-8 text-center">{item.quantity}</span>
+                                                <button
+                                                    onClick={() => updateQuantity(item.id, 1)}
+                                                    className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-50"
+                                                >
+                                                    <Plus className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-3 font-medium">
+                                            AU$ {(item.price * item.quantity).toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <button
+                                                onClick={() => removeItem(item.id)}
+                                                className="text-gray-400 hover:text-red-500"
+                                            >
+                                                <Trash2 className="w-5 h-5" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+
+                        <div className="sm:hidden space-y-4">
                             {cartItems.map((item) => (
-                                <tr key={item.id}>
-                                    <td className="px-4 py-3 flex items-center space-x-3">
-                                        <img
-                                            src={item.image}
-                                            className="w-16 h-16 bg-cover rounded-lg bg-gray-100 border-none"
-                                        />
+                                <div key={item.id} className="border rounded-lg p-4 flex items-center justify-between">
+                                    <div className="flex items-center space-x-3">
+                                        <img src={item.image} className="w-16 h-16 rounded-lg bg-gray-100" />
                                         <div>
                                             <h3 className="font-medium text-gray-900">{item.name}</h3>
-                                            <p className="text-sm text-gray-500">
-                                                {item.color} | {item.size}
-                                            </p>
+                                            <p className="text-sm text-gray-500">{item.color} | {item.size}</p>
+                                            <p className="text-sm font-medium">AU$ {item.price.toLocaleString()}</p>
                                         </div>
-                                    </td>
-                                    <td className="px-4 py-3 font-medium">AU$ {item.price.toLocaleString()}</td>
-                                    <td className="px-4 py-3">
-                                        <div className="flex items-center justify-center bg-gray-50 rounded">
-                                            <button
-                                                onClick={() => updateQuantity(item.id, -1)}
-                                                className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-50"
-                                            >
-                                                <Minus className="w-4 h-4" />
-                                            </button>
-                                            <span className="w-8 text-center">{item.quantity}</span>
-                                            <button
-                                                onClick={() => updateQuantity(item.id, 1)}
-                                                className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-50"
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                            </button>
+                                    </div>
+                                    <div className="flex flex-col items-end">
+                                        <div className="flex items-center space-x-2 bg-gray-200 rounded p-1">
+                                            <button onClick={() => updateQuantity(item.id, -1)} className="w-8 h-8">-</button>
+                                            <span>{item.quantity}</span>
+                                            <button onClick={() => updateQuantity(item.id, 1)} className="w-8 h-8">+</button>
                                         </div>
-                                    </td>
-                                    <td className="px-4 py-3 font-medium">
-                                        AU$ {(item.price * item.quantity).toLocaleString()}
-                                    </td>
-                                    <td className="px-4 py-3 text-center">
-                                        <button
-                                            onClick={() => removeItem(item.id)}
-                                            className="text-gray-400 hover:text-red-500"
-                                        >
-                                            <Trash2 className="w-5 h-5" />
-                                        </button>
-                                    </td>
-                                </tr>
+                                        <p className="mt-2 font-medium">AU$ {(item.price * item.quantity).toLocaleString()}</p>
+                                        <button onClick={() => removeItem(item.id)} className="text-red-500 mt-2">Remove</button>
+                                    </div>
+                                </div>
                             ))}
-                        </tbody>
-                    </table>
-
-                    <div className="sm:hidden space-y-4">
-                        {cartItems.map((item) => (
-                            <div key={item.id} className="border rounded-lg p-4 flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                    <img src={item.image} className="w-16 h-16 rounded-lg bg-gray-100" />
-                                    <div>
-                                        <h3 className="font-medium text-gray-900">{item.name}</h3>
-                                        <p className="text-sm text-gray-500">{item.color} | {item.size}</p>
-                                        <p className="text-sm font-medium">AU$ {item.price.toLocaleString()}</p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <div className="flex items-center space-x-2 bg-gray-200 rounded p-1">
-                                        <button onClick={() => updateQuantity(item.id, -1)} className="w-8 h-8">-</button>
-                                        <span>{item.quantity}</span>
-                                        <button onClick={() => updateQuantity(item.id, 1)} className="w-8 h-8">+</button>
-                                    </div>
-                                    <p className="mt-2 font-medium">AU$ {(item.price * item.quantity).toLocaleString()}</p>
-                                    <button onClick={() => removeItem(item.id)} className="text-red-500 mt-2">Remove</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="mt-6 space-y-6">
-                    <div className="flex items-center space-x-3">
-                        <input
-                            type="checkbox"
-                            id="gift-wrap"
-                            checked={giftWrap}
-                            onChange={(e) => setGiftWrap(e.target.checked)}
-                            className="w-4 h-4 text-orange-500 rounded custom-checkbox"
-                        />
-                        <label htmlFor="gift-wrap" className="text-gray-700">
-                            Gift wrap your purchase for just US$ 20
-                        </label>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 className="font-medium text-gray-900 mb-4">Order special instructions</h3>
-                            <textarea
-                                placeholder="Write your instructions..."
-                                value={specialInstructions}
-                                onChange={(e) => setSpecialInstructions(e.target.value)}
-                                className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24"
-                            />
-                        </div>
-
-                        <div>
-                            <h3 className="font-medium text-gray-900 mb-4">Estimates Delivery</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">
-                                        Province <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={province}
-                                        onChange={(e) => setProvince(e.target.value)}
-                                        className="w-full p-3 border border-gray-300 rounded-lg bg-white"
-                                    >
-                                        <option value="">Select State</option>
-                                        <option value="NSW">New South Wales</option>
-                                        <option value="VIC">Victoria</option>
-                                        <option value="QLD">Queensland</option>
-                                        <option value="WA">Western Australia</option>
-                                        <option value="SA">South Australia</option>
-                                        <option value="TAS">Tasmania</option>
-                                        <option value="ACT">Australian Capital Territory</option>
-                                        <option value="NT">Northern Territory</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-sm text-gray-700 mb-1">
-                                        ZIP code <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter ZIP code"
-                                        value={zipCode}
-                                        onChange={(e) => setZipCode(e.target.value)}
-                                        className="w-full p-3 border border-gray-300 rounded-lg"
-                                    />
-                                </div>
-                                <button className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                                    Calculate Shipping
-                                </button>
-                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div className="bg-gray-50 p-6 rounded-lg h-fit">
-                <h3 className="font-medium text-gray-900 mb-4">Order Summary</h3>
-
-                <div className="space-y-4 mb-6">
-                    <div>
-                        <label className="block text-sm text-gray-700 mb-2">Add a discount code</label>
-                        <div className="flex">
+                    <div className="mt-6 space-y-6">
+                        <div className="flex items-center space-x-3">
                             <input
-                                type="text"
-                                placeholder="Enter code"
-                                value={discountCode}
-                                onClick={() => setIsModalOpen(true)}
-                                onChange={(e) => setDiscountCode(e.target.value)}
-                                className="flex-1 p-3 border border-gray-300 rounded-l-lg"
+                                type="checkbox"
+                                id="gift-wrap"
+                                checked={giftWrap}
+                                onChange={(e) => setGiftWrap(e.target.checked)}
+                                className="w-4 h-4 text-orange-500 rounded custom-checkbox"
                             />
-                            <button
-                                onClick={applyDiscountCode}
-                                className="px-6 py-3 rounded-r-lg bg-white border border-gray-300"
-                            >
-                                Apply
-                            </button>
+                            <label htmlFor="gift-wrap" className="text-gray-700">
+                                Gift wrap your purchase for just US$ 20
+                            </label>
                         </div>
-                        {appliedDiscount && (
-                            <div className="text-green-600 text-sm mt-2">
-                                ✓ {appliedDiscount.description} applied
-                            </div>
-                        )}
-                    </div>
-                </div>
 
-                {isModalOpen && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
-                            <div className="flex items-center justify-between p-4 border-b">
-                                <h2 className="text-xl font-semibold">Apply Coupon</h2>
-                                <button
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="p-1 hover:bg-gray-100 rounded-full"
-                                >
-                                    <X size={20} />
-                                </button>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <h3 className="font-medium text-gray-900 mb-4">Order special instructions</h3>
+                                <textarea
+                                    placeholder="Write your instructions..."
+                                    value={specialInstructions}
+                                    onChange={(e) => setSpecialInstructions(e.target.value)}
+                                    className="w-full p-3 border border-gray-300 rounded-lg resize-none h-24"
+                                />
                             </div>
 
-                            <div className="p-4">
-                                <div className="mb-4">
-                                    <p className="text-sm text-gray-600 mb-2">Add a discount code</p>
-                                    <div className="flex">
+                            <div>
+                                <h3 className="font-medium text-gray-900 mb-4">Estimates Delivery</h3>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-sm text-gray-700 mb-1">
+                                            Province <span className="text-red-500">*</span>
+                                        </label>
+                                        <select
+                                            value={province}
+                                            onChange={(e) => setProvince(e.target.value)}
+                                            className="w-full p-3 border border-gray-300 rounded-lg bg-white"
+                                        >
+                                            <option value="">Select State</option>
+                                            <option value="NSW">New South Wales</option>
+                                            <option value="VIC">Victoria</option>
+                                            <option value="QLD">Queensland</option>
+                                            <option value="WA">Western Australia</option>
+                                            <option value="SA">South Australia</option>
+                                            <option value="TAS">Tasmania</option>
+                                            <option value="ACT">Australian Capital Territory</option>
+                                            <option value="NT">Northern Territory</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm text-gray-700 mb-1">
+                                            ZIP code <span className="text-red-500">*</span>
+                                        </label>
                                         <input
                                             type="text"
-                                            placeholder="Enter code"
-                                            value={discountCode}
-                                            onChange={(e) => setDiscountCode(e.target.value)}
-                                            className="flex-1 p-3 border border-gray-300 rounded-l-lg focus:outline-none"
+                                            placeholder="Enter ZIP code"
+                                            value={zipCode}
+                                            onChange={(e) => setZipCode(e.target.value)}
+                                            className="w-full p-3 border border-gray-300 rounded-lg"
                                         />
-                                        <button
-                                            onClick={() => applyDiscountCode()}
-                                            className="px-6 py-3 border border-gray-300 rounded-r-lg"
-                                        >
-                                            Apply
-                                        </button>
                                     </div>
+                                    <button className="w-full py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                        Calculate Shipping
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="bg-gray-50 p-6 rounded-lg h-fit">
+                    <h3 className="font-medium text-gray-900 mb-4">Order Summary</h3>
+
+                    <div className="space-y-4 mb-6">
+                        <div>
+                            <label className="block text-sm text-gray-700 mb-2">Add a discount code</label>
+                            <div className="flex">
+                                <input
+                                    type="text"
+                                    placeholder="Enter code"
+                                    value={discountCode}
+                                    onClick={() => setIsModalOpen(true)}
+                                    // onClick={() => setOpenCoupen(true)}
+                                    onChange={(e) => setDiscountCode(e.target.value)}
+                                    className="flex-1 p-3 border border-gray-300 rounded-l-lg"
+                                />
+                                <button
+                                    onClick={applyDiscountCode}
+                                    className="px-6 py-3 rounded-r-lg bg-white border border-gray-300"
+                                >
+                                    Apply
+                                </button>
+                            </div>
+                            {appliedDiscount && (
+                                <div className="text-green-600 text-sm mt-2">
+                                    ✓ {appliedDiscount.description} applied
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {isModalOpen && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+                                <div className="flex items-center justify-between p-4 border-b">
+                                    <h2 className="text-xl font-semibold">Apply Coupon</h2>
+                                    <button
+                                        onClick={() => setIsModalOpen(false)}
+                                        className="p-1 hover:bg-gray-100 rounded-full"
+                                    >
+                                        <X size={20} />
+                                    </button>
                                 </div>
 
-                                <div className="space-y-3 overflow-y-auto max-h-80">
-                                    {discountCodes.map((coupon, index) => (
-                                        <div key={coupon.id} className="flex gap-3">
-                                            <div
-                                                className={`rounded-l-lg border-r-4 border-white border-dashed ${
-                                                    index === 0 ? "bg-green-500" : 
-                                                    index === 1 ? "bg-red-500" : "bg-blue-500"
-                                                }`}
+                                <div className="p-4">
+                                    <div className="mb-4">
+                                        <p className="text-sm text-gray-600 mb-2">Add a discount code</p>
+                                        <div className="flex">
+                                            <input
+                                                type="text"
+                                                placeholder="Enter code"
+                                                value={discountCode}
+                                                onChange={(e) => setDiscountCode(e.target.value)}
+                                                className="flex-1 p-3 border border-gray-300 rounded-l-lg focus:outline-none"
+                                            />
+                                            <button
+                                                onClick={() => applyDiscountCode()}
+                                                className="px-6 py-3 border border-gray-300 rounded-r-lg"
                                             >
-                                                <div className="text-whitet r_text writing-mode-vertical">
-                                                    Discount
-                                                </div>
-                                            </div>
+                                                Apply
+                                            </button>
+                                        </div>
+                                    </div>
 
-                                            <div className="p-4 w-full border rounded-r-lg">
-                                                <div className="mb-3">
-                                                    <div className="flex justify-between">
-                                                        <div>
-                                                            <p className="text-gray-700 font-medium">{coupon.description}</p>
-                                                        </div>
-                                                        <div>
-                                                            <div className="w-6 h-6 rounded-full flex items-center justify-center">
-                                                                <img src={dot} alt="" />
+                                    <div className="space-y-3 overflow-y-auto max-h-80">
+                                        {discountCodes.map((coupon, index) => (
+                                            <div key={coupon.id} className="flex gap-3">
+                                                <div
+                                                    className={`rounded-l-lg border-r-4 border-white border-dashed ${index === 0 ? "bg-green-500" :
+                                                            index === 1 ? "bg-red-500" : "bg-blue-500"
+                                                        }`}
+                                                >
+                                                    <div className="text-whitet r_text writing-mode-vertical">
+                                                        Discount
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-4 w-full border rounded-r-lg">
+                                                    <div className="mb-3">
+                                                        <div className="flex justify-between">
+                                                            <div>
+                                                                <p className="text-gray-700 font-medium">{coupon.description}</p>
+                                                            </div>
+                                                            <div>
+                                                                <div className="w-6 h-6 rounded-full flex items-center justify-center">
+                                                                    <img src={dot} alt="" />
+                                                                </div>
                                                             </div>
                                                         </div>
+
+                                                        <h3 className="font-bold text-lg">{coupon.code}</h3>
+                                                        <p className="text-sm text-gray-600">{coupon.subtitle}</p>
+                                                        {coupon.minOrder && (
+                                                            <p className="text-sm text-gray-500">{coupon.minOrder}</p>
+                                                        )}
                                                     </div>
 
-                                                    <h3 className="font-bold text-lg">{coupon.code}</h3>
-                                                    <p className="text-sm text-gray-600">{coupon.subtitle}</p>
-                                                    {coupon.minOrder && (
-                                                        <p className="text-sm text-gray-500">{coupon.minOrder}</p>
-                                                    )}
+                                                    <button
+                                                        onClick={() => applyDiscountCode(coupon.code)}
+                                                        className="w-full py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                                                    >
+                                                        Apply Code
+                                                    </button>
                                                 </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
+
+
+                    {/* Coupen Modal */}
+                    {/* <Dialog open={openCoupen} onClose={() => setOpenCoupen(false)} className="relative z-[999]">
+
+                   
+                        <DialogBackdrop
+                            transition
+                            className="fixed inset-0 bg-black/50 transition-opacity duration-300 data-[closed]:opacity-0"
+                        />
+
+                      
+                        <div className="fixed inset-0 flex items-center justify-center p-4">
+                            <DialogPanel
+                                transition
+                                className="w-full p-4 max-w-md lg:max-w-lg xl:max-w-xl h-90  rounded-xl bg-[var(--profile-bg,#fff)] shadow-lg transform transition-all duration-300 ease-out data-[closed]:scale-95 data-[closed]:opacity-0 flex flex-col"
+                            >
+                                
+                                <div className="flex justify-between items-center py-3 shrink-0">
+                                    <DialogTitle className="text-xl font-semibold text-[var(--profile-dark-text,#111)]">
+                                        Apply Coupon
+                                    </DialogTitle>
+                                    <IoMdClose onClick={() => setOpenCoupen(false)} className="text-[24px] text-[var(--profile-dark-text)] cursor-pointer bg-[var(--profile-gray-text)] p-1 rounded-full" />
+                                </div>
+
+                                <div className="border-b border-[var(--profile-border,#ddd)]"></div>
+
+                                <div>
+
+                                    
+                                    <div className="">
+                                        <div className="mb-4">
+                                            <p className="text-base text-gray-600 my-2">Add a discount code</p>
+                                            <div className="flex">
+                                                <input
+                                                    type="text"
+                                                    placeholder="Enter code"
+                                                    value={discountCode}
+                                                    onChange={(e) => setDiscountCode(e.target.value)}
+                                                    className="flex-1 p-3 border border-gray-300 rounded-l-lg focus:outline-none"
+                                                />
                                                 <button
-                                                    onClick={() => applyDiscountCode(coupon.code)}
-                                                    className="w-full py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                                                    onClick={() => applyDiscountCode()}
+                                                    className="px-6 py-3 border border-gray-300 rounded-r-lg"
                                                 >
-                                                    Apply Code
+                                                    Apply
                                                 </button>
                                             </div>
                                         </div>
-                                    ))}
+
+                                        <div className="space-y-4 overflow-y-auto h-[380px]">
+                                            {coupenData && coupenData.length > 0 ? (
+                                                coupenData.map((coupon, index) => (
+                                                    <div key={coupon._id || index} className="flex gap-3">
+                                                      
+                                                        <div
+                                                            className={`rounded-l-lg border-r-4 border-white border-dashed ${index === 0
+                                                                    ? "bg-green-500"
+                                                                    : index === 1
+                                                                        ? "bg-red-500"
+                                                                        : "bg-blue-500"
+                                                                }`}
+                                                        >
+                                                            <div className="text-white r_text writing-mode-vertical px-2 py-3">
+                                                                Discount
+                                                            </div>
+                                                        </div>
+
+                                                       
+                                                        <div className="p-4 w-full rounded-r-lg ">
+                                                            <div className="mb-3">
+                                                                <div className="flex justify-between">
+                                                                    <p className="text-gray-700 font-normal text-base">
+                                                                            Flat ${coupon.discountValue} OFF*
+                                                                    </p>
+
+                                                                    <div className="w-6 h-6 rounded-full flex items-center justify-center">
+                                                                        <img src={dot} alt="dot" />
+                                                                    </div>
+                                                                </div>
+
+                                                                <h3 className="font-bold text-lg mt-1">{coupon.code}</h3>
+                                                                <p className="text-base text-gray-600 mt-1">
+                                                                    {coupon.description}
+                                                                </p>
+                                                            </div>
+
+                                                            <button
+                                                                onClick={() => applyDiscountCode(coupon.code)}
+                                                                className="w-full mt-2 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                                                            >
+                                                                Apply Code
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <p className="text-gray-500 text-center">No coupons available.</p>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
 
-                <div className="space-y-3 text-sm">
-                    <div className="flex justify-between">
-                        <span>{itemCount} Item</span>
-                        <span>AU$ {subtotal.toLocaleString()}</span>
-                    </div>
-                    <hr className="my-4" />
-                    <div className="flex justify-between">
-                        <span>Subtotal</span>
-                        <span>AU$ {subtotal.toLocaleString()}</span>
-                    </div>
-                    <hr className="my-4" />
-                    <div className="flex justify-between">
-                        <span>Estimated Delivery</span>
-                        <span>AU$ {estimatedDelivery}</span>
-                    </div>
-                    <hr className="my-4" />
-                    <div className="flex justify-between">
-                        <span>Platform Fee</span>
-                        <span>AU$ {platformFee}</span>
-                    </div>
-                    {giftWrap && (
+
+                            </DialogPanel>
+                        </div>
+
+                    </Dialog> */}
+
+
+                    <div className="space-y-3 text-sm">
                         <div className="flex justify-between">
-                            <span>Gift Wrap</span>
-                            <span>AU$ {giftWrapFee}</span>
+                            <span>{itemCount} Item</span>
+                            <span>AU$ {subtotal.toLocaleString()}</span>
                         </div>
-                    )}
-                    {appliedDiscount && (
-                        <div className="flex justify-between text-green-600">
-                            <span>Discount ({appliedDiscount.description})</span>
-                            <span>-AU$ {discountAmount}</span>
+                        <hr className="my-4" />
+                        <div className="flex justify-between">
+                            <span>Subtotal</span>
+                            <span>AU$ {subtotal.toLocaleString()}</span>
                         </div>
-                    )}
-                    <hr className="my-4" />
-                    <div className="flex justify-between font-medium text-base">
-                        <span>Total</span>
-                        <span>AU$ {total.toLocaleString()}</span>
+                        <hr className="my-4" />
+                        <div className="flex justify-between">
+                            <span>Estimated Delivery</span>
+                            <span>AU$ {estimatedDelivery}</span>
+                        </div>
+                        <hr className="my-4" />
+                        <div className="flex justify-between">
+                            <span>Platform Fee</span>
+                            <span>AU$ {platformFee}</span>
+                        </div>
+                        {giftWrap && (
+                            <div className="flex justify-between">
+                                <span>Gift Wrap</span>
+                                <span>AU$ {giftWrapFee}</span>
+                            </div>
+                        )}
+                        {appliedDiscount && (
+                            <div className="flex justify-between text-green-600">
+                                <span>Discount ({appliedDiscount.description})</span>
+                                <span>-AU$ {discountAmount}</span>
+                            </div>
+                        )}
+                        <hr className="my-4" />
+                        <div className="flex justify-between font-medium text-base">
+                            <span>Total</span>
+                            <span>AU$ {total.toLocaleString()}</span>
+                        </div>
                     </div>
-                </div>
 
-                <button
-                    onClick={() => navigateToTab(2)}
-                    className="w-full mt-6 py-4 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 disabled:bg-gray-400"
-                    disabled={cartItems.length === 0}
-                >
-                    Proceed to checkout
-                </button>
+                    <button
+                        onClick={() => navigateToTab(2)}
+                        className="w-full mt-6 py-4 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 disabled:bg-gray-400"
+                        disabled={cartItems.length === 0}
+                    >
+                        Proceed to checkout
+                    </button>
+                </div>
             </div>
+        );
+    };
+
+
+
+
+    const renderEmptyCart = () => (
+        <div className="flex flex-col items-center justify-center py-16 px-4">
+            <div className="mb-6">
+                <div>
+                    <img src={cart} alt="" />
+                </div>
+            </div>
+
+            <h2 className="text-xl font-medium text-gray-900 mb-2">
+                Your cart is currently empty.
+            </h2>
+
+            <button
+
+                className="mt-4 px-8 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition-colors"
+            >
+                <Link to={'/home'}>Back to Store</Link>
+            </button>
         </div>
     );
-};
-
-const renderEmptyCart = () => (
-    <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="mb-6">
-          <div>
-            <img src={cart} alt="" />
-          </div>
-        </div>
-        
-        <h2 className="text-xl font-medium text-gray-900 mb-2">
-            Your cart is currently empty.
-        </h2>
-        
-        <button 
-           
-            className="mt-4 px-8 py-3 bg-orange-500 text-white font-medium rounded-lg hover:bg-orange-600 transition-colors"
-        >
-            <Link to={'/home'}>Back to Store</Link>
-        </button>
-    </div>
-);
     const renderAddressTab = () => {
 
         if (viewState === 'add-first') {
@@ -836,9 +979,9 @@ const renderEmptyCart = () => (
                             </button>
                         </div>
                     </div>
-                   <div className='lg:col-span-2  md:col-span-2 col-span-1 r_responsive' style={{gridColumnStart:'4'}}>
+                    <div className='lg:col-span-2  md:col-span-2 col-span-1 r_responsive' style={{ gridColumnStart: '4' }}>
 
-                    <OrderSummary onButtonClick={() => navigateToTab(3)} />
+                        <OrderSummary onButtonClick={() => navigateToTab(3)} />
                     </div>
                 </div>
             );
@@ -894,7 +1037,7 @@ const renderEmptyCart = () => (
                             >
                                 <span className="text-xl text-orange-500">+</span>
                                 <span className='mt-1'>
-                                Add Billing Address
+                                    Add Billing Address
                                 </span>
                             </button>
                         </div>
@@ -1146,24 +1289,24 @@ const renderEmptyCart = () => (
                         <div className="p-4 bg-gray-50 rounded-lg">
                             {savedAddress ? (
                                 <>
-                                <div className='flex gap-3'>
+                                    <div className='flex gap-3'>
 
-                                <div >
-                                  <input
+                                        <div >
+                                            <input
                                                 type="radio"
                                                 name="selectedAddress"
                                                 defaultChecked
                                                 className="mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-1 checked:ring-[var(--text-orange)] checked:ring-offset-1 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
                                             />
-                                </div>
-                                <div>
-                                    <p className="font-medium">{savedAddress.name}</p>
-                                    <p>{savedAddress.address}</p>
-                                    <p>{savedAddress.postalCode}</p>
-                                    <p>Mobile: {savedAddress.mobile}</p>
-                                </div>
-                                </div>
-                                
+                                        </div>
+                                        <div>
+                                            <p className="font-medium">{savedAddress.name}</p>
+                                            <p>{savedAddress.address}</p>
+                                            <p>{savedAddress.postalCode}</p>
+                                            <p>Mobile: {savedAddress.mobile}</p>
+                                        </div>
+                                    </div>
+
                                 </>
                             ) : (
                                 <p className="text-gray-500">No delivery address selected</p>
@@ -1227,297 +1370,297 @@ const renderEmptyCart = () => (
         </div>
     );
 
-   const [showOrderModal, setShowOrderModal] = useState(false);
+    const [showOrderModal, setShowOrderModal] = useState(false);
 
-const renderPaymentTab = () => {
-    const handlePaymentSuccess = () => {
-        setShowOrderModal(true);
-    };
+    const renderPaymentTab = () => {
+        const handlePaymentSuccess = () => {
+            setShowOrderModal(true);
+        };
 
-    return (
-        <>
-            <div className="p-6">
-                <div className="grid grid-cols-1 md: lg:grid-cols-3 gap-8 main_container">
+        return (
+            <>
+                <div className="p-6">
+                    <div className="grid grid-cols-1 md: lg:grid-cols-3 gap-8 main_container">
 
-                    <div>
-                        <h2 className="text-xl font-semibold mb-6">Payment Method</h2>
+                        <div>
+                            <h2 className="text-xl font-semibold mb-6">Payment Method</h2>
 
-                        <div className="space-y-4">
+                            <div className="space-y-4">
 
-                            <div
-                                className={`p-4 border-l-4 cursor-pointer ${selectedPaymentMethod === 'credit'
-                                    ? 'border-orange-500 bg-gray-50'
-                                    : 'border-gray-200 bg-white'
-                                    }`}
-                                onClick={() => setSelectedPaymentMethod('credit')}
-                            >
-                                <div className="font-medium text-gray-800">Credit / Debit Card</div>
-                            </div>
+                                <div
+                                    className={`p-4 border-l-4 cursor-pointer ${selectedPaymentMethod === 'credit'
+                                        ? 'border-orange-500 bg-gray-50'
+                                        : 'border-gray-200 bg-white'
+                                        }`}
+                                    onClick={() => setSelectedPaymentMethod('credit')}
+                                >
+                                    <div className="font-medium text-gray-800">Credit / Debit Card</div>
+                                </div>
 
-                            <div
-                                className={`p-4 border-l-4 cursor-pointer ${selectedPaymentMethod === 'digital'
-                                    ? 'border-orange-500 bg-gray-50'
-                                    : 'border-gray-200 bg-white'
-                                    }`}
-                                onClick={() => setSelectedPaymentMethod('digital')}
-                            >
-                                <div className="font-medium text-gray-800">Digital Payments</div>
-                            </div>
+                                <div
+                                    className={`p-4 border-l-4 cursor-pointer ${selectedPaymentMethod === 'digital'
+                                        ? 'border-orange-500 bg-gray-50'
+                                        : 'border-gray-200 bg-white'
+                                        }`}
+                                    onClick={() => setSelectedPaymentMethod('digital')}
+                                >
+                                    <div className="font-medium text-gray-800">Digital Payments</div>
+                                </div>
 
-                            <div
-                                className={`p-4 border-l-4 cursor-pointer ${selectedPaymentMethod === 'bnpl'
-                                    ? 'border-orange-500 bg-gray-50'
-                                    : 'border-gray-200 bg-white'
-                                    }`}
-                                onClick={() => setSelectedPaymentMethod('bnpl')}
-                            >
-                                <div className="font-medium text-gray-800">BNPL</div>
-                            </div>
+                                <div
+                                    className={`p-4 border-l-4 cursor-pointer ${selectedPaymentMethod === 'bnpl'
+                                        ? 'border-orange-500 bg-gray-50'
+                                        : 'border-gray-200 bg-white'
+                                        }`}
+                                    onClick={() => setSelectedPaymentMethod('bnpl')}
+                                >
+                                    <div className="font-medium text-gray-800">BNPL</div>
+                                </div>
 
-                            <div
-                                className={`p-4 border-l-4 cursor-pointer ${selectedPaymentMethod === 'cod'
-                                    ? 'border-orange-500 bg-gray-50'
-                                    : 'border-gray-200 bg-white'
-                                    }`}
-                                onClick={() => setSelectedPaymentMethod('cod')}
-                            >
-                                <div className="font-medium text-gray-800">Cash on Delivery</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className='mt-12'>
-                        {selectedPaymentMethod === 'credit' && (
-                            <div className='bg-gray-50 p-3 rounded-lg'>
-                                <h3 className="text-lg font-medium mb-4">Credit / Debit Card</h3>
-                                <div className="space-y-4">
-                                    <input
-                                        type="text"
-                                        placeholder="Card Number"
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Name Same as Card"
-                                        className="w-full p-3 border border-gray-300 rounded-md focus:outline-none"
-                                    />
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <input
-                                            type="text"
-                                            placeholder="Valid Card (MM/YY)"
-                                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none"
-                                        />
-                                        <input
-                                            type="text"
-                                            placeholder="CVV"
-                                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none"
-                                        />
-                                    </div>
-                                    <button 
-                                        onClick={handlePaymentSuccess}
-                                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors"
-                                    >
-                                        Pay Now
-                                    </button>
+                                <div
+                                    className={`p-4 border-l-4 cursor-pointer ${selectedPaymentMethod === 'cod'
+                                        ? 'border-orange-500 bg-gray-50'
+                                        : 'border-gray-200 bg-white'
+                                        }`}
+                                    onClick={() => setSelectedPaymentMethod('cod')}
+                                >
+                                    <div className="font-medium text-gray-800">Cash on Delivery</div>
                                 </div>
                             </div>
-                        )}
-                        {selectedPaymentMethod === 'digital' && (
-                            <div className='bg-gray-50 p-3 rounded-lg'>
-                                <h3 className="text-xl font-medium mb-4">Digital Payments</h3>
-                                <hr className='mb-4' />
-                                <div className="mb-6">
-                                    <div className="flex items-center mb-2 gap-2">
+                        </div>
+
+                        <div className='mt-12'>
+                            {selectedPaymentMethod === 'credit' && (
+                                <div className='bg-gray-50 p-3 rounded-lg'>
+                                    <h3 className="text-lg font-medium mb-4">Credit / Debit Card</h3>
+                                    <div className="space-y-4">
                                         <input
-                                            type="radio"
-                                            id="scan"
-                                            name="digitalPayment"
-                                            className="mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-1 checked:ring-[var(--text-orange)] checked:ring-offset-1 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
-
-                                            checked={selectedDigitalPayment === 'scan'}
-                                            onChange={() => setSelectedDigitalPayment('scan')}
+                                            type="text"
+                                            placeholder="Card Number"
+                                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none"
                                         />
-                                        <label htmlFor="scan" className="font-medium mt-2">Scan</label>
-                                    </div>
-                                    <div>
-                                        <div className=" h-20  mb-2 flex items-center  gap-3">
-                                            <div>
-                                                <img src={qr} alt="" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm text-gray-600 mb-3">Use any app on your phone</p>
-                                                <div className="flex space-x-2 mb-4">
-                                                    <div>
-                                                        <img src={gpay} alt="" />
-                                                    </div>
-                                                    <div>
-                                                        <img src={applepay} alt="" />
-                                                    </div>
-                                                    <div>
-                                                        <img src={paypal} alt="" />
-                                                    </div>
-                                                    <div>
-                                                        <img src={pay} alt="" />
-                                                    </div>
-                                                </div>
-                                            </div>
+                                        <input
+                                            type="text"
+                                            placeholder="Name Same as Card"
+                                            className="w-full p-3 border border-gray-300 rounded-md focus:outline-none"
+                                        />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input
+                                                type="text"
+                                                placeholder="Valid Card (MM/YY)"
+                                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none"
+                                            />
+                                            <input
+                                                type="text"
+                                                placeholder="CVV"
+                                                className="w-full p-3 border border-gray-300 rounded-md focus:outline-none"
+                                            />
                                         </div>
-
-                                        <button 
+                                        <button
                                             onClick={handlePaymentSuccess}
-                                            className="w-full mb-0 bg-orange-500 hover:bg-orange-600 text-white py-2 px-6 rounded-md font-medium transition-colors mb-6" 
-                                            style={{ marginBottom: "0" }}
+                                            className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors"
                                         >
                                             Pay Now
                                         </button>
-
                                     </div>
                                 </div>
-                                <hr className='mb-3' />
-
-                                <div className="space-y-3">
-                                    {[
-                                        { id: 'paypal', name: 'PayPal', image: paypal },
-                                        { id: 'googlepay', name: 'Google Pay', image: gpay },
-                                        { id: 'samsungpay', name: 'Samsung Pay', image: pay },
-                                        { id: 'applepay', name: 'Apple Pay', image: applepay }
-                                    ].map((payment) => (
-                                        <div
-                                            key={payment.id}
-                                            className="flex items-center justify-between p-3   rounded-md hover:bg-gray-50"
-                                        >
-                                            <div className="flex items-center">
-
-                                                {payment.image ? (
-                                                    <img
-                                                        src={payment.image}
-                                                        alt={payment.name}
-                                                        className="w-8 h-6 object-contain mr-3"
-                                                    />
-                                                ) : (
-                                                    <div className={`w-8 h-6 ${payment.color} rounded mr-3`}></div>
-                                                )}
-
-                                                <span className="font-medium">{payment.name}</span>
-                                            </div>
-
+                            )}
+                            {selectedPaymentMethod === 'digital' && (
+                                <div className='bg-gray-50 p-3 rounded-lg'>
+                                    <h3 className="text-xl font-medium mb-4">Digital Payments</h3>
+                                    <hr className='mb-4' />
+                                    <div className="mb-6">
+                                        <div className="flex items-center mb-2 gap-2">
                                             <input
                                                 type="radio"
+                                                id="scan"
                                                 name="digitalPayment"
-                                                value={payment.id}
-                                                className="accent-orange-500 peer appearance-none w-4 h-4 border-2  rounded-full checked:border-orange-500 checked:bg-orange-500 focus:ring-2 focus:ring-orange-200"
-                                                checked={selectedDigitalPayment === payment.id}
-                                                onChange={(e) => setSelectedDigitalPayment(e.target.value)}
+                                                className="mt-2 appearance-none sm:h-4 sm:w-4 h-3 w-3 rounded-full border border-[var(--text-orange)] bg-orange-200 checked:ring-1 checked:ring-[var(--text-orange)] checked:ring-offset-1 checked:ring-offset-orange-100 checked:bg-[var(--text-orange)]"
+
+                                                checked={selectedDigitalPayment === 'scan'}
+                                                onChange={() => setSelectedDigitalPayment('scan')}
                                             />
+                                            <label htmlFor="scan" className="font-medium mt-2">Scan</label>
                                         </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {selectedPaymentMethod === 'bnpl' && (
-                            <div className='bg-gray-50 p-3 rounded-lg'>
-                                <h3 className="text-lg font-medium mb-4">BNPL</h3>
-                                <hr className='mb-5' />
-                                <div className="space-y-3">
-                                    {[
-                                        { id: 'paypal', name: 'PayPal', image: paypal },
-                                        { id: 'googlepay', name: 'Google Pay', image: gpay },
-                                        { id: 'samsungpay', name: 'Samsung Pay', image: pay },
-
-                                    ].map((payment) => (
-                                        <div key={payment.id} className="flex items-center justify-between p-3  rounded-md hover:bg-gray-50">
-                                            <div className="flex items-center">
-                                                {payment.image ? (
-                                                    <img
-                                                        src={payment.image}
-                                                        alt={payment.name}
-                                                        className="w-8 h-6 object-contain mr-3"
-                                                    />
-                                                ) : (
-                                                    <div className={`w-8 h-6 ${payment.color} rounded mr-3`}></div>
-                                                )}
-                                                <span className="font-medium">{payment.name}</span>
+                                        <div>
+                                            <div className=" h-20  mb-2 flex items-center  gap-3">
+                                                <div>
+                                                    <img src={qr} alt="" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-gray-600 mb-3">Use any app on your phone</p>
+                                                    <div className="flex space-x-2 mb-4">
+                                                        <div>
+                                                            <img src={gpay} alt="" />
+                                                        </div>
+                                                        <div>
+                                                            <img src={applepay} alt="" />
+                                                        </div>
+                                                        <div>
+                                                            <img src={paypal} alt="" />
+                                                        </div>
+                                                        <div>
+                                                            <img src={pay} alt="" />
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <input
-                                                type="radio"
-                                                name="digitalPayment"
-                                                value={payment.id}
-                                                className="accent-orange-500 peer appearance-none w-4 h-4 border-2 rounded-full checked:border-orange-500 checked:bg-orange-500 "
-                                                checked={selectedDigitalPayment === payment.id}
-                                                onChange={(e) => setSelectedDigitalPayment(e.target.value)}
-                                            />
+
+                                            <button
+                                                onClick={handlePaymentSuccess}
+                                                className="w-full mb-0 bg-orange-500 hover:bg-orange-600 text-white py-2 px-6 rounded-md font-medium transition-colors mb-6"
+                                                style={{ marginBottom: "0" }}
+                                            >
+                                                Pay Now
+                                            </button>
+
                                         </div>
-                                    ))}
+                                    </div>
+                                    <hr className='mb-3' />
+
+                                    <div className="space-y-3">
+                                        {[
+                                            { id: 'paypal', name: 'PayPal', image: paypal },
+                                            { id: 'googlepay', name: 'Google Pay', image: gpay },
+                                            { id: 'samsungpay', name: 'Samsung Pay', image: pay },
+                                            { id: 'applepay', name: 'Apple Pay', image: applepay }
+                                        ].map((payment) => (
+                                            <div
+                                                key={payment.id}
+                                                className="flex items-center justify-between p-3   rounded-md hover:bg-gray-50"
+                                            >
+                                                <div className="flex items-center">
+
+                                                    {payment.image ? (
+                                                        <img
+                                                            src={payment.image}
+                                                            alt={payment.name}
+                                                            className="w-8 h-6 object-contain mr-3"
+                                                        />
+                                                    ) : (
+                                                        <div className={`w-8 h-6 ${payment.color} rounded mr-3`}></div>
+                                                    )}
+
+                                                    <span className="font-medium">{payment.name}</span>
+                                                </div>
+
+                                                <input
+                                                    type="radio"
+                                                    name="digitalPayment"
+                                                    value={payment.id}
+                                                    className="accent-orange-500 peer appearance-none w-4 h-4 border-2  rounded-full checked:border-orange-500 checked:bg-orange-500 focus:ring-2 focus:ring-orange-200"
+                                                    checked={selectedDigitalPayment === payment.id}
+                                                    onChange={(e) => setSelectedDigitalPayment(e.target.value)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
+                            )}
 
-                        )}
+                            {selectedPaymentMethod === 'bnpl' && (
+                                <div className='bg-gray-50 p-3 rounded-lg'>
+                                    <h3 className="text-lg font-medium mb-4">BNPL</h3>
+                                    <hr className='mb-5' />
+                                    <div className="space-y-3">
+                                        {[
+                                            { id: 'paypal', name: 'PayPal', image: paypal },
+                                            { id: 'googlepay', name: 'Google Pay', image: gpay },
+                                            { id: 'samsungpay', name: 'Samsung Pay', image: pay },
 
-                        {selectedPaymentMethod === 'cod' && (
-                            <div className='bg-gray-50 p-3 rounded-lg'>
-                                <h1 className=" font-midium  mb-4 text-2xl" >Pay at your doorstep</h1>
-                                <hr className='mb-5' />
-                                <button 
-                                    onClick={handlePaymentSuccess}
-                                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors"
-                                >
-                                    Place Order
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                    <div>
-                        <OrderSummary />
-                    </div>
-                </div>
-            </div>
-
-            {/* Order Success Modal */}
-            {showOrderModal && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" >
-                    <div className="bg-white rounded-lg p-6 max-w-md w-full  mx-4 relative">
-                        <button 
-                            onClick={() => setShowOrderModal(false)}
-                            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-                        >
-                            ✕
-                        </button>
-                        
-                        <div className="text-center">
-                            <div className="mb-4">
-                                <div className="  flex items-center justify-center mx-auto mb-4">
-                                   <div>
-                                        <img src={fram} alt="" />
-                                   </div>
+                                        ].map((payment) => (
+                                            <div key={payment.id} className="flex items-center justify-between p-3  rounded-md hover:bg-gray-50">
+                                                <div className="flex items-center">
+                                                    {payment.image ? (
+                                                        <img
+                                                            src={payment.image}
+                                                            alt={payment.name}
+                                                            className="w-8 h-6 object-contain mr-3"
+                                                        />
+                                                    ) : (
+                                                        <div className={`w-8 h-6 ${payment.color} rounded mr-3`}></div>
+                                                    )}
+                                                    <span className="font-medium">{payment.name}</span>
+                                                </div>
+                                                <input
+                                                    type="radio"
+                                                    name="digitalPayment"
+                                                    value={payment.id}
+                                                    className="accent-orange-500 peer appearance-none w-4 h-4 border-2 rounded-full checked:border-orange-500 checked:bg-orange-500 "
+                                                    checked={selectedDigitalPayment === payment.id}
+                                                    onChange={(e) => setSelectedDigitalPayment(e.target.value)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <h2 className="text-2xl font-semibold mb-2">Thanks for</h2>
-                            <h2 className='text-2xl font-semibold mb-2'>Shopping with us!</h2>
-                            
-                            <div className="text-gray-600 mb-4">
-                                <p>Delivery by <strong>Sun, 14th Sep 2025</strong></p>
-                                <p className="text-sm">Order ID: AUOD20250910_001234</p>
-                            </div>
-                            
-                            <button 
-                                onClick={() => setShowOrderModal(false)}
-                                className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors"
-                             
-                            >
-                                <Link to={"/profile/Orders"}>
-                                
-                                Track & Manage Order
-                                </Link>
-                            </button>
+
+                            )}
+
+                            {selectedPaymentMethod === 'cod' && (
+                                <div className='bg-gray-50 p-3 rounded-lg'>
+                                    <h1 className=" font-midium  mb-4 text-2xl" >Pay at your doorstep</h1>
+                                    <hr className='mb-5' />
+                                    <button
+                                        onClick={handlePaymentSuccess}
+                                        className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors"
+                                    >
+                                        Place Order
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                        <div>
+                            <OrderSummary />
                         </div>
                     </div>
                 </div>
-            )}
-        </>
-    );
-};
+
+                {/* Order Success Modal */}
+                {showOrderModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" >
+                        <div className="bg-white rounded-lg p-6 max-w-md w-full  mx-4 relative">
+                            <button
+                                onClick={() => setShowOrderModal(false)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+                            >
+                                ✕
+                            </button>
+
+                            <div className="text-center">
+                                <div className="mb-4">
+                                    <div className="  flex items-center justify-center mx-auto mb-4">
+                                        <div>
+                                            <img src={fram} alt="" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h2 className="text-2xl font-semibold mb-2">Thanks for</h2>
+                                <h2 className='text-2xl font-semibold mb-2'>Shopping with us!</h2>
+
+                                <div className="text-gray-600 mb-4">
+                                    <p>Delivery by <strong>Sun, 14th Sep 2025</strong></p>
+                                    <p className="text-sm">Order ID: AUOD20250910_001234</p>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowOrderModal(false)}
+                                    className="w-full bg-orange-500 hover:bg-orange-600 text-white py-3 px-6 rounded-md font-medium transition-colors"
+
+                                >
+                                    <Link to={"/profile/Orders"}>
+
+                                        Track & Manage Order
+                                    </Link>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
     const renderTabContent = () => {
         switch (currentTab) {
             case 1: return renderBagTab();
@@ -1527,6 +1670,13 @@ const renderPaymentTab = () => {
             default: return renderBagTab();
         }
     };
+
+
+
+
+
+
+
 
     return (
         <div className="min-h-screen bg-white">
