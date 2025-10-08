@@ -6,7 +6,7 @@ import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middle
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdateController, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
 import { addBadgeToProduct, createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
-import { getMyCartController,addToCartController, removeCartController } from '../controller/cart.controller.js';
+import { getMyCartController, addToCartController, removeCartController } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
 import { createMainCategory, deleteMainCategoryById, getAllMainCategory, getMainCategoryById, updateMainCategoryById } from '../controller/mainCategory.controller.js';
@@ -31,6 +31,7 @@ import { createContactUs, deleteContactUs, getAllContactUs, getContactUsById, up
 import { createSubcribe, deleteSubcribeById, getAllSubcribe, getSubcribeById, updateSubcribeById } from '../controller/subcribe.controller.js';
 import { createInsideSubCategory, deleteInsideSubCategoryById, getAllInsideSubCategory, getInsideSubCategoriesBySubCategoryId, getInsideSubCategoryById, updateInsideSubCategoryById } from '../controller/insideSubCategory.controller.js';
 import { createMainFaqCategory, deleteMainFaqCategoryById, getAllMainFaqCategory, getMainFaqCategoryById, updateMainFaqCategoryById } from '../controller/mainFaqCategory.controller.js';
+import { sendErrorResponse, sendSuccessResponse } from '../utils/Response.utils.js';
 
 
 const indexRouter = express.Router();
@@ -177,9 +178,9 @@ indexRouter.get("/user/billingaddress", UserAuth, getUserBillingAddressControlle
 indexRouter.put("/user/selectUserBillingAddressController/:addressId", UserAuth, selectUserBillingAddressController);
 
 //cart.route.js
-indexRouter.post("/add/cart/:productId", UserAuth, addToCartController );
+indexRouter.post("/add/cart/:productId", UserAuth, addToCartController);
 indexRouter.get("/my/cart", UserAuth, getMyCartController);
-indexRouter.delete("/remove/cart/:productId",UserAuth,removeCartController)
+indexRouter.delete("/remove/cart/:productId", UserAuth, removeCartController)
 
 //wishlist.route.js
 indexRouter.post("/addToWishlist/:productId", UserAuth, addToWishlist)
@@ -304,6 +305,34 @@ indexRouter.get("/getAllSubcribe", getAllSubcribe);
 indexRouter.get("/getSubcribeById/:id", getSubcribeById);
 indexRouter.patch("/updateSubcribeById/:id", updateSubcribeById);
 indexRouter.delete("/deleteSubcribeById/:id", deleteSubcribeById);
+
+
+
+// austrials states data
+const australiaData = {
+    country: "Australia",
+    total: 8,
+    states: [
+        { name: "New South Wales", abbreviation: "NSW" },
+        { name: "Victoria", abbreviation: "VIC" },
+        { name: "Queensland", abbreviation: "QLD" },
+        { name: "South Australia", abbreviation: "SA" },
+        { name: "Western Australia", abbreviation: "WA" },
+        { name: "Tasmania", abbreviation: "TAS" },
+        { name: "Northern Territory", abbreviation: "NT" },
+        { name: "Australian Capital Territory", abbreviation: "ACT" },
+    ],
+};
+
+indexRouter.get("/au/states", async (req, res) => {
+    try {
+        return sendSuccessResponse(res, "All Austraila States fetched", australiaData)
+    } catch (error) {
+        console.log(error.message);
+        return sendErrorResponse(res, 500, "Error During Featch all au states", error);
+    }
+})
+
 
 
 const s3Client = new S3Client({
