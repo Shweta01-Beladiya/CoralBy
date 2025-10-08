@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { LiaAngleRightSolid } from "react-icons/lia";
 import { FaShieldAlt, FaRegUser } from "react-icons/fa";
 import {
@@ -16,42 +16,69 @@ import { FiMail } from "react-icons/fi";
 import { FAQ, FAQ2 } from "../component/FAQ";
 import our_promise from "../images/our-promise.png"
 import { Link } from "react-router-dom";
+import { fetchHelpSupportCategories } from "../Store/Slices/helpsupportSlice";
+import { useDispatch, useSelector } from "react-redux";
 
 const Help_Support = () => {
 	const [selectedCard, setSelectedCard] = useState(null);
 
-	const cards = [
-		{
-			icon: <GoFileDirectory className="text-[#F97316] text-3xl" />,
-			title: "Getting Started",
-			desc: "Learn how to create an account, browse products, and place orders with ease. Our step-by-step guides will help you start shopping quickly and confidently.",
-		},
-		{
-			icon: <MdOutlineLocalShipping className="text-[#F97316] text-3xl" />,
-			title: "Orders & Shipping",
-			desc: "Track your orders, update delivery details, and learn about shipping options. We’re here to ensure your items arrive safely and on time.",
-		},
-		{
-			icon: <MdOutlinePayment className="text-[#F97316] text-3xl" />,
-			title: "Payments & Returns",
-			desc: "Learn how to manage payments, request returns, and explore step-by-step guides that make your shopping secure and easy.",
-		},
-		{
-			icon: <FaRegUser className="text-[#F97316] text-3xl" />,
-			title: "Account Management",
-			desc: "Manage your personal information, reset passwords, and customize notifications. Keep your profile secure and up-to-date for a seamless experience.",
-		},
-		{
-			icon: <MdOutlineSupport className="text-[#F97316] text-3xl" />,
-			title: "Technical Support",
-			desc: "Get assistance with app issues, troubleshoot problems, and access guides tailored to ensure seamless navigation and usage.",
-		},
-		{
-			icon: <FaShieldAlt className="text-[#F97316] text-3xl" />,
-			title: "Safety & Security",
-			desc: "Protect your personal information and shop with confidence. Learn how we secure payments, prevent fraud, and keep your data safe at every step.",
-		},
-	];
+	// const cards = [
+	// 	{
+	// 		icon: <GoFileDirectory className="text-[#F97316] text-3xl" />,
+	// 		title: "Getting Started",
+	// 		desc: "Learn how to create an account, browse products, and place orders with ease. Our step-by-step guides will help you start shopping quickly and confidently.",
+	// 	},
+	// 	{
+	// 		icon: <MdOutlineLocalShipping className="text-[#F97316] text-3xl" />,
+	// 		title: "Orders & Shipping",
+	// 		desc: "Track your orders, update delivery details, and learn about shipping options. We’re here to ensure your items arrive safely and on time.",
+	// 	},
+	// 	{
+	// 		icon: <MdOutlinePayment className="text-[#F97316] text-3xl" />,
+	// 		title: "Payments & Returns",
+	// 		desc: "Learn how to manage payments, request returns, and explore step-by-step guides that make your shopping secure and easy.",
+	// 	},
+	// 	{
+	// 		icon: <FaRegUser className="text-[#F97316] text-3xl" />,
+	// 		title: "Account Management",
+	// 		desc: "Manage your personal information, reset passwords, and customize notifications. Keep your profile secure and up-to-date for a seamless experience.",
+	// 	},
+	// 	{
+	// 		icon: <MdOutlineSupport className="text-[#F97316] text-3xl" />,
+	// 		title: "Technical Support",
+	// 		desc: "Get assistance with app issues, troubleshoot problems, and access guides tailored to ensure seamless navigation and usage.",
+	// 	},
+	// 	{
+	// 		icon: <FaShieldAlt className="text-[#F97316] text-3xl" />,
+	// 		title: "Safety & Security",
+	// 		desc: "Protect your personal information and shop with confidence. Learn how we secure payments, prevent fraud, and keep your data safe at every step.",
+	// 	},
+	// ];
+
+	const iconMap = {
+		"Getting Started": <GoFileDirectory className="text-[#F97316] text-3xl" />,
+		"Orders & Shipping": <MdOutlineLocalShipping className="text-[#F97316] text-3xl" />,
+		"Payments & Returns": <MdOutlinePayment className="text-[#F97316] text-3xl" />,
+		"Account Management": <FaRegUser className="text-[#F97316] text-3xl" />,
+		"Technical Support": <MdOutlineSupport className="text-[#F97316] text-3xl" />,
+		"Safety & Security": <FaShieldAlt className="text-[#F97316] text-3xl" />,
+	};
+
+
+	const dispatch = useDispatch();
+	const { categories, loading, error } = useSelector((state) => state.helpSupport);
+
+	useEffect(() => {
+		dispatch(fetchHelpSupportCategories());
+	}, [dispatch]);
+
+	const allCategories = Array.isArray(categories)
+		? categories.map((help) => ({
+			id: help._id,
+			name: help.mainFaqCategoryName,
+			description: help.mainFaqCategoryDescription,
+		}))
+		: [];
 
 	const features = [
 		{
@@ -82,7 +109,7 @@ const Help_Support = () => {
 			<div className="bg-[#F9FAFB] py-[22px] sm:py-[32px]">
 				<div className="main_container px-[22px] sm:px-[32px] mx-0 h_breadcrumb">
 					<h2 className="text-[26px] sm:text-[38px] font-semibold font-heading">
-						{selectedCard ? selectedCard.title : "Help & Support"}
+						{selectedCard ? selectedCard.name : "Help & Support"}
 					</h2>
 					<div className="h_Breadcrumb_navigation flex items-center justify-start gap-[2px]">
 						<h5 className="text-[16px] text-[#BABABA] font-medium">
@@ -105,7 +132,7 @@ const Help_Support = () => {
 								</h3>
 								<LiaAngleRightSolid />
 								<h3 className="text-[12px] sm:text-[16px] text-[#44506A] font-medium">
-									{selectedCard.title}
+									{selectedCard.name}
 								</h3>
 							</>
 						)}
@@ -131,21 +158,34 @@ const Help_Support = () => {
 
 							{/* Cards Section */}
 							<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[32px] mt-8">
-								{cards.map((card, index) => (
-									<div
-										key={index}
-										onClick={() => setSelectedCard(card)}
-										className="cursor-pointer group bg-[#F9FAFB] rounded-xl p-[18px] sm:p-[32px] flex flex-col items-center justify-center text-center gap-[8px] hover:bg-white hover:shadow-md hover:border hover:border-[#E5E7EB] transition duration-300"
-									>
-										{card.icon}
-										<h3 className="text-[18px] font-bold text-[#111827] group-hover:underline">
-											{card.title}
-										</h3>
-										<p className="text-[#6B7280] font-medium text-[14px] sm:text-[16px]">
-											{card.desc}
-										</p>
-									</div>
-								))}
+								{loading ? (
+									<p>Loading categories...</p>
+								) : error ? (
+									<p className="text-red-500">{error}</p>
+								) : (
+									allCategories.map((category, index) => (
+										<div
+											key={category.id || index}
+											onClick={() => {
+												// alert("Category ID:: " + category.id);
+												setSelectedCard(category);
+												window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+											}}
+											className="cursor-pointer group bg-[#F9FAFB] rounded-xl p-[18px] sm:p-[32px] flex flex-col items-center justify-center text-center gap-[8px] hover:bg-white hover:shadow-md hover:border hover:border-[#E5E7EB] transition duration-300"
+										>
+											{/* Optionally show an icon */}
+											{iconMap[category.name] || <GoFileDirectory className="text-[#F97316] text-3xl" />}
+
+
+											<h3 className="text-[18px] font-bold text-[#111827] group-hover:underline">
+												{category.name}
+											</h3>
+											<p className="text-[#6B7280] font-medium text-[14px] sm:text-[16px]">
+												{category.description}
+											</p>
+										</div>
+									))
+								)}
 							</div>
 
 							{/* Contact Customer Care */}
@@ -181,7 +221,7 @@ const Help_Support = () => {
 					) : (
 						<>
 							{/* FAQ specific to this card */}
-							<FAQ2 category={selectedCard.title} />
+							<FAQ2 category={selectedCard} />
 
 							{/* Contact Customer Care */}
 							<div className="contact-customer-care bg-[#0A0E17] text-white p-[28px] md:p-[36px] lg:p-[48px] mt-[30px] sm:mt-[60px] rounded-xl">

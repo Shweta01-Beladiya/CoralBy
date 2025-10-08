@@ -1,4 +1,6 @@
-import React, { useEffect, useState } from 'react'
+import React, { use, useEffect, useState } from 'react'
+import { fetchfaqCategory, fetchfaqQuestions, fetchfaqQuestionsByCategory } from '../Store/Slices/helpsupportSlice'
+import { useDispatch, useSelector } from 'react-redux';
 
 
 export const FAQ = () => {
@@ -286,173 +288,65 @@ export const FAQ = () => {
 
 
 
-export const FAQ2 = () => {
-	const [activeFaq2Category, setActiveFaq2Category] = useState("Placing an Order");
+export const FAQ2 = ({ category }) => {
+	const [activeFaq2Category, setActiveFaq2Category] = useState("");
 	const [openfaqIndex, setOpenfaqIndex] = useState(null);
 
-	// Reset openIndex when category changes
+	const dispatch = useDispatch();
+	const { faqcategory, faqquestionsByCategory, loading, error } = useSelector(
+		(state) => state.helpSupport
+	);
+
 	useEffect(() => {
-		setOpenfaqIndex(null);
-	}, [activeFaq2Category]);
+		dispatch(fetchfaqCategory());
+	}, [dispatch]);
 
-	const faq2Categories = [
-		"Placing an Order",
-		"Order Modifications",
-		"Shipping & Delivery",
-		"Order Tracking",
-		"Returns & Exchanges",
-		"Order Issues & Support",
-	];
+	// Filter FAQ categories based on the selected main category
+	const filteredFaqCategories = Array.isArray(faqcategory) && category?.id ? faqcategory.filter(
+		(faq) => faq?.mainFaqCategoryId?._id === category.id
+	)
+		: [];
+	// console.log("Filtered FAQ Categories:", filteredFaqCategories);
 
-	const faq2Data = {
-		"Placing an Order": [
-			{
-				question: " How can I place an order quickly?",
-				answer:
-					"Add the product to your cart and checkout.",
-			},
-			{
-				question: "What payment methods do you support?",
-				answer:
-					"Credit/debit cards, net banking, UPI, wallets, and COD.",
-			},
-			{
-				question: "Can I change the product quantity after placing an order?",
-				answer:
-					"Yes, but only within 2 hours of placing your order. After that, it may already be processed. Contact Customer Care immediately if you need to make changes.",
-			},
-			{
-				question: "How do I apply a coupon or promo code?",
-				answer:
-					"Enter your coupon code in the “Promo Code” field during checkout. The discount will automatically apply before final payment. Some coupons may have conditions like minimum order value or specific products. ",
-			},
-			{
-				question: "Will I get a confirmation after placing an order?",
-				answer:
-					"Yes, you will receive an email and/or SMS confirming your order with a unique Order ID and summary.",
-			},
-			{
-				question: "Can I save items for later?",
-				answer:
-					"Most platforms allow you to save items in your wishlist or leave them in your cart to purchase later.",
-			},
-			{
-				question: "What if the product I want is out of stock?",
-				answer:
-					"Out-of-stock items will show as unavailable on the product page. Some websites let you subscribe for restock notifications.",
-			},
-			{
-				question: "Is scheduling delivery possible?",
-				answer:
-					" Some items may offer a delivery scheduling option at checkout. You can select a preferred date and time for delivery, subject to availability.",
-			},
-			{
-				question: "Why did my payment fail?",
-				answer:
-					" Payments can fail due to network issues, incorrect card details, or insufficient funds. Try again or use another payment method. Failed transactions are not charged to your account.",
-			},
-			{
-				question: " Can I place bulk orders?",
-				answer:
-					"Yes, for bulk or business orders, please contact our sales support team. Bulk orders may qualify for special discounts and shipping arrangements.",
-			},
-		],
-		"Order Modifications": [
-			{
-				question: " How can I place an order quickly?",
-				answer:
-					"Add the product to your cart and checkout.",
-			},
-			{
-				question: "What payment methods do you support?",
-				answer:
-					"Credit/debit cards, net banking, UPI, wallets, and COD.",
-			},
-			{
-				question: "Can I change the product quantity after placing an order?",
-				answer:
-					"Yes, but only within 2 hours of placing your order. After that, it may already be processed. Contact Customer Care immediately if you need to make changes.",
-			},
-		],
-		"Shipping & Delivery": [
-			{
-				question: "What if the product I want is out of stock?",
-				answer:
-					"Out-of-stock items will show as unavailable on the product page. Some websites let you subscribe for restock notifications.",
-			},
-			{
-				question: "Is scheduling delivery possible?",
-				answer:
-					" Some items may offer a delivery scheduling option at checkout. You can select a preferred date and time for delivery, subject to availability.",
-			},
-		],
-		"Order Tracking": [
-			{
-				question: "How do I apply a coupon or promo code?",
-				answer:
-					"Enter your coupon code in the “Promo Code” field during checkout. The discount will automatically apply before final payment. Some coupons may have conditions like minimum order value or specific products. ",
-			},
-			{
-				question: "Can I save items for later?",
-				answer:
-					"Most platforms allow you to save items in your wishlist or leave them in your cart to purchase later.",
-			},
-			{
-				question: "Is scheduling delivery possible?",
-				answer:
-					" Some items may offer a delivery scheduling option at checkout. You can select a preferred date and time for delivery, subject to availability.",
-			},
-		],
-		"Returns & Exchanges": [
-			{
-				question: "Can I change the product quantity after placing an order?",
-				answer:
-					"Yes, but only within 2 hours of placing your order. After that, it may already be processed. Contact Customer Care immediately if you need to make changes.",
-			},
-			{
-				question: " How can I place an order quickly?",
-				answer:
-					"Add the product to your cart and checkout.",
-			},
-			{
-				question: "What if the product I want is out of stock?",
-				answer:
-					"Out-of-stock items will show as unavailable on the product page. Some websites let you subscribe for restock notifications.",
-			},
-			{
-				question: "Can I save items for later?",
-				answer:
-					"Most platforms allow you to save items in your wishlist or leave them in your cart to purchase later.",
-			},
-		],
-		"Order Issues & Support": [
-			{
-				question: "Is scheduling delivery possible?",
-				answer:
-					" Some items may offer a delivery scheduling option at checkout. You can select a preferred date and time for delivery, subject to availability.",
-			},
-			{
-				question: "Will I get a confirmation after placing an order?",
-				answer:
-					"Yes, you will receive an email and/or SMS confirming your order with a unique Order ID and summary.",
-			},
-			{
-				question: "What payment methods do you support?",
-				answer:
-					"Credit/debit cards, net banking, UPI, wallets, and COD.",
-			},
-			{
-				question: "Why did my payment fail?",
-				answer:
-					" Payments can fail due to network issues, incorrect card details, or insufficient funds. Try again or use another payment method. Failed transactions are not charged to your account.",
-			},
-		],
+	// Set the first category as active when filtered categories change
+	// useEffect(() => {
+	// 	if (faqcategory.length > 0) {
+	// 		// const firstCat = faqcategory[0];
+	// 		// setActiveFaq2Category(firstCat.faqCategoryName);
+	// 		// dispatch(fetchfaqQuestionsByCategory(firstCat._id));
+	// 	}
+	// }, [faqcategory, dispatch]);
 
-	};
+	// Reset openIndex when category changes
+	// useEffect(() => {
+	// 	setOpenfaqIndex(null);
+	// }, [activeFaq2Category]);
+
+	const selectFirstID = filteredFaqCategories[0]?._id;
+	const selectFirstName = filteredFaqCategories[0]?.faqCategoryName;
+
+	useEffect(() => {
+		if (!selectFirstID) return;
+
+		setActiveFaq2Category(selectFirstName);
+
+		const fetchQuestions = async () => {
+			try {
+				await dispatch(fetchfaqQuestionsByCategory(selectFirstID));
+			} catch (err) {
+				console.error("Error fetching questions:", err);
+			}
+		};
+
+		fetchQuestions();
+	}, [dispatch, selectFirstID, selectFirstName]);
+
+
 	return (
 		<>
 			{/* FAQ section */}
 			<div className="Faq_part pb-[16px] sm:pb-[62px]">
+
 				{/* Intro Section */}
 				<div className="pb-[24px] sm:pb-[62px]">
 					<h1 className="text-[26px] sm:text-[42px] font-bold leading-tight">
@@ -462,95 +356,124 @@ export const FAQ2 = () => {
 						We’re here to assist you every step of the way. Explore our guides, FAQs, and expert help to make your shopping experience smooth, safe, and enjoyable.
 					</p>
 				</div>
+
 				{/* faq questions */}
 				<div className="bg-white rounded-lg">
+
 					{/* Mobile Horizontal Scrollable Categories (320px - 768px) */}
 					<div className="lg:hidden">
 						<div className="flex overflow-x-auto no-scrollbar border-b border-gray-200 bg-[#F9FAFB]">
-							{faq2Categories.map((cat) => (
-								<button
-									key={cat}
-									onClick={() => setActiveFaq2Category(cat)}
-									className={`flex-shrink-0 px-4 py-3 text-[14px] font-semibold whitespace-nowrap transition-colors ${activeFaq2Category === cat
-										? "bg-[#F9731633] text-[#F97316] border-b-2 border-[#F97316]"
-										: "text-[#44506A] hover:bg-[#F9731633] hover:text-[#F97316]"
-										}`}
-								>
-									{cat}
-								</button>
-							))}
+							{filteredFaqCategories.length > 0 ? (
+								filteredFaqCategories.map((cat) => (
+									<button
+										key={cat._id}
+										onClick={() => {
+											// alert("SFDgc")
+											setActiveFaq2Category(cat.faqCategoryName);
+											dispatch(fetchfaqQuestionsByCategory(cat._id));
+										}}
+										className={`flex-shrink-0 px-4 py-3 text-[14px] font-semibold whitespace-nowrap transition-colors ${activeFaq2Category === cat.faqCategoryName
+											? "bg-[#F9731633] text-[#F97316] border-b-2 border-[#F97316]"
+											: "text-[#44506A] hover:bg-[#F9731633] hover:text-[#F97316]"
+											}`}
+									>
+										{cat.faqCategoryName}
+									</button>
+								))
+							) : (
+								<p className="px-4 py-3 text-[14px] text-[#44506A]">No categories available</p>
+							)}
 						</div>
 
 						{/* FAQ Questions for Mobile */}
 						<div className="lg:px-4 py-4">
 							<div className="space-y-4">
-								{faq2Data[activeFaq2Category]?.map((faq, index) => (
-									<div
-										key={index}
-										className="border-y-[1px] border-y-[#E5E7EB] py-6 cursor-pointer"
-										onClick={() => setOpenfaqIndex(openfaqIndex === index ? null : index)}
-									>
-										<div className="flex justify-between items-center">
-											<span className="text-[16px] font-semibold text-[#44506A]">
-												{faq.question}
-											</span>
-											<button className="text-[20px] font-bold text-[#44506A] border-[2px] border-[#44506A] rounded-full leading-[13px] p-[3px]">
-												{openfaqIndex === index ? "-" : "+"}
-											</button>
+								{faqquestionsByCategory.length > 0 ? (
+									faqquestionsByCategory.map((faq, index) => (
+										<div
+											key={faq._id}
+											className="border-y-[1px] border-y-[#E5E7EB] py-6 cursor-pointer"
+											onClick={() => setOpenfaqIndex(openfaqIndex === index ? null : index)}
+										>
+											<div className="flex justify-between items-center">
+												<span className="text-[16px] font-semibold text-[#44506A]">
+													{faq.faqQuestion}
+												</span>
+												<button className="text-[20px] font-bold text-[#44506A] border-[2px] border-[#44506A] rounded-full leading-[13px] p-[3px]">
+													{openfaqIndex === index ? "-" : "+"}
+												</button>
+											</div>
+											{openfaqIndex === index && (
+												<p className="mt-2 text-[16px] font-medium text-[#6B7280]">
+													{faq.faqAnswer}
+												</p>
+											)}
 										</div>
-										{openfaqIndex === index && (
-											<p className="mt-2 text-[16px] font-medium text-[#6B7280]">
-												{faq.answer}
-											</p>
-										)}
-									</div>
-								))}
+									))
+								) : (
+									<p className="text-[16px] text-[#44506A] py-6">No frequently asked questions available for this category.</p>
+								)}
 							</div>
 						</div>
 					</div>
 
 					{/* Desktop Layout (768px+) */}
 					<div className="hidden lg:flex">
+
 						{/* Sidebar Categories */}
 						<div className="w-1/5 bg-[#F9FAFB]">
-							{faq2Categories.map((cat) => (
-								<div
-									key={cat}
-									onClick={() => setActiveFaq2Category(cat)}
-									className={`sm:px-[10px] lg:px-[18px] xl:px-[28px] md:py-[12px] lg:py-[20px] xl:py-[22px] cursor-pointer text-[14px] xl:text-[16px] text-[#44506A] border-y-[1px] border-y-[#E5E7EB] font-semibold ${activeFaq2Category === cat
-										? "bg-[#F9731633] text-[#F97316]"
-										: "hover:bg-[#F9731633] hover:text-[#F97316]"
-										}`}
-								>
-									{cat}
+							{filteredFaqCategories.length > 0 ? (
+								filteredFaqCategories.map((cat) => (
+									<div
+										key={cat._id}
+										onClick={() => {
+											// alert("SFDgc")
+											setActiveFaq2Category(cat.faqCategoryName);
+											dispatch(fetchfaqQuestionsByCategory(cat._id));
+										}}
+										className={`sm:px-[10px] lg:px-[18px] xl:px-[28px] md:py-[12px] lg:py-[20px] xl:py-[22px] cursor-pointer text-[14px] xl:text-[16px] text-[#44506A] border-y-[1px] border-y-[#E5E7EB] font-semibold ${activeFaq2Category === cat.faqCategoryName
+											? "bg-[#F9731633] text-[#F97316]"
+											: "hover:bg-[#F9731633] hover:text-[#F97316]"
+											}`}
+									>
+										{cat.faqCategoryName}
+									</div>
+								))
+							) : (
+								<div className="sm:px-[10px] lg:px-[18px] xl:px-[28px] md:py-[12px] lg:py-[20px] xl:py-[22px] text-[14px] xl:text-[16px] text-[#44506A] border-y-[1px] border-y-[#E5E7EB] font-semibold">
+									No categories available
 								</div>
-							))}
+							)}
 						</div>
 
 						{/* FAQ Questions */}
 						<div className="w-4/5 px-6">
 							<div className="space-y-4">
-								{faq2Data[activeFaq2Category]?.map((faq, index) => (
-									<div
-										key={index}
-										className="border-y-[1px] border-y-[#E5E7EB] py-6 cursor-pointer"
-										onClick={() => setOpenfaqIndex(openfaqIndex === index ? null : index)}
-									>
-										<div className="flex justify-between items-center">
-											<span className="text-[16px] font-semibold text-[#44506A]">
-												{faq.question}
-											</span>
-											<button className="text-[20px] font-bold text-[#44506A] border-[2px] border-[#44506A] rounded-full leading-[13px] p-[3px]">
-												{openfaqIndex === index ? "-" : "+"}
-											</button>
+								{faqquestionsByCategory.length > 0 ? (
+									faqquestionsByCategory.map((faq, index) => (
+										<div
+											key={faq._id}
+											className="border-y-[1px] border-y-[#E5E7EB] py-6 cursor-pointer"
+											onClick={() => setOpenfaqIndex(openfaqIndex === index ? null : index)}
+										>
+											<div className="flex justify-between items-center">
+												<span className="text-[16px] font-semibold text-[#44506A]">
+													{faq.faqQuestion}
+												</span>
+												<button className="text-[20px] font-bold text-[#44506A] border-[2px] border-[#44506A] rounded-full leading-[13px] p-[3px]">
+													{openfaqIndex === index ? "-" : "+"}
+												</button>
+											</div>
+											{openfaqIndex === index && (
+												<p className="mt-2 text-[16px] font-medium text-[#6B7280]">
+													{faq.faqAnswer}
+												</p>
+											)}
 										</div>
-										{openfaqIndex === index && (
-											<p className="mt-2 text-[16px] font-medium text-[#6B7280]">
-												{faq.answer}
-											</p>
-										)}
-									</div>
-								))}
+									))
+								) : (
+									<p className="text-[16px] text-[#44506A] py-6">No frequently asked questions available for this category.</p>
+								)}
 							</div>
 						</div>
 					</div>
