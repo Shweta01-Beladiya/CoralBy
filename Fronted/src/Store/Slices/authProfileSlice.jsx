@@ -186,12 +186,12 @@ export const updateBillingAddress = createAsyncThunk('authProfile/updateBillAdd'
 })
 
 
-export const selectNewAddress = createAsyncThunk('authProfile/selectNewAdd', async (id, { rejectWithValue }) => {
+export const selectNewAddress = createAsyncThunk('authProfile/selectNewAdd', async (addressId, { rejectWithValue }) => {
 
   try {
 
     const token = localStorage.getItem('token');
-    const response = await axios.put(`${BaseUrl}/api/users/select-address/${id}`, {
+    const response = await axios.put(`${BaseUrl}/api/user/selectUserAddressController/${addressId}`,{},{
       headers: {
         Authorization: `Bearer ${token}`
       }
@@ -207,6 +207,30 @@ export const selectNewAddress = createAsyncThunk('authProfile/selectNewAdd', asy
   }
 
 })
+
+export const selectBillingAddress = createAsyncThunk('authProfile/selectBillAdd', async (addressId, { rejectWithValue }) => {
+
+  try {
+
+    const token = localStorage.getItem('token');
+    const response = await axios.put(`${BaseUrl}/api/user/selectUserBillingAddressController/${addressId}`,{},{
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    })
+
+    if (response.data) {
+      return response.data.result
+    }
+
+    return rejectWithValue('Select Billing Address Failed')
+  } catch (error) {
+    return rejectWithValue(error?.response?.data?.message || 'Select Billing Address Failed')
+  }
+
+})
+
+
 
 
 
@@ -334,6 +358,34 @@ const authProfile = createSlice({
       .addCase(updateBillingAddress.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload || "Update Billing Address Failed";
+      })
+
+      // Select New Address 
+      .addCase(selectNewAddress.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(selectNewAddress.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(selectNewAddress.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Select New Address Failed";
+      })
+
+      // Select Billing Address 
+      .addCase(selectBillingAddress.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(selectBillingAddress.fulfilled, (state) => {
+        state.isLoading = false;
+        state.error = null;
+      })
+      .addCase(selectBillingAddress.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload || "Select New Address Failed";
       })
 
 
