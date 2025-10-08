@@ -13,7 +13,7 @@ import { createMainCategory, deleteMainCategoryById, getAllMainCategory, getMain
 import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCategoriesByCategoryId, getSubCategoryById, updateSubCategoryById } from '../controller/subCategory.controller.js';
 import { createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand, brandFilterController } from '../controller/brand.controller.js';
 import { addToWishlist, getWishlist, removeFromWishlist } from '../controller/wishlist.controller.js';
-import { createCoupon, deleteCoupon, getAllCoupon, getCouponById, updateCoupon } from '../controller/coupon.controller.js';
+import { applyCouponController, createCoupon, deleteCoupon, getAllCoupon, getCouponById, removeCouponController, updateCoupon } from '../controller/coupon.controller.js';
 import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, selectUserAddressController, selectUserBillingAddressController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
 import { createReview, deleteReview, dislikeReview, getProductReviews, likeReview, updateReview } from '../controller/review.controller.js';
 import { addProductBannerController, deleteProductBannerController, getProductBannerController, updateProductBannerController } from '../controller/product.banner.controller.js';
@@ -138,13 +138,13 @@ indexRouter.delete("/delete/offer/:offerId", UserAuth, isAdmin, deleteOfferContr
 
 
 // Coupon
-indexRouter.post("/seller/createCoupon", sellerAuth, createCoupon);
+indexRouter.post("/admin/createCoupon", UserAuth, isAdmin, createCoupon);
 indexRouter.get("/getAllCoupon", UserAuth, getAllCoupon);
 indexRouter.get("/getCouponById/:id", UserAuth, getCouponById);
-indexRouter.patch("/seller/updateCoupon/:id", sellerAuth, updateCoupon);
-indexRouter.delete("/seller/deleteCoupon/:id", sellerAuth, deleteCoupon);
-// indexRouter.post("/apply-coupon", applyCouponController);
-
+indexRouter.patch("/admin/updateCoupon/:id", UserAuth, isAdmin, updateCoupon);
+indexRouter.delete("/admin/deleteCoupon/:id", UserAuth, isAdmin, deleteCoupon);
+indexRouter.post("/apply-coupon", UserAuth, applyCouponController);
+indexRouter.post("/remove-coupon", UserAuth, removeCouponController);
 
 //seller.kyc.router.js
 indexRouter.post("/seller/gst/verify", sellerAuth, sellerGstVerifyAndInsertController);

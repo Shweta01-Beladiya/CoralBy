@@ -1,35 +1,66 @@
 import mongoose from "mongoose";
 import CouponModel from "../model/coupon.model.js";
 import { ThrowError } from "../utils/Error.utils.js";
-import { sendBadRequestResponse, sendNotFoundResponse, sendSuccessResponse } from "../utils/Response.utils.js";
+import { sendBadRequestResponse, sendNotFoundResponse, sendSuccessResponse,sendErrorResponse } from "../utils/Response.utils.js";
+import cartModel from "../model/cart.model.js";
 // import OrderModel from "../model/order.model.js";
-
 
 export const createCoupon = async (req, res) => {
     try {
-        const { code, description, discountType, discountValue, minOrderValue, maxDiscount, expiryDate, isActive } = req.body;
-        const sellerId = req.user._id;
+        const { code, description, discountType, flatValue, percentageValue, minOrderValue, expiryDate, isActive } = req.body;
 
-        if (!code || !description || !discountType || !discountValue || !expiryDate) {
-            return sendBadRequestResponse(res, "Required fields missing");
+        // Required fields validation
+        if (!code || !description || !discountType || !expiryDate) {
+            return sendBadRequestResponse(res, "All required fields must be provided");
         }
 
-        const existCoupon = await CouponModel.findOne({ code });
-        if (existCoupon) return sendBadRequestResponse(res, "Coupon code already exists");
+        // Validate discountType
+        if (!["flat", "percentage"].includes(discountType)) {
+            return sendBadRequestResponse(res, "Discount type must be either 'flat' or 'percentage'");
+        }
 
+        let finalFlatValue = flatValue || 0;
+        let finalPercentageValue = percentageValue || 0;
+
+        // Validate values based on discount type
+        if (discountType === "flat") {
+            if (!flatValue || flatValue <= 0) {
+                return sendBadRequestResponse(res, "Flat value must be provided and greater than 0 for flat discount type");
+            }
+            // Set percentageValue to 0 for flat coupons
+            finalPercentageValue = 0;
+        } else if (discountType === "percentage") {
+            if (!percentageValue || percentageValue <= 0 || percentageValue > 100) {
+                return sendBadRequestResponse(res, "Percentage value must be between 1 and 100 for percentage discount type");
+            }
+            // Set flatValue to 0 for percentage coupons
+            finalFlatValue = 0;
+        }
+
+        // Check if coupon code already exists
+        const existCoupon = await CouponModel.findOne({ code: code.toUpperCase() });
+        if (existCoupon) {
+            return sendBadRequestResponse(res, "Coupon code already exists");
+        }
+
+        // Parse expiry date (assuming format: "DD/MM/YYYY")
         const [day, month, year] = expiryDate.split("/").map(Number);
         const expiry = new Date(year, month - 1, day, 23, 59, 59, 999);
 
+        // Validate expiry date
+        if (expiry < new Date()) {
+            return sendBadRequestResponse(res, "Expiry date cannot be in the past");
+        }
+
         const newCoupon = await CouponModel.create({
-            code,
+            code: code.toUpperCase(),
             description,
             discountType,
-            discountValue,
+            flatValue: finalFlatValue,
+            percentageValue: finalPercentageValue,
             minOrderValue: minOrderValue || 0,
-            maxDiscount: maxDiscount || null,
             expiryDate: expiry,
-            isActive: isActive ?? true,
-            sellerId
+            isActive: isActive ?? true // Default to true if not provided
         });
 
         return sendSuccessResponse(res, "Coupon created successfully", newCoupon);
@@ -40,7 +71,17 @@ export const createCoupon = async (req, res) => {
 
 export const getAllCoupon = async (req, res) => {
     try {
-        const coupons = await CouponModel.find();
+        const { activeOnly } = req.query;
+
+        let filter = {};
+        if (activeOnly === "true") {
+            filter = {
+                isActive: true,
+                expiryDate: { $gt: new Date() }
+            };
+        }
+
+        const coupons = await CouponModel.find(filter).sort({ createdAt: -1 });
 
         if (!coupons || coupons.length === 0) {
             return sendNotFoundResponse(res, "No coupons found!");
@@ -56,12 +97,10 @@ export const getCouponById = async (req, res) => {
     try {
         const { id } = req.params;
 
-
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid Coupon ID");
         }
 
-        // Find coupon
         const coupon = await CouponModel.findById(id);
         if (!coupon) {
             return sendNotFoundResponse(res, "Coupon not found!");
@@ -76,22 +115,28 @@ export const getCouponById = async (req, res) => {
 export const updateCoupon = async (req, res) => {
     try {
         const { id } = req.params;
-        const sellerId = req.user?._id;
-
-        // Validate sellerId
-        if (!sellerId || !mongoose.Types.ObjectId.isValid(sellerId)) {
-            return sendBadRequestResponse(res, "Invalid or missing seller ID. Please login first!");
-        }
+        const { code, description, discountType, flatValue, percentageValue, minOrderValue, expiryDate, isActive } = req.body;
 
         // Validate coupon id
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid Coupon ID!");
         }
 
-        // Check coupon exists and belongs to seller
-        const existingCoupon = await CouponModel.findOne({ _id: id, sellerId });
+        // Check if coupon exists
+        const existingCoupon = await CouponModel.findById(id);
         if (!existingCoupon) {
-            return sendNotFoundResponse(res, "Coupon not found or unauthorized!");
+            return sendNotFoundResponse(res, "Coupon not found!");
+        }
+
+        // Check if code is being updated and if it already exists
+        if (code && code !== existingCoupon.code) {
+            const existCoupon = await CouponModel.findOne({
+                code: code.toUpperCase(),
+                _id: { $ne: id } // Exclude current coupon from check
+            });
+            if (existCoupon) {
+                return sendBadRequestResponse(res, "Coupon code already exists");
+            }
         }
 
         // Allowed fields for update
@@ -99,9 +144,9 @@ export const updateCoupon = async (req, res) => {
             "code",
             "description",
             "discountType",
-            "discountValue",
+            "flatValue",
+            "percentageValue",
             "minOrderValue",
-            "maxDiscount",
             "expiryDate",
             "isActive"
         ];
@@ -113,6 +158,51 @@ export const updateCoupon = async (req, res) => {
             }
         });
 
+        let finalFlatValue = updates.flatValue !== undefined ? updates.flatValue : existingCoupon.flatValue;
+        let finalPercentageValue = updates.percentageValue !== undefined ? updates.percentageValue : existingCoupon.percentageValue;
+
+        // Handle discount type validation and value resetting
+        if (updates.discountType || updates.flatValue !== undefined || updates.percentageValue !== undefined) {
+            const discountType = updates.discountType || existingCoupon.discountType;
+
+            if (discountType === "flat") {
+                // For flat discount, ensure flatValue is provided and greater than 0
+                if (updates.flatValue !== undefined && updates.flatValue <= 0) {
+                    return sendBadRequestResponse(res, "Flat value must be greater than 0");
+                }
+                // Set percentageValue to 0 for flat coupons
+                finalPercentageValue = 0;
+                updates.percentageValue = 0;
+            } else if (discountType === "percentage") {
+                // For percentage discount, ensure percentageValue is valid
+                if (updates.percentageValue !== undefined && (updates.percentageValue <= 0 || updates.percentageValue > 100)) {
+                    return sendBadRequestResponse(res, "Percentage value must be between 1 and 100");
+                }
+                // Set flatValue to 0 for percentage coupons
+                finalFlatValue = 0;
+                updates.flatValue = 0;
+            }
+
+            // Update the final values in updates object
+            updates.flatValue = finalFlatValue;
+            updates.percentageValue = finalPercentageValue;
+        }
+
+        // Handle expiry date parsing if provided
+        if (updates.expiryDate) {
+            const [day, month, year] = updates.expiryDate.split("/").map(Number);
+            updates.expiryDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+            if (updates.expiryDate < new Date()) {
+                return sendBadRequestResponse(res, "Expiry date cannot be in the past");
+            }
+        }
+
+        // Update code to uppercase if provided
+        if (updates.code) {
+            updates.code = updates.code.toUpperCase();
+        }
+
         // Update coupon
         const updatedCoupon = await CouponModel.findByIdAndUpdate(
             id,
@@ -120,7 +210,7 @@ export const updateCoupon = async (req, res) => {
             { new: true, runValidators: true }
         );
 
-        return sendSuccessResponse(res, " Coupon updated successfully!", updatedCoupon);
+        return sendSuccessResponse(res, "Coupon updated successfully!", updatedCoupon);
 
     } catch (error) {
         return ThrowError(res, 500, error.message);
@@ -130,90 +220,226 @@ export const updateCoupon = async (req, res) => {
 export const deleteCoupon = async (req, res) => {
     try {
         const { id } = req.params;
-        const sellerId = req.user?._id;
-
-        if (!sellerId || !mongoose.Types.ObjectId.isValid(sellerId)) {
-            return sendBadRequestResponse(res, "Invalid or missing seller ID. Please login first!");
-        }
 
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return sendBadRequestResponse(res, "Invalid Coupon ID!");
         }
 
-        const coupon = await CouponModel.findOne({ _id: id, sellerId });
+        const coupon = await CouponModel.findById(id);
         if (!coupon) {
-            return sendNotFoundResponse(res, "Coupon not found or unauthorized!");
+            return sendNotFoundResponse(res, "Coupon not found!");
         }
 
         await CouponModel.findByIdAndDelete(id);
 
-        return sendSuccessResponse(res, " Coupon deleted successfully!", { deletedId: id });
+        return sendSuccessResponse(res, "Coupon deleted successfully!", { deletedId: id });
 
     } catch (error) {
         return ThrowError(res, 500, error.message);
     }
 };
 
-// export const applyCouponController = async (req, res) => {
-//     try {
-//         const { code, orderId } = req.body;
+export const applyCouponController = async (req, res) => {
+    try {
+        const { code } = req.body;
+        const { id: userId } = req.user;
 
-//         if (!code || !orderId)
-//             return sendBadRequestResponse(res, "Coupon code and orderId are required");
+        if (!code) {
+            return sendBadRequestResponse(res, "Coupon code is required");
+        }
 
-//         const order = await OrderModel.findById(orderId).populate("items.productId");
-//         if (!order) return sendNotFoundResponse(res, "Order not found");
+        // Find user's cart
+        const cart = await cartModel.findOne({ userId })
+            .populate({
+                path: "items.productId",
+                model: "Product",
+                select: "productName title description isActive productDetails shippingReturn rating brand mainCategory category subCategory",
+                populate: [
+                    {
+                        path: "brand",
+                        model: "Brand",
+                        select: "brandName brandImage",
+                    },
+                    {
+                        path: "mainCategory",
+                        model: "MainCategory",
+                        select: "mainCategoryName mainCategoryImage",
+                    },
+                    {
+                        path: "category",
+                        model: "Category",
+                        select: "categoryName categoryImage",
+                    },
+                    {
+                        path: "subCategory",
+                        model: "SubCategory",
+                        select: "subCategoryName subCategoryImage",
+                    },
+                ],
+            })
+            .populate({
+                path: "items.productVarientId",
+                model: "ProductVariant",
+                select: "size color price stock images sku",
+            });
 
-//         const coupon = await CouponModel.findOne({ code: code.toUpperCase(), isActive: true });
-//         if (!coupon) return sendNotFoundResponse(res, "Invalid or inactive coupon");
+        if (!cart) {
+            return sendNotFoundResponse(res, "Cart not found");
+        }
 
-//         if (coupon.expiryDate < new Date())
-//             return sendBadRequestResponse(res, "Coupon has expired");
+        if (cart.items.length === 0) {
+            return sendBadRequestResponse(res, "Cart is empty. Add products to apply coupon.");
+        }
 
-//         // ✅ Calculate only for items belonging to this seller
-//         let eligibleAmount = 0;
-//         order.items.forEach(item => {
-//             if (item.sellerId.toString() === coupon.sellerId.toString()) {
-//                 eligibleAmount += (item.productId.price || 0) * item.quantity;
-//             }
-//         });
+        // Calculate cart total
+        let cartTotal = 0;
+        cart.items.forEach((item) => {
+            if (item.productVarientId?.price) {
+                const { original, discounted } = item.productVarientId.price;
+                const effectivePrice = discounted && discounted > 0 ? discounted : original;
+                cartTotal += effectivePrice * item.quantity;
+            }
+        });
 
-//         if (eligibleAmount === 0) {
-//             return sendBadRequestResponse(res, "Coupon not applicable: no items from this seller in order");
-//         }
+        // Find and validate coupon
+        const coupon = await CouponModel.findOne({ 
+            code: code.toUpperCase(), 
+            isActive: true 
+        });
 
-//         if (eligibleAmount < coupon.minOrderValue) {
-//             return sendBadRequestResponse(res, `Minimum order value for this coupon: ₹${coupon.minOrderValue}`);
-//         }
+        if (!coupon) {
+            return sendNotFoundResponse(res, "Invalid or inactive coupon");
+        }
 
-//         let discount = 0;
-//         if (coupon.discountType === "percentage") {
-//             discount = (eligibleAmount * coupon.discountValue) / 100;
-//             if (coupon.maxDiscount && discount > coupon.maxDiscount) {
-//                 discount = coupon.maxDiscount;
-//             }
-//         } else if (coupon.discountType === "flat") {
-//             discount = coupon.discountValue;
-//         }
+        // Check if coupon is expired
+        if (coupon.expiryDate < new Date()) {
+            return sendBadRequestResponse(res, "Coupon has expired");
+        }
 
-//         if (discount > eligibleAmount) discount = eligibleAmount;
+        // Check minimum order value
+        if (cartTotal < coupon.minOrderValue) {
+            return sendBadRequestResponse(res, `Minimum order value for this coupon is $${coupon.minOrderValue}`);
+        }
 
-//         // ✅ Final amount = totalAmount - discount (only applied to eligible seller part)
-//         order.appliedCoupon = coupon.code;
-//         order.discount = discount;
-//         order.finalAmount = order.totalAmount - discount;
+        // Calculate discount based on discount type
+        let discount = 0;
+        let finalAmount = cartTotal;
 
-//         await order.save();
+        if (coupon.discountType === "percentage") {
+            discount = (cartTotal * coupon.percentageValue) / 100;
+        } else if (coupon.discountType === "flat") {
+            discount = coupon.flatValue;
+        }
 
-//         return sendSuccessResponse(res, "Coupon applied successfully", {
-//             orderId: order._id,
-//             sellerId: coupon.sellerId,
-//             couponCode: coupon.code,
-//             eligibleAmount,
-//             discount,
-//             finalAmount: order.finalAmount
-//         });
-//     } catch (error) {
-//         return ThrowError(res, 500, error.message);
-//     }
-// };
+        // Ensure discount doesn't exceed cart total
+        if (discount > cartTotal) {
+            discount = cartTotal;
+        }
+
+        finalAmount = cartTotal - discount;
+
+        // Save coupon details to cart
+        cart.appliedCoupon = {
+            code: coupon.code,
+            couponId: coupon._id,
+            discount: discount,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountType === "flat" ? coupon.flatValue : coupon.percentageValue,
+            originalAmount: cartTotal,
+            finalAmount: finalAmount
+        };
+
+        await cart.save();
+
+        // Return updated cart with applied coupon
+        return sendSuccessResponse(res, "Coupon applied successfully", {
+            cartId: cart._id,
+            items: cart.items,
+            appliedCoupon: cart.appliedCoupon,
+            originalAmount: cartTotal,
+            discount,
+            finalAmount,
+            discountType: coupon.discountType,
+            discountValue: coupon.discountType === "flat" ? coupon.flatValue : coupon.percentageValue,
+            minOrderValue: coupon.minOrderValue,
+            expiryDate: coupon.expiryDate
+        });
+
+    } catch (error) {
+        console.error("🛒 applyCouponController error:", error);
+        return sendErrorResponse(res, 500, "Error applying coupon", error.message);
+    }
+};
+
+export const removeCouponController = async (req, res) => {
+    try {
+        const { id: userId } = req.user;
+
+        // Find user's cart
+        const cart = await cartModel.findOne({ userId })
+            .populate({
+                path: "items.productId",
+                model: "Product",
+                select: "productName title description isActive productDetails shippingReturn rating brand mainCategory category subCategory",
+                populate: [
+                    {
+                        path: "brand",
+                        model: "Brand",
+                        select: "brandName brandImage",
+                    },
+                    {
+                        path: "mainCategory",
+                        model: "MainCategory",
+                        select: "mainCategoryName mainCategoryImage",
+                    },
+                    {
+                        path: "category",
+                        model: "Category",
+                        select: "categoryName categoryImage",
+                    },
+                    {
+                        path: "subCategory",
+                        model: "SubCategory",
+                        select: "subCategoryName subCategoryImage",
+                    },
+                ],
+            })
+            .populate({
+                path: "items.productVarientId",
+                model: "ProductVariant",
+                select: "size color price stock images sku",
+            });
+
+        if (!cart) {
+            return sendNotFoundResponse(res, "Cart not found");
+        }
+
+        // Calculate cart total without coupon
+        let cartTotal = 0;
+        cart.items.forEach((item) => {
+            if (item.productVarientId?.price) {
+                const { original, discounted } = item.productVarientId.price;
+                const effectivePrice = discounted && discounted > 0 ? discounted : original;
+                cartTotal += effectivePrice * item.quantity;
+            }
+        });
+
+        // Remove applied coupon
+        const removedCoupon = cart.appliedCoupon;
+        cart.appliedCoupon = undefined;
+        await cart.save();
+
+        return sendSuccessResponse(res, "Coupon removed successfully", {
+            cartId: cart._id,
+            items: cart.items,
+            originalAmount: cartTotal,
+            finalAmount: cartTotal,
+            discount: 0,
+            removedCoupon: removedCoupon
+        });
+
+    } catch (error) {
+        console.error("🛒 removeCouponController error:", error);
+        return sendErrorResponse(res, 500, "Error removing coupon", error.message);
+    }
+};

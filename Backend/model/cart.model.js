@@ -1,4 +1,3 @@
-// models/cart.model.js
 import mongoose from "mongoose";
 
 const CartItemSchema = new mongoose.Schema({
@@ -29,6 +28,16 @@ const CartSchema = new mongoose.Schema(
             unique: true,
         },
         items: [CartItemSchema],
+        appliedCoupon: {
+            code: String,
+            couponId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: "coupon"
+            },
+            discount: Number,
+            discountType: String,
+            discountValue: Number
+        }
     },
     { timestamps: true }
 );
