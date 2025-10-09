@@ -29,10 +29,10 @@ export const getProduct = createAsyncThunk('category/fetchProduct', async () => 
     return response.data.result;
 })
 
-export const getProductVarient = createAsyncThunk('category/fetchProductVariant', async () => {
-    const response = await axios.get(`${BaseUrl}/api/getAllProductVariant`);
-    return response.data.result;
-})
+// export const getProductVarient = createAsyncThunk('category/fetchProductVariant', async () => {
+//     const response = await axios.get(`${BaseUrl}/api/getAllProductVariant`);
+//     return response.data.result;
+// })
 
 const categorySlice = createSlice({
     name: "category",
@@ -42,7 +42,7 @@ const categorySlice = createSlice({
         subCategory: { isLoading: false, data: [], isError: false },
         inSubCategory: { isLoading: false, data: [], isError: false },
         product: { isLoading: false, data: [], isError: false },
-        productVarient: { isLoading: false, data: [], isError: false }
+        // productVarient: { isLoading: false, data: [], isError: false }
     },
     reducers: {},
     extraReducers: (builder) => {
@@ -119,17 +119,17 @@ const categorySlice = createSlice({
             })
 
             //Product Varient
-            .addCase(getProductVarient.pending, (state) => {
-                state.productVarient.isLoading = true;
-            })
-            .addCase(getProductVarient.fulfilled, (state, action) => {
-                state.productVarient.isLoading = false;
-                state.productVarient.data = action.payload;
-            })
-            .addCase(getProductVarient.rejected, (state) => {
-                state.productVarient.isLoading = false;
-                state.productVarient.isError = true;
-            })
+            // .addCase(getProductVarient.pending, (state) => {
+            //     state.productVarient.isLoading = true;
+            // })
+            // .addCase(getProductVarient.fulfilled, (state, action) => {
+            //     state.productVarient.isLoading = false;
+            //     state.productVarient.data = action.payload;
+            // })
+            // .addCase(getProductVarient.rejected, (state) => {
+            //     state.productVarient.isLoading = false;
+            //     state.productVarient.isError = true;
+            // })
     },
 });
 
