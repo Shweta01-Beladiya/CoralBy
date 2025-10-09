@@ -118,10 +118,10 @@ indexRouter.get("/discover/product", UserAuth, discoverProductController)
 
 
 // Product
-indexRouter.post("/createProductVariant", sellerAuth, upload.fields([{ name: "images", maxCount: 1 }]), createProductVariant);
+indexRouter.post("/createProductVariant", sellerAuth, upload.fields([{ name: "images", maxCount: 10 }]), createProductVariant);
 indexRouter.get("/getAllProductVariant", getAllProductVariant);
 indexRouter.get("/getProductVarientById/:id", getProductVarientById);
-indexRouter.patch("/updateProductVariant/:variantId", sellerAuth, upload.fields([{ name: "images", maxCount: 1 }]), updateProductVariant);
+indexRouter.patch("/updateProductVariant/:variantId", sellerAuth, upload.fields([{ name: "images", maxCount: 10 }]), updateProductVariant);
 indexRouter.delete("/deleteProductVariant/:variantId", sellerAuth, deleteProductVariant);
 indexRouter.get("/getProductWiseProductVarientdata/:productId", getProductWiseProductVarientdata);
 
