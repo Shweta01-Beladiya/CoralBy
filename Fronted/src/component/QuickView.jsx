@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { IoClose } from "react-icons/io5";
 import { MdOutlineShoppingBag, MdStar } from "react-icons/md";
 import { FaHeart, FaMinus, FaPlus, FaRegHeart } from "react-icons/fa";
@@ -16,6 +16,14 @@ const QuickView = ({ product, onClose }) => {
     color: "",
     colorName: "",
   };
+
+  // Lock background scroll
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, []);
 
   const [activeVariant, setActiveVariant] = useState(initialVariant);
   const [activeSize, setActiveSize] = useState(8);
@@ -145,12 +153,14 @@ const QuickView = ({ product, onClose }) => {
                 <div className="flex items-center gap-2 sm:gap-3 mb-3">
                   {activeVariant?.price?.original && (
                     <del className="text-red-500 font-semibold text-sm sm:text-lg">
-                      {activeVariant.price.currency || 'AU$'}{activeVariant.price.original}
+                      {activeVariant.price.currency || "AU$"}
+                      {activeVariant.price.original}
                     </del>
                   )}
                   {activeVariant?.price?.discounted && (
                     <span className="text-black font-bold text-base sm:text-xl">
-                      {activeVariant.price.currency || 'AU$'}{activeVariant.price.discounted}
+                      {activeVariant.price.currency || "AU$"}
+                      {activeVariant.price.discounted}
                     </span>
                   )}
                 </div>
@@ -174,10 +184,11 @@ const QuickView = ({ product, onClose }) => {
                               : [v.image, v.image]
                           );
                         }}
-                        className={`w-12 h-12 sm:w-[60px] sm:h-[60px] object-cover rounded cursor-pointer border-2 ${v.color === activeVariant.color
+                        className={`w-12 h-12 sm:w-[60px] sm:h-[60px] object-cover rounded cursor-pointer border-2 ${
+                          v.color === activeVariant.color
                             ? "border-[#44506A33] shadow-lg transform scale-[1.05]"
                             : "border-gray-100"
-                          }`}
+                        }`}
                       />
                     ))}
                   </div>
@@ -193,10 +204,11 @@ const QuickView = ({ product, onClose }) => {
                       <button
                         key={size}
                         onClick={() => setActiveSize(size)}
-                        className={`px-2 sm:px-3 py-1 border rounded text-xs sm:text-sm transition ${activeSize === size
+                        className={`px-2 sm:px-3 py-1 border rounded text-xs sm:text-sm transition ${
+                          activeSize === size
                             ? "bg-black text-white"
                             : "hover:bg-black hover:text-white"
-                          }`}
+                        }`}
                       >
                         {size}
                       </button>
@@ -279,7 +291,6 @@ const QuickView = ({ product, onClose }) => {
           onClose={() => setIsSizeGuideOpen(false)}
         />
       )}
-
     </>
   );
 };
