@@ -6,14 +6,14 @@ import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middle
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdateController, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
 import { addBadgeToProduct, createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
-import { getMyCartController,addToCartController, removeCartController } from '../controller/cart.controller.js';
+import { getMyCartController, addToCartController, removeCartController } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
 import { createMainCategory, deleteMainCategoryById, getAllMainCategory, getMainCategoryById, updateMainCategoryById } from '../controller/mainCategory.controller.js';
 import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCategoriesByCategoryId, getSubCategoryById, updateSubCategoryById } from '../controller/subCategory.controller.js';
 import { createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand, brandFilterController } from '../controller/brand.controller.js';
 import { addToWishlist, getWishlist, removeFromWishlist } from '../controller/wishlist.controller.js';
-import { createCoupon, deleteCoupon, getAllCoupon, getCouponById, updateCoupon } from '../controller/coupon.controller.js';
+import { applyCouponController, createCoupon, deleteCoupon, getAllCoupon, getCouponById, removeCouponController, updateCoupon } from '../controller/coupon.controller.js';
 import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, selectUserAddressController, selectUserBillingAddressController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
 import { createReview, deleteReview, dislikeReview, getProductReviews, likeReview, updateReview } from '../controller/review.controller.js';
 import { addProductBannerController, deleteProductBannerController, getProductBannerController, updateProductBannerController } from '../controller/product.banner.controller.js';
@@ -31,6 +31,9 @@ import { createContactUs, deleteContactUs, getAllContactUs, getContactUsById, up
 import { createSubcribe, deleteSubcribeById, getAllSubcribe, getSubcribeById, updateSubcribeById } from '../controller/subcribe.controller.js';
 import { createInsideSubCategory, deleteInsideSubCategoryById, getAllInsideSubCategory, getInsideSubCategoriesBySubCategoryId, getInsideSubCategoryById, updateInsideSubCategoryById } from '../controller/insideSubCategory.controller.js';
 import { createMainFaqCategory, deleteMainFaqCategoryById, getAllMainFaqCategory, getMainFaqCategoryById, updateMainFaqCategoryById } from '../controller/mainFaqCategory.controller.js';
+import { sendErrorResponse, sendSuccessResponse } from '../utils/Response.utils.js';
+import { createSimilarFaqCategory, deleteSimilarFaqCategoryById, getAllSimilarFaqCategory, getSimilarFaqCategoryById, updateSimilarFaqCategoryById } from '../controller/similarFaqCategory.controller.js';
+import { createSimilarFAQQuestion, deleteSimilarFAQQuestion, getAllSimilarFAQQuestion, getSimilarFAQQuestionById, getSimilarFAQQuestionsByCategory, updateSimilarFAQQuestion } from '../controller/similarFaqQuestion.controller.js';
 
 
 const indexRouter = express.Router();
@@ -136,13 +139,13 @@ indexRouter.delete("/delete/offer/:offerId", UserAuth, isAdmin, deleteOfferContr
 
 
 // Coupon
-indexRouter.post("/seller/createCoupon", sellerAuth, createCoupon);
+indexRouter.post("/admin/createCoupon", UserAuth, isAdmin, createCoupon);
 indexRouter.get("/getAllCoupon", UserAuth, getAllCoupon);
 indexRouter.get("/getCouponById/:id", UserAuth, getCouponById);
-indexRouter.patch("/seller/updateCoupon/:id", sellerAuth, updateCoupon);
-indexRouter.delete("/seller/deleteCoupon/:id", sellerAuth, deleteCoupon);
-// indexRouter.post("/apply-coupon", applyCouponController);
-
+indexRouter.patch("/admin/updateCoupon/:id", UserAuth, isAdmin, updateCoupon);
+indexRouter.delete("/admin/deleteCoupon/:id", UserAuth, isAdmin, deleteCoupon);
+indexRouter.post("/apply-coupon", UserAuth, applyCouponController);
+indexRouter.post("/remove-coupon", UserAuth, removeCouponController);
 
 //seller.kyc.router.js
 indexRouter.post("/seller/gst/verify", sellerAuth, sellerGstVerifyAndInsertController);
@@ -177,9 +180,9 @@ indexRouter.get("/user/billingaddress", UserAuth, getUserBillingAddressControlle
 indexRouter.put("/user/selectUserBillingAddressController/:addressId", UserAuth, selectUserBillingAddressController);
 
 //cart.route.js
-indexRouter.post("/add/cart/:productId", UserAuth, addToCartController );
+indexRouter.post("/add/cart/:productId", UserAuth, addToCartController);
 indexRouter.get("/my/cart", UserAuth, getMyCartController);
-indexRouter.delete("/remove/cart/:productId",UserAuth,removeCartController)
+indexRouter.delete("/remove/cart/:productId", UserAuth, removeCartController)
 
 //wishlist.route.js
 indexRouter.post("/addToWishlist/:productId", UserAuth, addToWishlist)
@@ -246,6 +249,21 @@ indexRouter.post("/apply/job/:jobId", UserAuth, upload.single("resume"), applyJo
 indexRouter.get("/my/applications", UserAuth, getMyJobapplicationsController);
 indexRouter.delete("/delete/job/application/:applicationId", UserAuth, isAdmin, deleteJobApplicationController);
 
+//similarFaqCategory route
+indexRouter.post("/createSimilarFaqCategory", UserAuth, isAdmin, createSimilarFaqCategory);
+indexRouter.get("/getAllSimilarFaqCategory", getAllSimilarFaqCategory);
+indexRouter.get("/getSimilarFaqCategoryById/:id", getSimilarFaqCategoryById);
+indexRouter.patch("/updateSimilarFaqCategoryById/:id", UserAuth, isAdmin, updateSimilarFaqCategoryById);
+indexRouter.delete("/deleteSimilarFaqCategoryById/:id", UserAuth, isAdmin, deleteSimilarFaqCategoryById);
+
+//similarFaqQuestion route
+indexRouter.post("/createSimilarFAQQuestion", UserAuth, isAdmin, createSimilarFAQQuestion);
+indexRouter.get("/getAllSimilarFAQQuestion", getAllSimilarFAQQuestion);
+indexRouter.get("/getSimilarFAQQuestionById/:id", getSimilarFAQQuestionById);
+indexRouter.patch("/updateSimilarFAQQuestion/:id", UserAuth, isAdmin, updateSimilarFAQQuestion);
+indexRouter.delete("/deleteSimilarFAQQuestion/:id", UserAuth, isAdmin, deleteSimilarFAQQuestion);
+indexRouter.get("/getSimilarFAQQuestionsByCategory/:similarFaqCategoryId", getSimilarFAQQuestionsByCategory);
+
 //mainFaqCategory route
 indexRouter.post("/createMainFaqCategory", UserAuth, isAdmin, createMainFaqCategory);
 indexRouter.get("/getAllMainFaqCategory", getAllMainFaqCategory);
@@ -269,6 +287,7 @@ indexRouter.patch("/updateFAQQuestion/:id", UserAuth, isAdmin, updateFAQQuestion
 indexRouter.delete("/deleteFAQQuestion/:id", UserAuth, isAdmin, deleteFAQQuestion);
 indexRouter.get("/getFAQQuestionsByCategory/:categoryId", getFAQQuestionsByCategory);
 
+//Recently viewed product
 indexRouter.post("/addRecentlyView/:productId", UserAuth, addRecentlyView);
 indexRouter.get("/getRecentlyView", UserAuth, getRecentlyView);
 
@@ -304,6 +323,34 @@ indexRouter.get("/getAllSubcribe", getAllSubcribe);
 indexRouter.get("/getSubcribeById/:id", getSubcribeById);
 indexRouter.patch("/updateSubcribeById/:id", updateSubcribeById);
 indexRouter.delete("/deleteSubcribeById/:id", deleteSubcribeById);
+
+
+
+// austrials states data
+const australiaData = {
+    country: "Australia",
+    total: 8,
+    states: [
+        { name: "New South Wales", abbreviation: "NSW" },
+        { name: "Victoria", abbreviation: "VIC" },
+        { name: "Queensland", abbreviation: "QLD" },
+        { name: "South Australia", abbreviation: "SA" },
+        { name: "Western Australia", abbreviation: "WA" },
+        { name: "Tasmania", abbreviation: "TAS" },
+        { name: "Northern Territory", abbreviation: "NT" },
+        { name: "Australian Capital Territory", abbreviation: "ACT" },
+    ],
+};
+
+indexRouter.get("/au/states", async (req, res) => {
+    try {
+        return sendSuccessResponse(res, "All Austraila States fetched", australiaData)
+    } catch (error) {
+        console.log(error.message);
+        return sendErrorResponse(res, 500, "Error During Featch all au states", error);
+    }
+})
+
 
 
 const s3Client = new S3Client({

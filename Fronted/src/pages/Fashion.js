@@ -11,7 +11,7 @@ import Pagination from "../component/Pagination";
 import { Link } from "react-router-dom";
 import QuickView from "../component/QuickView";
 import { useSelector, useDispatch } from "react-redux";
-import { getProduct, getProductVarient } from "../Store/Slices/categorySlice";
+import { getProduct } from "../Store/Slices/categorySlice";
 
 const Fashion = () => {
 
@@ -37,6 +37,8 @@ const Fashion = () => {
 
 	// QuickView handlers
 	const openQuickView = (product) => {
+		console.log("product>>>>>>>",product);
+		
 		setQuickViewProduct(product);
 		setShowQuickView(true);
 	};
@@ -179,7 +181,6 @@ const Fashion = () => {
 
 	useEffect(() => {
 		dispatch(getProduct());
-		dispatch(getProductVarient());
 	}, []);
 
 
@@ -189,34 +190,31 @@ const Fashion = () => {
 	console.log("productVarient",productVarient);
 	
 
-	// Filtered products based on selected filters
-	const filteredProducts = products.filter((product) => {
+	const filteredProducts = (product || []).filter((p) => {
 		return Object.keys(selectedFilters).every((section) => {
 			const selectedItems = selectedFilters[section];
-			if (!selectedItems || selectedItems.length === 0) return true;
+			if (!selectedItems?.length) return true;
 
-			const productValue =
+			const value =
 				section === "Categories"
-					? product.category
+					? p.category?.categoryName
 					: section === "Colors"
-						? product.color
-						: product[section.toLowerCase()] || "";
+						? p.varientId?.some((v) => selectedItems.includes(v.color))
+						: p[section.toLowerCase()];
 
-			if (Array.isArray(productValue)) {
-				return selectedItems.some((item) => productValue.includes(item));
+			if (Array.isArray(value)) {
+				return selectedItems.some((item) => value.includes(item));
 			}
-			return selectedItems.includes(productValue);
+			return selectedItems.includes(value);
 		});
 	});
 
-	// State
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 16;
-
-	// Paginated products
 	const indexOfLastItem = currentPage * itemsPerPage;
 	const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 	const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+
 
 	const toggleFilter = () => setShowFilter(!showFilter);
 
@@ -251,7 +249,7 @@ const Fashion = () => {
 							</div>
 							<div>
 								<h5 className="text-[16px] text-[#111827] font-semibold">
-									Showing 01 - {filteredProducts.length} of {products.length}{" "}
+									Showing 01 - {filteredProducts.length} of {(product || []).length}
 									Products
 								</h5>
 							</div>
@@ -314,8 +312,8 @@ const Fashion = () => {
 						</div>
 						{/* Product grid */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-							{currentProducts.map((product) => (
-								<SingleProduct key={product.id} product={product} onQuickView={openQuickView} />))}
+							{currentProducts.map((p) => (
+								<SingleProduct  key={p._id}  product={p} onQuickView={openQuickView} />))}
 						</div>
 
 						{/* Pagination */}
