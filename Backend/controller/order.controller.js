@@ -1,17 +1,15 @@
 import mongoose from "mongoose";
 import Order from "../model/order.model.js";
-import Product from "../model/product.model.js";
 import ProductVariant from "../model/productvarient.model.js";
 import { sendBadRequestResponse, sendErrorResponse, sendNotFoundResponse, sendSuccessResponse } from "../utils/Response.utils.js";
 import { nanoid } from "nanoid";
 import orderModel from "../model/order.model.js";
 import UserModel from "../model/user.model.js";
 import sellerModel from "../model/seller.model.js";
-import couponModel from "../model/coupon.model.js";
+import CouponModel from "../model/coupon.model.js";
 import axios from "axios";
 import cartModel from "../model/cart.model.js";
 
-const roundToTwo = (num) => Math.round(num * 100) / 100;
 
 export const selectUserAddressController = async (req, res) => {
     try {
@@ -108,12 +106,15 @@ export const selectUserBillingAddressController = async (req, res) => {
 export const newOrderController = async (req, res) => {
     const session = await mongoose.startSession();
 
+    // Helper function to round numbers
+    const roundToTwo = (num) => Math.round(num * 100) / 100;
+
     try {
         session.startTransaction();
         const giftWrapCharge = 20;
 
         const { id: userId } = req.user;
-        const { billingAddressId, orderInstruction, isGiftWrap, paymentMethod, couponCode, isCouponApplied } = req.body;
+        const { billingAddressId, orderInstruction, isGiftWrap, paymentMethod } = req.body;
 
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return sendBadRequestResponse(res, "Invalid user ID");
@@ -123,7 +124,7 @@ export const newOrderController = async (req, res) => {
             return sendBadRequestResponse(res, "Invalid payment method");
         }
 
-        // --- Fetch cart ---
+        // --- Fetch cart with applied coupon ---
         const cart = await cartModel.findOne({ userId })
             .populate([
                 { path: "items.productId", select: "name sellerId" },
@@ -180,21 +181,38 @@ export const newOrderController = async (req, res) => {
             giftWrapAmount = giftWrapCharge;
         }
 
-        // --- Apply coupon if any ---
-        if (isCouponApplied && couponCode) {
-            const coupon = await couponModel.findOne({ code: couponCode.toUpperCase() }).session(session);
-            if (!coupon) return sendBadRequestResponse(res, "Invalid coupon code");
-            if (!coupon.isActive) return sendBadRequestResponse(res, "Coupon inactive");
-            if (coupon.expiryDate < new Date()) return sendBadRequestResponse(res, "Coupon expired");
+        // --- Use cart's applied coupon if any ---
+        let appliedCoupon = null;
+        if (cart.appliedCoupon) {
+            const coupon = await CouponModel.findOne({
+                _id: cart.appliedCoupon.couponId,
+                isActive: true
+            }).session(session);
 
-            if (coupon.discountType === "percentage") {
-                discountAmount = roundToTwo((coupon.discountValue / 100) * billingAmount);
-                if (coupon.maxDiscount && discountAmount > coupon.maxDiscount) discountAmount = coupon.maxDiscount;
-            } else if (coupon.discountType === "fixed") {
-                discountAmount = Math.min(coupon.discountValue, billingAmount);
+            if (!coupon) {
+                return sendBadRequestResponse(res, "Applied coupon is no longer valid");
             }
 
-            await couponModel.findByIdAndUpdate(coupon._id, { $addToSet: { usedBy: userId } }, { session });
+            if (coupon.expiryDate < new Date()) {
+                return sendBadRequestResponse(res, "Applied coupon has expired");
+            }
+
+            // Use the discount amount from cart's applied coupon
+            discountAmount = cart.appliedCoupon.discount;
+
+            appliedCoupon = {
+                code: coupon.code,
+                couponId: coupon._id,
+                discount: discountAmount,
+                discountType: coupon.discountType,
+                percentageValue: coupon.percentageValue,
+                flatValue: coupon.flatValue
+            };
+
+            // Mark coupon as used
+            await CouponModel.findByIdAndUpdate(coupon._id, {
+                $addToSet: { usedBy: userId }
+            }, { session });
         }
 
         // Calculate final total amount (billing - discount + gift wrap)
@@ -211,18 +229,13 @@ export const newOrderController = async (req, res) => {
             products: orderProducts,
             billingAmount,
             discountAmount,
-            giftWrapAmount, // Add gift wrap amount to order
-            isGiftWrap: !!isGiftWrap, // Store gift wrap preference
+            giftWrapAmount,
+            isGiftWrap: !!isGiftWrap,
             totalAmount,
             orderInstruction: orderInstruction,
-            couponCode: couponCode || null,
-            isCouponApplied: !!(isCouponApplied && couponCode),
+            appliedCoupon: appliedCoupon,
             deliveryExpected,
-            payment: {
-                method: paymentMethod,
-                status: paymentMethod === "COD" ? "Pending" : "Paid",
-                transactionId: paymentMethod !== "COD" ? `TXN-${Date.now()}-${nanoid(8)}` : null
-            }
+            // No payment field here - payment will be handled separately
         });
 
         const savedOrder = await newOrder.save({ session });
@@ -240,8 +253,9 @@ export const newOrderController = async (req, res) => {
         // --- Add order to seller ---
         await sellerModel.findByIdAndUpdate(sellerId, { $push: { orders: savedOrder._id } }, { session });
 
-        // --- Clear user cart ---
+        // --- Clear user cart (including applied coupon) ---
         cart.items = [];
+        cart.appliedCoupon = undefined;
         await cart.save({ session });
 
         await session.commitTransaction();
@@ -255,7 +269,9 @@ export const newOrderController = async (req, res) => {
             products: orderProducts,
             deliveryExpected,
             sellerId: sellerId,
-            isGiftWrap: !!isGiftWrap
+            isGiftWrap: !!isGiftWrap,
+            appliedCoupon: appliedCoupon,
+            // No payment information in response - payment will be handled separately
         });
 
     } catch (error) {
@@ -266,7 +282,6 @@ export const newOrderController = async (req, res) => {
         session.endSession();
     }
 };
-// ======================================================================================
 
 export const myOrderController = async (req, res) => {
     try {
@@ -276,7 +291,6 @@ export const myOrderController = async (req, res) => {
             return sendErrorResponse(res, 400, "Valid UserID is required");
         }
 
-        // Fetch active orders (excluding completed/cancelled statuses)
         const orders = await orderModel
             .find({
                 userId,
@@ -284,17 +298,18 @@ export const myOrderController = async (req, res) => {
                     $in: ["Pending", "Order Confirmed", "Processing", "Shipped", "Out For Delivery"]
                 }
             })
-            .populate("userId", "name email billingAddress")
-            .populate("sellerId", "mobileNo businessName pickUpAddr")
+            .populate("userId", "name email")
+            .populate("sellerId", "businessName mobileNo pickUpAddr")
             .populate([
                 {
                     path: "products.productId",
                     model: "Product",
-                    select: "title mainCategory category subCategory brand sellerId"
+                    select: "title mainCategory category subCategory brand"
                 },
                 {
                     path: "products.variantId",
-                    model: "ProductVariant"
+                    model: "ProductVariant",
+                    select: "sku price stock attributes"
                 }
             ])
             .sort({ createdAt: -1 });
@@ -303,31 +318,32 @@ export const myOrderController = async (req, res) => {
             return sendSuccessResponse(res, "No active orders found", { orders: [] });
         }
 
-        // Format orders
-        // const formattedOrders = orders.map((order) => ({
-        //     _id: order._id,
-        //     orderId: order.orderId,
-        //     products: order.products,
-        //     billingAmount: order.billingAmount,
-        //     discountAmount: order.discountAmount,
-        //     totalAmount: order.totalAmount,
-        //     couponCode: order.couponCode,
-        //     isCouponApplied: order.isCouponApplied,
-        //     orderStatus: order.orderStatus,
-        //     deliveryExpected: order.deliveryExpected,
-        //     deliveredAt: order.deliveredAt,
-        //     createdAt: order.createdAt,
-        //     orderInstruction: order.orderInstruction,
-        //     payment: order.payment,
-        //     seller: order.sellerId, // Include seller info
-        //     timeline: order.timeline, // Include timeline
-        //     userAddress: order.userAddress, // From order model
-        //     userBillingAddress: order.userBillingAddress // From order model
-        // }));
+        // Format orders properly for response
+        const formattedOrders = orders.map((order) => ({
+            _id: order._id,
+            orderId: order.orderId,
+            products: order.products,
+            billingAmount: order.billingAmount,
+            discountAmount: order.discountAmount,
+            giftWrapAmount: order.giftWrapAmount,
+            totalAmount: order.totalAmount,
+            appliedCoupon: order.appliedCoupon || null,
+            orderStatus: order.orderStatus,
+            deliveryExpected: order.deliveryExpected,
+            deliveredAt: order.deliveredAt,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+            orderInstruction: order.orderInstruction,
+            seller: order.sellerId,
+            timeline: order.timeline,
+            userAddress: order.userAddress,
+            userBillingAddress: order.userBillingAddress,
+            isGiftWrap: order.isGiftWrap,
+        }));
 
         return sendSuccessResponse(res, "Active orders fetched successfully", {
-            orders: orders,
-            count: orders.length
+            orders: formattedOrders,
+            count: formattedOrders.length
         });
 
     } catch (error) {
@@ -344,7 +360,6 @@ export const myHistoryOrderController = async (req, res) => {
             return sendErrorResponse(res, 400, "Valid UserID is required");
         }
 
-        // Fetch completed/cancelled orders
         const orders = await orderModel
             .find({
                 userId,
@@ -353,35 +368,47 @@ export const myHistoryOrderController = async (req, res) => {
                 }
             })
             .populate("userId", "name email")
-            .populate("sellerId", "businessName")
+            .populate("sellerId", "businessName mobileNo")
+            .populate([
+                {
+                    path: "products.productId",
+                    model: "Product",
+                    select: "title mainCategory category subCategory brand"
+                },
+                {
+                    path: "products.variantId",
+                    model: "ProductVariant",
+                    select: "sku price stock attributes"
+                }
+            ])
             .sort({ createdAt: -1 });
 
         if (!orders || orders.length === 0) {
             return sendSuccessResponse(res, "No order history found", { orders: [] });
         }
 
-        // Format response
         const formattedOrders = orders.map((order) => ({
             _id: order._id,
             orderId: order.orderId,
             products: order.products,
             billingAmount: order.billingAmount,
             discountAmount: order.discountAmount,
+            giftWrapAmount: order.giftWrapAmount,
             totalAmount: order.totalAmount,
-            couponCode: order.couponCode,
-            isCouponApplied: order.isCouponApplied,
+            appliedCoupon: order.appliedCoupon || null,
             orderStatus: order.orderStatus,
             deliveryExpected: order.deliveryExpected,
             deliveredAt: order.deliveredAt,
             createdAt: order.createdAt,
             updatedAt: order.updatedAt,
             orderInstruction: order.orderInstruction,
-            payment: order.payment,
             seller: order.sellerId,
             timeline: order.timeline,
-            reasonForCancel: order.reasonForCancel,
+            reasonForCancel: order.reasonForCancel || null,
+            comment: order.comment || null,
             userAddress: order.userAddress,
-            userBillingAddress: order.userBillingAddress
+            userBillingAddress: order.userBillingAddress,
+            isGiftWrap: order.isGiftWrap,
         }));
 
         return sendSuccessResponse(res, "Order history fetched successfully", {
@@ -395,72 +422,105 @@ export const myHistoryOrderController = async (req, res) => {
     }
 };
 
-
-
 export const getAllOrders = async (req, res) => {
     try {
-        const orders = await orderModel.find().populate("userId").populate("sellerId").sort({ createdAt: -1 });
+        const orders = await orderModel
+            .find()
+            .populate("userId", "name email")
+            .populate("sellerId", "businessName mobileNo")
+            .sort({ createdAt: -1 });
+
         if (!orders || orders.length === 0) {
             return sendErrorResponse(res, 404, "No orders found");
         }
-        return sendSuccessResponse(res, "All orders fetched successfully", orders);
+
+        return sendSuccessResponse(res, "All orders fetched successfully", {
+            orders,
+            count: orders.length,
+        });
     } catch (err) {
-        console.log(err);
-        return sendErrorResponse(res, 500, "Error during getAllOrders", err);
+        console.error("Error fetching all orders:", err);
+        return sendErrorResponse(res, 500, "Error during getAllOrders", err.message);
     }
-}
+};
 
 export const getSellerAllOrdersController = async (req, res) => {
     try {
-        const { _id: sellerId } = req?.user;
-        if (!sellerId && !mongoose.Types.ObjectId.isValid(sellerId)) {
-            return sendErrorResponse(res, 400, "SellerID is required");
+        const { _id: sellerId } = req.user;
+
+        if (!sellerId || !mongoose.Types.ObjectId.isValid(sellerId)) {
+            return sendErrorResponse(res, 400, "Valid SellerID is required");
         }
-        const orders = await orderModel.find({ sellerId }).populate("userId");
-        const populatedOrders = orders.map(order => {
-            const user = order.userId;
-            const deliveryAddress = user.billingaddress.find(addr =>
-                addr._id.toString() === order.deliveryAddress.toString()
-            );
-            return {
-                ...order.toObject(),
-                deliveryAddress
-            };
-        });
+
+        const orders = await orderModel
+            .find({ sellerId })
+            .populate("userId", "name email")
+            .sort({ createdAt: -1 });
 
         if (!orders || orders.length === 0) {
             return sendErrorResponse(res, 404, "No orders found for this seller");
         }
-        return sendSuccessResponse(res, "Seller orders fetched successfully", orders);
+
+        // No `deliveryAddress` in schema — we already store `userAddress` and `userBillingAddress` inside order
+        const formattedOrders = orders.map((order) => ({
+            _id: order._id,
+            orderId: order.orderId,
+            products: order.products,
+            billingAmount: order.billingAmount,
+            discountAmount: order.discountAmount,
+            giftWrapAmount: order.giftWrapAmount,
+            totalAmount: order.totalAmount,
+            appliedCoupon: order.appliedCoupon || null,
+            user: order.userId,
+            orderStatus: order.orderStatus,
+            timeline: order.timeline,
+            deliveryExpected: order.deliveryExpected,
+            createdAt: order.createdAt,
+            updatedAt: order.updatedAt,
+            userAddress: order.userAddress,
+            userBillingAddress: order.userBillingAddress,
+            isGiftWrap: order.isGiftWrap,
+        }));
+
+        return sendSuccessResponse(res, "Seller orders fetched successfully", {
+            orders: formattedOrders,
+            count: formattedOrders.length,
+        });
+
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Error during getSellerAllOrdersController", error);
+        console.error("Error fetching seller orders:", error);
+        return sendErrorResponse(res, 500, "Error during getSellerAllOrdersController", error.message);
     }
-}
+};
 
 export const updateOrderStatusController = async (req, res) => {
     try {
-        const { orderId } = req?.params;
-        const { status } = req?.body;
-        if (!orderId && !mongoose.Types.ObjectId.isValid(orderId)) {
-            return sendErrorResponse(res, 400, "OrderID is required");
+        const { orderId } = req.params;
+        const { status } = req.body;
+
+        if (!orderId || !mongoose.Types.ObjectId.isValid(orderId)) {
+            return sendErrorResponse(res, 400, "Valid OrderID is required");
         }
+
         if (!status) {
             return sendErrorResponse(res, 400, "Status is required");
         }
+
         const order = await orderModel.findById(orderId);
         if (!order) {
             return sendErrorResponse(res, 404, "Order not found");
         }
+
+        // Update order status — pre-save hook in schema will auto-update timeline
         order.orderStatus = status;
         await order.save();
-        return sendSuccessResponse(res, "Order status updated successfully", order);
 
+        return sendSuccessResponse(res, "Order status updated successfully", order);
     } catch (error) {
-        console.log(error.message);
+        console.error("Error updating order status:", error);
         return sendErrorResponse(res, 500, "Error during updateOrderStatusController", error.message);
     }
-}
+};
 
 export const cancelMyOrderController = async (req, res) => {
     try {
@@ -477,31 +537,32 @@ export const cancelMyOrderController = async (req, res) => {
             return sendErrorResponse(res, 404, "Order not found");
         }
 
+        // Check user authorization
         if (order.userId.toString() !== userId) {
             return sendErrorResponse(res, 403, "You are not authorized to cancel this order");
         }
 
-        if (order.orderStatus === "Cancelled") {
-            return sendErrorResponse(res, 400, "Order is already cancelled");
+        if (["Cancelled", "Delivered", "Returned"].includes(order.orderStatus)) {
+            return sendErrorResponse(res, 400, `Order is already ${order.orderStatus.toLowerCase()}`);
         }
 
+        // Update cancellation info
         order.orderStatus = "Cancelled";
-        order.reasonForCancel = reasonForCancel;
-        order.comment = comment;
+        order.reasonForCancel = reasonForCancel || "User cancelled the order";
+        order.comment = comment || null;
 
-        await order.save();
+        await order.save(); // Pre-save hook auto updates `timeline.cancelledAt`
 
         return sendSuccessResponse(res, "Order cancelled successfully", order);
     } catch (error) {
-        console.error(error.message);
+        console.error("Error cancelling order:", error);
         return sendErrorResponse(res, 500, "Error during cancelMyOrderController", error.message);
     }
 };
 
-
 export const orderSummeryController = async (req, res) => {
     try {
-        const { id: userId } = req?.user;
+        const { id: userId } = req.user || {};
 
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return sendErrorResponse(res, 400, "Valid UserID is required");
@@ -517,25 +578,49 @@ export const orderSummeryController = async (req, res) => {
             return sendErrorResponse(res, 404, "No orders found for this user");
         }
 
-        // Flatten all products across orders
+        // Flatten all products from all orders
         const allProducts = orders.flatMap(order => order.products);
 
-        // Calculate totals
+        // 🧮 Calculate total items and subtotal
         const totalItems = allProducts.reduce((sum, p) => sum + (p.quantity || 0), 0);
 
         const subtotal = allProducts.reduce(
-            (sum, p) => sum + ((p.price || 0) * (p.quantity || 0)),
+            (sum, p) => sum + (Number(p.price) * (p.quantity || 0)),
             0
         );
 
-        // Example fees
-        const estimatedDelivery = 100; // AU$
-        const platformFee = 13;        // AU$
-        const total = subtotal + estimatedDelivery + platformFee;
+        // 🧾 Calculate total discount across orders
+        let totalDiscount = 0;
 
+        orders.forEach(order => {
+            if (order.appliedCoupon && order.appliedCoupon.discountType === "percentage") {
+                // % Discount based on subtotal
+                const percent = order.appliedCoupon.percentageValue || 0;
+                totalDiscount += (order.billingAmount * percent) / 100;
+            } else if (order.appliedCoupon && order.appliedCoupon.discountType === "flat") {
+                // Flat discount
+                totalDiscount += order.appliedCoupon.flatValue || 0;
+            } else if (order.discountAmount) {
+                totalDiscount += order.discountAmount;
+            }
+        });
+
+        // 🎁 Gift wrap total
+        const totalGiftWrap = orders.reduce((sum, o) => sum + (o.giftWrapAmount || 0), 0);
+
+        // ⚙️ Static platform + delivery fees
+        const estimatedDelivery = 100;
+        const platformFee = 13;
+
+        // 💰 Grand total
+        const total = subtotal - totalDiscount + totalGiftWrap + estimatedDelivery + platformFee;
+
+        // 🧾 Final summary
         const summary = {
             items: totalItems,
             subtotal,
+            discountValue: totalDiscount,
+            giftWrap: totalGiftWrap,
             estimatedDelivery,
             platformFee,
             total
@@ -544,35 +629,41 @@ export const orderSummeryController = async (req, res) => {
         return sendSuccessResponse(res, "Order summary fetched successfully", summary);
 
     } catch (error) {
-        console.error(error.message);
+        console.error("Order Summary Error:", error.message);
         return sendErrorResponse(res, 500, "Error during orderSummeryController", error.message);
     }
 };
 
 export const addOrderInstructionsController = async (req, res) => {
     try {
-        const { orderId } = req?.params
-        const { order_notes } = req?.body;
-        if (!order_notes && !req.body && !id) {
-            return sendBadRequestResponse(res, "order_notes or userId iS require to Request");
+        const { orderId } = req.params;
+        const { order_notes } = req.body;
+
+        if (!orderId) {
+            return sendErrorResponse(res, 400, "orderId is required in params");
         }
 
-        const orderNotes = await orderModel.findByIdAndUpdate({ _id: orderId }, {
-            orderInstruction: order_notes
-        }, { new: true });
-
-        if (!orderNotes) {
-            return sendNotFoundResponse(res, "Order Not Found");
+        if (!order_notes || typeof order_notes !== "string" || order_notes.trim() === "") {
+            return sendErrorResponse(res, 400, "Valid order_notes is required in body");
         }
 
-        return sendSuccessResponse(res, "Order instruction (notes) add successfull", orderNotes);
+        const updatedOrder = await orderModel.findByIdAndUpdate(
+            orderId,
+            { orderInstruction: order_notes },
+            { new: true }
+        );
+
+        if (!updatedOrder) {
+            return sendErrorResponse(res, 404, "Order not found");
+        }
+
+        return sendSuccessResponse(res, "Order instruction added successfully", updatedOrder);
 
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Error during Add order instruction", error)
+        console.error("Add Order Instruction Error:", error);
+        return sendErrorResponse(res, 500, "Error during addOrderInstructionsController", error.message);
     }
-}
-
+};
 
 //verify post code
 

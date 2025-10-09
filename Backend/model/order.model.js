@@ -1,12 +1,13 @@
 import mongoose from "mongoose";
 import { nanoid } from "nanoid";
 import { UserAddressSchema, UserBillingAddressSchema } from "./user.model.js";
+
 const orderSchema = new mongoose.Schema(
   {
     orderId: {
       type: String,
       unique: true,
-      index: true, // faster queries
+      index: true,
     },
 
     userId: {
@@ -26,19 +27,26 @@ const orderSchema = new mongoose.Schema(
         productId: { type: mongoose.Types.ObjectId, ref: "Product", required: true },
         variantId: { type: mongoose.Types.ObjectId, ref: "ProductVariant" },
         sku: { type: String, required: true },
-        name: { type: String }, // snapshot name at purchase
+        name: { type: String },
         quantity: { type: Number, required: true, min: 1 },
-        price: { type: String, required: true }, // unit price at purchase
-        subtotal: { type: Number }, // quantity * price
+        price: { type: String, required: true },
+        subtotal: { type: Number },
       },
     ],
 
-    billingAmount: { type: Number, required: true, default: 0 }, // before discount
+    billingAmount: { type: Number, required: true, default: 0 },
     discountAmount: { type: Number, default: 0 },
     giftWrapAmount: { type: Number, default: 0 },
-    totalAmount: { type: Number, required: true, default: 0 }, // after discount
-    couponCode: { type: String, default: null },
-    isCouponApplied: { type: Boolean, default: false },
+    totalAmount: { type: Number, required: true, default: 0 },
+
+    appliedCoupon: {
+      code: String,
+      couponId: { type: mongoose.Types.ObjectId, ref: "coupon" },
+      discount: Number,
+      discountType: String,
+      percentageValue: Number,
+      flatValue: Number
+    },
 
     userAddress: UserAddressSchema,
     userBillingAddress: UserBillingAddressSchema,
@@ -69,25 +77,13 @@ const orderSchema = new mongoose.Schema(
     },
 
     deliveryExpected: { type: Date },
-    deliveredAt: { type: Date }, // actual delivered date
+    deliveredAt: { type: Date },
     orderInstruction: { type: String, default: null },
     isGiftWrap: {
       type: Boolean,
       default: false,
     },
-    payment: {
-      method: {
-        type: String,
-        enum: ["COD", "Card", "UPI", "PayPal", "Bank"],
-        required: true,
-      },
-      status: {
-        type: String,
-        enum: ["Pending", "Paid", "Failed", "Refunded"],
-        default: "Pending",
-      },
-      transactionId: { type: String },
-    },
+
     reasonForCancel: {
       type: String,
       default: null

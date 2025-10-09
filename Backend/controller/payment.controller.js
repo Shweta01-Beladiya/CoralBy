@@ -1,156 +1,126 @@
 import mongoose from "mongoose";
-import { sendErrorResponse, sendNotFoundResponse, sendSuccessResponse } from "../utils/Response.utils.js";
+import { nanoid } from "nanoid";
+import { sendErrorResponse, sendNotFoundResponse, sendSuccessResponse, sendBadRequestResponse } from "../utils/Response.utils.js";
 import orderModel from "../model/order.model.js";
 import paymentModel from "../model/payment.model.js";
-import cartModel from "../model/cart.model.js";
 import PDFDocument from "pdfkit";
 import productModel from "../model/product.model.js";
 
 export const makeNewPaymentController = async (req, res) => {
+    const session = await mongoose.startSession();
+
     try {
+        session.startTransaction();
+
         const userId = req?.user?.id;
         const {
             orderId,
             paymentMethod,
             transactionId,
             cardDetails,
+            upiDetails,
             paypalDetails,
             bankTransferDetails,
         } = req.body;
 
-        //  Validate required fields
+        // Basic validation
         if (!userId || !orderId || !paymentMethod) {
-            return res.status(400).json({
-                success: false,
-                message: "Missing required fields: userId, orderId, paymentMethod"
-            });
+            return sendBadRequestResponse(res, "Missing required fields: userId, orderId, paymentMethod");
         }
 
-        //  Fetch order and check if it belongs to the user
-        const order = await orderModel.findOne({ _id: orderId, userId });
-        if (!order) {
-            return res.status(404).json({
-                success: false,
-                message: "Order not found or does not belong to user"
-            });
+        const validMethods = ["COD", "Card", "UPI", "PayPal", "Bank"];
+        if (!validMethods.includes(paymentMethod)) {
+            return sendBadRequestResponse(res, "Invalid payment method");
         }
 
-        //  Check if payment already exists for this order
-        const existingPayment = await paymentModel.findOne({ orderId });
-        if (existingPayment) {
-            return res.status(409).json({
-                success: false,
-                message: "Payment already exists for this order"
-            });
+        // Method-specific validation
+        if (paymentMethod === "COD" && (cardDetails || upiDetails || paypalDetails || bankTransferDetails || transactionId)) {
+            return sendBadRequestResponse(res, "COD should not include card/UPI/PayPal/bank details or transactionId");
         }
+        if (paymentMethod === "Card" && !cardDetails) return sendBadRequestResponse(res, "Card details required");
+        if (paymentMethod === "UPI" && !upiDetails) return sendBadRequestResponse(res, "UPI details required");
+        if (paymentMethod === "PayPal" && !paypalDetails) return sendBadRequestResponse(res, "PayPal details required");
+        if (paymentMethod === "Bank" && !bankTransferDetails) return sendBadRequestResponse(res, "Bank transfer details required");
 
-        //  Use order.totalAmount as the payment amount
+        // Fetch order
+        const order = await orderModel.findOne({ _id: orderId, userId })
+            .populate("products.productId", "sellerId")
+            .session(session);
+
+        if (!order) return sendNotFoundResponse(res, "Order not found or does not belong to user");
+
+        // Prevent duplicate payment
+        const existingPayment = await paymentModel.findOne({ orderId }).session(session);
+        if (existingPayment) return sendBadRequestResponse(res, "Payment already exists for this order");
+
+        // Payment amount
         const amount = order.totalAmount;
 
-        //  Create Payment record with initial status "pending"
-        let payment = await paymentModel.create({
+        // Payment status
+        let paymentStatus = "Pending";
+        let finalTransactionId = null;
+        let paymentDate = null;
+
+        if (paymentMethod !== "COD") {
+            paymentStatus = "Paid";
+            finalTransactionId = transactionId || `TXN-${Date.now()}-${nanoid(8)}`;
+            paymentDate = new Date();
+        }
+
+        // Extract unique sellerIds
+        const sellerIds = [...new Set(order.products.map(p => p.productId.sellerId).filter(Boolean))];
+
+        // Create payment
+        const paymentData = {
             userId,
             orderId,
             amount,
             paymentMethod,
-            transactionId: transactionId || null,
-            cardDetails,
-            paypalDetails,
-            bankTransferDetails,
-            paymentStatus: "pending", // initial state
-        });
+            paymentStatus,
+            transactionId: finalTransactionId,
+            paymentDate,
+            sellerIds,
+        };
 
-        //  Remove ordered items from user's cart
-        if (order.items && order.items.length > 0) {
-            const productIds = order.items.map(item => item.productId);
-            const packSizeIds = order.items.map(item => item.packSizeId).filter(Boolean);
-
-            await cartModel.updateOne(
-                { userId },
-                {
-                    $pull: {
-                        items: {
-                            $or: [
-                                { productId: { $in: productIds } },
-                                { packSizeId: { $in: packSizeIds } }
-                            ]
-                        }
-                    }
-                }
-            );
+        if (paymentMethod !== "COD") {
+            if (cardDetails) paymentData.cardDetails = cardDetails;
+            if (upiDetails) paymentData.upiDetails = upiDetails;
+            if (paypalDetails) paymentData.paypalDetails = paypalDetails;
+            if (bankTransferDetails) paymentData.bankTransferDetails = bankTransferDetails;
         }
 
-        //  Update order status to pending
-        await orderModel.findByIdAndUpdate(orderId, {
-            status: "pending",
-            paymentStatus: "pending"
-        });
+        const payment = new paymentModel(paymentData);
+        await payment.save({ session });
 
-        await payment.save();
+        // Update order and product sold count
+        if (paymentStatus === "Paid") {
+            order.orderStatus = "Order Confirmed";
+            order.timeline.confirmedAt = new Date();
+            await order.save({ session });
 
-        //  Update order status to completed
-        await orderModel.findByIdAndUpdate(orderId, {
-            status: "completed",
-            paymentStatus: "completed"
-        });
-
-        //  Update sold count for each product in the order
-        if (order.items && order.items.length > 0) {
-            for (const item of order.items) {
-                await Product.findByIdAndUpdate(
+            for (const item of order.products) {
+                await productModel.findByIdAndUpdate(
                     item.productId,
-                    { $inc: { sold: item.quantity || 1 } },
-                    { new: true }
+                    { $inc: { sold: item.quantity } },
+                    { session }
                 );
-                console.log(`✅ Updated sold count for product: ${item.productId}`);
             }
         }
 
-        return res.status(201).json({
-            success: true,
-            message: "Payment completed successfully & items removed from cart",
-            data: {
-                paymentId: payment._id,
-                orderId: order._id,
-                amount: payment.amount,
-                paymentMethod: payment.paymentMethod,
-                paymentStatus: payment.paymentStatus, // "completed"
-                transactionId: payment.transactionId
-            },
-        });
+        await session.commitTransaction();
 
-    } catch (error) {
-        console.error("Payment Error:", error);
-        return res.status(500).json({
-            success: false,
-            message: "Payment processing failed",
-            error: error.message,
-        });
-    }
-};
-
-export const myPaymentController = async (req, res) => {
-    try {
-        const userId = req?.user?.id;
-        if (!userId) {
-            return sendErrorResponse(res, 400, "User ID is required");
-        }
-
-        const payments = await paymentModel.find({ userId })
-            .populate("userId", "email mobileNo firstName lastName address billingaddress") // include addresses
+        // Populate final response
+        const populatedPayment = await paymentModel.findById(payment._id)
+            .populate("userId", "firstName lastName email mobileNo")
+            .populate("sellerIds", "email mobileNo businessName") // ✅ populate sellerIds
             .populate({
                 path: "orderId",
-                select: "-payment -__v -updatedAt",
+                select: "-__v -updatedAt",
                 populate: [
-                    {
-                        path: "sellerId",
-                        model: "seller",
-                        select: "email mobileNo avatar"
-                    },
                     {
                         path: "products.productId",
                         model: "Product",
-                        select: "mainCategory subCategory title",
+                        select: "title mainCategory subCategory brand",
                         populate: {
                             path: "brand",
                             model: "Brand",
@@ -165,21 +135,63 @@ export const myPaymentController = async (req, res) => {
                 ]
             });
 
-        // Map through payments and manually resolve deliveryAddress
-        // const result = payments.map(payment => {
-        //     const order = payment.orderId;
-        //     if (order && order.userId && Array.isArray(order.userId.address)) {
-        //         const address = order.userId.address.id(order.deliveryAddress);
-        //         order.deliveryAddress = address || null;
-        //     } else {
-        //         order.deliveryAddress = null; 
-        //     }
-        //     return payment;
-        // });
+        return sendSuccessResponse(res, "Payment processed successfully", populatedPayment);
 
-        return sendSuccessResponse(res, "User payments fetched", payments);
     } catch (error) {
-        console.log(error.message);
+        await session.abortTransaction();
+        console.error("Payment Error:", error);
+        return sendErrorResponse(res, 500, "Payment processing failed", error.message);
+    } finally {
+        session.endSession();
+    }
+};
+
+export const myPaymentController = async (req, res) => {
+    try {
+        const userId = req?.user?.id;
+        if (!userId) {
+            return sendBadRequestResponse(res, "User ID is required");
+        }
+
+        // Fetch all payments for this user
+        const payments = await paymentModel.find({ userId })
+            .populate("userId", "firstName lastName email mobileNo address billingaddress") // user info with addresses
+            .populate({
+                path: "orderId",
+                select: "-__v -updatedAt",
+                populate: [
+                    {
+                        path: "sellerId",
+                        model: "seller",
+                        select: "email mobileNo avatar businessName"
+                    },
+                    {
+                        path: "products.productId",
+                        model: "Product",
+                        select: "title mainCategory subCategory sellerId",
+                        populate: {
+                            path: "brand",
+                            model: "Brand",
+                            select: "brandName brandImage"
+                        }
+                    },
+                    {
+                        path: "products.variantId",
+                        model: "ProductVariant",
+                        select: "color size price stock"
+                    }
+                ]
+            })
+            .populate({
+                path: "sellerIds",
+                model: "seller",
+                select: "firstName lastName email mobileNo avatar businessName"
+            })
+            .sort({ createdAt: -1 });
+
+        return sendSuccessResponse(res, "User payments fetched successfully", payments);
+    } catch (error) {
+        console.error("My Payment Controller Error:", error.message);
         return sendErrorResponse(res, 500, "Server error", error.message);
     }
 };
@@ -258,11 +270,7 @@ export const downloadInvoiceController = async (req, res) => {
         // ===== Invoice & Customer Info Table =====
         const tableStartX = 50;
         let y = doc.y;
-
-        // Draw Invoice & Customer Info Table
-        const invoiceTableWidth = 500;
         const rowHeight = 20;
-
         const user = payment.userId;
         const addr = user.billingaddress?.[0];
 
@@ -282,33 +290,27 @@ export const downloadInvoiceController = async (req, res) => {
             );
         }
 
-        // Draw table header background
+        const invoiceTableWidth = 500;
         doc.fillColor("#1E90FF");
-        invoiceData.forEach((row, i) => {
+        invoiceData.forEach(row => {
             doc.rect(tableStartX, y, invoiceTableWidth, rowHeight).fillOpacity(0.1).fill("#1E90FF").fillOpacity(1);
-
             doc.fillColor("#000").fontSize(12).font("Helvetica-Bold")
                 .text(row[0], tableStartX + 5, y + 5, { width: 150, align: "left" });
             doc.font("Helvetica").text(row[1], tableStartX + 160, y + 5, { width: 335, align: "left" });
-
-            // Draw borders
             doc.rect(tableStartX, y, invoiceTableWidth, rowHeight).stroke();
-
             y += rowHeight;
         });
 
-        y += 20; // Space before products table
+        y += 20;
 
         // ===== Products Table =====
         const products = payment.orderId.products;
         const tableColWidths = { no: 50, product: 220, qty: 60, price: 80, subtotal: 90 };
-        const tableWidth = tableColWidths.no + tableColWidths.product + tableColWidths.qty + tableColWidths.price + tableColWidths.subtotal;
+        const tableWidth = Object.values(tableColWidths).reduce((a, b) => a + b, 0);
 
-        // Header
+        // Table header
         const headers = ["No", "Product", "Qty", "Price", "Subtotal"];
         let x = tableStartX;
-
-        // Draw header background
         doc.fillColor("#1E90FF").font("Helvetica-Bold").fontSize(12);
         headers.forEach((header, index) => {
             const w = Object.values(tableColWidths)[index];
@@ -316,22 +318,18 @@ export const downloadInvoiceController = async (req, res) => {
             doc.fillColor("#000").text(header, x + 5, y + 5, { width: w - 10, align: "left" });
             x += w;
         });
-
-        // Draw header border
+        // Header border
         x = tableStartX;
-        Object.values(tableColWidths).forEach(w => {
-            doc.rect(x, y, w, rowHeight).stroke();
-            x += w;
-        });
-
+        Object.values(tableColWidths).forEach(w => { doc.rect(x, y, w, rowHeight).stroke(); x += w; });
         y += rowHeight;
 
-        // Rows
+        // Table rows
         products.forEach((item, index) => {
             const product = item.productId;
-            const variant = item.variantId;
+            const variant = item.variantId || {};
+            const price = variant.price?.original || 0;
+            const currency = variant.price?.currency || "AUD";
 
-            // Alternating row background
             if (index % 2 === 0) {
                 doc.rect(tableStartX, y, tableWidth, rowHeight).fillOpacity(0.05).fill("#1E90FF").fillOpacity(1);
             }
@@ -341,8 +339,8 @@ export const downloadInvoiceController = async (req, res) => {
                 index + 1,
                 `${product.title} (${variant.color || "N/A"}, Size: ${variant.size || "N/A"})`,
                 item.quantity,
-                `${variant.price.original || 0} ${variant.price.currency || "AUD"}`,
-                `${item.subtotal || 0} ${variant.price.currency || "AUD"}`
+                `${price} ${currency}`,
+                `${item.subtotal || 0} ${currency}`
             ];
 
             rowValues.forEach((val, i) => {
@@ -354,30 +352,27 @@ export const downloadInvoiceController = async (req, res) => {
 
             y += rowHeight;
         });
+
         y += 20;
 
         // ===== Totals Table =====
         const totalsData = [
             ["Billing Amount", `${payment.orderId.billingAmount || 0} AUD`],
             ["Discount", `${payment.orderId.discountAmount || 0} AUD`],
-            ["Coupon", payment.orderId.couponCode || "N/A`"],
+            ["Coupon", payment.orderId.appliedCoupon?.code || "N/A"],
             ["Total Amount", `${payment.amount || 0} AUD`]
         ];
 
-        totalsData.forEach((row, i) => {
+        totalsData.forEach(row => {
             const isTotal = row[0] === "Total Amount";
             const rowHeightTotal = 20;
-
-            // Background for total
             if (isTotal) doc.rect(tableStartX + 300, y, 200, rowHeightTotal).fillOpacity(0.1).fill("#228B22").fillOpacity(1);
 
             doc.fillColor("#000").font(isTotal ? "Helvetica-Bold" : "Helvetica").fontSize(12)
                 .text(row[0], tableStartX + 300 + 5, y + 5, { width: 100, align: "left" })
                 .text(row[1], tableStartX + 400 + 5, y + 5, { width: 100, align: "left" });
 
-            // Border
             doc.rect(tableStartX + 300, y, 200, rowHeightTotal).stroke();
-
             y += rowHeightTotal;
         });
 
@@ -391,91 +386,86 @@ export const downloadInvoiceController = async (req, res) => {
 };
 
 export const paymentStatusChangeController = async (req, res) => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
-  try {
-    const { paymentId } = req.params;
-    const { paymentStatus } = req.body;
+    try {
+        const { paymentId } = req.params;
+        let { paymentStatus } = req.body;
 
-    if (!paymentId || !mongoose.Types.ObjectId.isValid(paymentId)) {
-      return res.status(400).json({ success: false, message: "Valid payment ID required" });
-    }
-
-    const allowedStatuses = ["pending", "completed", "failed", "refunded"];
-    if (!paymentStatus || !allowedStatuses.includes(paymentStatus)) {
-      return res.status(400).json({
-        success: false,
-        message: `Payment status must be one of: ${allowedStatuses.join(", ")}`
-      });
-    }
-
-    const payment = await paymentModel.findById(paymentId).session(session);
-    if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
-
-    const order = await orderModel.findById(payment.orderId).session(session);
-    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
-
-    //  Increment sold ONLY once if status changes to completed
-    if (paymentStatus === "completed" && payment.paymentStatus !== "completed") {
-      if (order.products && order.products.length > 0) {
-        for (const item of order.products) {
-          if (!item.productId) continue;
-          const updatedProduct = await productModel.findByIdAndUpdate(
-            item.productId,
-            { 
-              $inc: { sold: item.quantity || 1 },
-              $set: { lastSoldAt: new Date() } // Add this field to track last sale time
-            },
-            { new: true, session }
-          );
-          console.log("Updated sold:", updatedProduct?.sold, "for product:", item.productId);
+        if (!paymentId || !mongoose.Types.ObjectId.isValid(paymentId)) {
+            return res.status(400).json({ success: false, message: "Valid payment ID required" });
         }
-      }
-      order.orderStatus = "Delivered";
-      order.payment.status = "Paid";
-    } else if (paymentStatus === "failed") {
-      order.orderStatus = "Cancelled";
-      order.payment.status = "Failed";
-    } else if (paymentStatus === "refunded") {
-      // If refunded, decrease the sold count
-      if (order.products && order.products.length > 0) {
-        for (const item of order.products) {
-          if (!item.productId) continue;
-          await productModel.findByIdAndUpdate(
-            item.productId,
-            { $inc: { sold: -(item.quantity || 1) } },
-            { session }
-          );
+
+        paymentStatus = paymentStatus?.toLowerCase();
+        const allowedStatuses = ["pending", "completed", "failed", "refunded"];
+        if (!paymentStatus || !allowedStatuses.includes(paymentStatus)) {
+            return res.status(400).json({
+                success: false,
+                message: `Payment status must be one of: ${allowedStatuses.join(", ")}`
+            });
         }
-      }
-      order.orderStatus = "Returned";
-      order.payment.status = "Refunded";
-    } else {
-      order.orderStatus = "Pending";
-      order.payment.status = "Pending";
+
+        const payment = await paymentModel.findById(paymentId).session(session);
+        if (!payment) return res.status(404).json({ success: false, message: "Payment not found" });
+
+        const order = await orderModel.findById(payment.orderId).session(session);
+        if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+
+        // Increment/decrement sold counts only when needed
+        const updateSoldCount = async (multiplier = 1) => {
+            for (const item of order.products || []) {
+                if (!item.productId) continue;
+                await productModel.findByIdAndUpdate(
+                    item.productId,
+                    {
+                        $inc: { sold: (item.quantity || 1) * multiplier },
+                        $set: multiplier > 0 ? { lastSoldAt: new Date() } : {}
+                    },
+                    { session }
+                );
+            }
+        };
+
+        switch (paymentStatus) {
+            case "completed":
+                if (payment.paymentStatus !== "completed") await updateSoldCount(1);
+                order.orderStatus = "Delivered";
+                order.payment = { ...order.payment, status: "Paid" };
+                break;
+            case "failed":
+                order.orderStatus = "Cancelled";
+                order.payment = { ...order.payment, status: "Failed" };
+                break;
+            case "refunded":
+                if (payment.paymentStatus === "completed") await updateSoldCount(-1);
+                order.orderStatus = "Returned";
+                order.payment = { ...order.payment, status: "Refunded" };
+                break;
+            default:
+                order.orderStatus = "Pending";
+                order.payment = { ...order.payment, status: "Pending" };
+        }
+
+        payment.paymentStatus = paymentStatus;
+
+        await payment.save({ session });
+        await order.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return res.status(200).json({
+            success: true,
+            message: `Payment status updated to ${paymentStatus}`,
+            payment,
+            order
+        });
+
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        console.error("Payment Status Change Error:", error);
+        return res.status(500).json({ success: false, message: "Server error", error: error.message });
     }
-
-    // Update payment status
-    payment.paymentStatus = paymentStatus;
-
-    await payment.save({ session });
-    await order.save({ session });
-
-    await session.commitTransaction();
-    session.endSession();
-
-    return res.status(200).json({
-      success: true,
-      message: `Payment status updated to ${paymentStatus}`,
-      payment,
-      order
-    });
-
-  } catch (error) {
-    await session.abortTransaction();
-    session.endSession();
-    console.error("Payment Status Change Error:", error);
-    return res.status(500).json({ success: false, message: "Server error", error: error.message });
-  }
 };
