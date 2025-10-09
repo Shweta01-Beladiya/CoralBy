@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import QuickView from "../component/QuickView";
 import { useSelector, useDispatch } from "react-redux";
 import { getProduct } from "../Store/Slices/categorySlice";
+import { getWishlist } from "../Store/Slices/wishlistSlice";
 
 const Fashion = () => {
 
@@ -37,8 +38,8 @@ const Fashion = () => {
 
 	// QuickView handlers
 	const openQuickView = (product) => {
-		console.log("product>>>>>>>",product);
-		
+		console.log("product>>>>>>>", product);
+
 		setQuickViewProduct(product);
 		setShowQuickView(true);
 	};
@@ -185,10 +186,10 @@ const Fashion = () => {
 
 
 	const product = useSelector((state) => state.category.product.data);
-	const productVarient = useSelector((state) => state.category.productVarient.data);
-	console.log("Product",product);
-	console.log("productVarient",productVarient);
-	
+	// const productVarient = useSelector((state) => state.category.productVarient.data);
+	console.log("Product", product);
+	// console.log("productVarient",productVarient);
+
 
 	const filteredProducts = (product || []).filter((p) => {
 		return Object.keys(selectedFilters).every((section) => {
@@ -227,6 +228,10 @@ const Fashion = () => {
 			[section]: !expandedSections[section],
 		});
 	};
+
+	useEffect(() => {
+		dispatch(getWishlist())
+	}, [dispatch])
 
 	return (
 		<>
@@ -313,7 +318,7 @@ const Fashion = () => {
 						{/* Product grid */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 							{currentProducts.map((p) => (
-								<SingleProduct  key={p._id}  product={p} onQuickView={openQuickView} />))}
+								<SingleProduct key={p._id} product={p} onQuickView={openQuickView} />))}
 						</div>
 
 						{/* Pagination */}
