@@ -185,6 +185,10 @@ const Fashion = () => {
 
 
 	const product = useSelector((state) => state.category.product.data);
+	const productVarient = useSelector((state) => state.category.productVarient.data);
+	console.log("Product",product);
+	console.log("productVarient",productVarient);
+	
 
 	const filteredProducts = (product || []).filter((p) => {
 		return Object.keys(selectedFilters).every((section) => {
