@@ -14,7 +14,7 @@ import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCate
 import { createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand, brandFilterController } from '../controller/brand.controller.js';
 import { addToWishlist, getWishlist, removeFromWishlist } from '../controller/wishlist.controller.js';
 import { applyCouponController, createCoupon, deleteCoupon, getAllCoupon, getCouponById, removeCouponController, updateCoupon } from '../controller/coupon.controller.js';
-import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, selectUserAddressController, selectUserBillingAddressController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
+import { addOrderInstructionsController, cancelMyOrderController, getOrderByStatusController, getOrderSellerByStatus, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, selectUserAddressController, selectUserBillingAddressController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
 import { createReview, deleteReview, dislikeReview, getProductReviews, likeReview, updateReview } from '../controller/review.controller.js';
 import { addProductBannerController, deleteProductBannerController, getProductBannerController, updateProductBannerController } from '../controller/product.banner.controller.js';
 import { applyJobController, currentJobController, deleteJobApplicationController, getCurrentJobByIdController, getMyJobapplicationsController } from '../controller/job.application.controller.js';
@@ -207,6 +207,8 @@ indexRouter.get("/getSeller", sellerAuth, getSeller)
 indexRouter.post("/new/order", UserAuth, newOrderController);
 indexRouter.get("/my/current/order", UserAuth, myOrderController);
 indexRouter.get("/my/history/order", UserAuth, myHistoryOrderController);
+indexRouter.get("/user/order", UserAuth, getOrderByStatusController);
+indexRouter.get("/seller/getOrderByStatus", sellerAuth, getOrderSellerByStatus)
 indexRouter.get("/seller/orders", sellerAuth, getSellerAllOrdersController);
 indexRouter.patch("/order/status/:orderId", sellerAuth, updateOrderStatusController);
 indexRouter.post("/cancel/my/order/:orderId", UserAuth, cancelMyOrderController);
@@ -328,76 +330,76 @@ indexRouter.delete("/deleteSubcribeById/:id", deleteSubcribeById);
 
 // austrials states data
 const australiaData = {
-    country: "Australia",
-    total: 8,
-    states: [
-        { name: "New South Wales", abbreviation: "NSW" },
-        { name: "Victoria", abbreviation: "VIC" },
-        { name: "Queensland", abbreviation: "QLD" },
-        { name: "South Australia", abbreviation: "SA" },
-        { name: "Western Australia", abbreviation: "WA" },
-        { name: "Tasmania", abbreviation: "TAS" },
-        { name: "Northern Territory", abbreviation: "NT" },
-        { name: "Australian Capital Territory", abbreviation: "ACT" },
-    ],
+  country: "Australia",
+  total: 8,
+  states: [
+    { name: "New South Wales", abbreviation: "NSW" },
+    { name: "Victoria", abbreviation: "VIC" },
+    { name: "Queensland", abbreviation: "QLD" },
+    { name: "South Australia", abbreviation: "SA" },
+    { name: "Western Australia", abbreviation: "WA" },
+    { name: "Tasmania", abbreviation: "TAS" },
+    { name: "Northern Territory", abbreviation: "NT" },
+    { name: "Australian Capital Territory", abbreviation: "ACT" },
+  ],
 };
 
 indexRouter.get("/au/states", async (req, res) => {
-    try {
-        return sendSuccessResponse(res, "All Austraila States fetched", australiaData)
-    } catch (error) {
-        console.log(error.message);
-        return sendErrorResponse(res, 500, "Error During Featch all au states", error);
-    }
+  try {
+    return sendSuccessResponse(res, "All Austraila States fetched", australiaData)
+  } catch (error) {
+    console.log(error.message);
+    return sendErrorResponse(res, 500, "Error During Featch all au states", error);
+  }
 })
 
 
 
 const s3Client = new S3Client({
-    region: process.env.S3_REGION,
-    credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY,
-        secretAccessKey: process.env.S3_SECRET_KEY,
-    },
+  region: process.env.S3_REGION,
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_KEY,
+  },
 });
 
 // List all files in bucket
 indexRouter.get("/listBucket", async (req, res) => {
-    try {
-        const command = new ListObjectsV2Command({ Bucket: process.env.S3_BUCKET_NAME });
-        const response = await s3Client.send(command);
+  try {
+    const command = new ListObjectsV2Command({ Bucket: process.env.S3_BUCKET_NAME });
+    const response = await s3Client.send(command);
 
-        const files = (response.Contents || []).map(file => ({
-            Key: file.Key,
-            Size: file.Size,
-            LastModified: file.LastModified,
-            ETag: file.ETag,
-            StorageClass: file.StorageClass,
-        }));
+    const files = (response.Contents || []).map(file => ({
+      Key: file.Key,
+      Size: file.Size,
+      LastModified: file.LastModified,
+      ETag: file.ETag,
+      StorageClass: file.StorageClass,
+    }));
 
-        return res.json({ success: true, files });
-    } catch (err) {
-        console.error("Error listing bucket:", err);
-        return res.status(500).json({ success: false, message: err.message });
-    }
+    return res.json({ success: true, files });
+  } catch (err) {
+    console.error("Error listing bucket:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // Delete a file from bucket
 indexRouter.delete("/deleteBucketFile", async (req, res) => {
-    try {
-        const { key } = req.body; // example: "images/1757483363902-9.jfif"
-        if (!key) return res.status(400).json({ success: false, message: "File key is required" });
+  try {
+    const { key } = req.body; // example: "images/1757483363902-9.jfif"
+    if (!key) return res.status(400).json({ success: false, message: "File key is required" });
 
-        await s3Client.send(new DeleteObjectCommand({
-            Bucket: process.env.S3_BUCKET_NAME,
-            Key: key,
-        }));
+    await s3Client.send(new DeleteObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+    }));
 
-        return res.json({ success: true, message: `File deleted successfully: ${key}` });
-    } catch (err) {
-        console.error("Error deleting file:", err);
-        return res.status(500).json({ success: false, message: err.message });
-    }
+    return res.json({ success: true, message: `File deleted successfully: ${key}` });
+  } catch (err) {
+    console.error("Error deleting file:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 export default indexRouter;
