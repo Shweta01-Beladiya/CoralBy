@@ -15,10 +15,6 @@ const faqQuestionSchema = mongoose.Schema({
     faqAnswer: {
         type: String
     },
-    faqQuestionLower: {
-        type: String,
-        lowercase: true
-    },
 }, { timestamps: true })
 
 export default mongoose.model("faqQuestion", faqQuestionSchema)

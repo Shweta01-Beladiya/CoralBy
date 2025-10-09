@@ -108,7 +108,6 @@ export const addToCartController = async (req, res) => {
     }
 };
 
-
 export const getMyCartController = async (req, res) => {
     try {
         const { id: userId } = req?.user;
@@ -157,7 +156,10 @@ export const getMyCartController = async (req, res) => {
         if (cart.items.length === 0) {
             return sendSuccessResponse(res, "Cart is empty! Please add products first.", {
                 items: [],
-                totalAmount: 0,
+                originalAmount: 0,
+                discount: 0,
+                finalAmount: 0,
+                appliedCoupon: null
             });
         }
 
@@ -179,9 +181,20 @@ export const getMyCartController = async (req, res) => {
             };
         });
 
+        let finalAmount = totalAmount;
+        let discount = 0;
+
+        if (cart.appliedCoupon) {
+            finalAmount = cart.appliedCoupon.finalAmount || (totalAmount - cart.appliedCoupon.discount);
+            discount = cart.appliedCoupon.discount;
+        }
+
         return sendSuccessResponse(res, "My cart items fetched successfully", {
             items: updatedItems,
-            totalAmount,
+            originalAmount: totalAmount,
+            discount: discount,
+            finalAmount: finalAmount,
+            appliedCoupon: cart.appliedCoupon || null
         });
 
     } catch (error) {
@@ -194,8 +207,8 @@ export const removeCartController = async (req, res) => {
     try {
         const { id: userId } = req.user;
         const { productId } = req.params;
-        const { productVarientId } = req.body; 
-        
+        const { productVarientId } = req.body;
+
         // === Validation ===
         if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
             return sendBadRequestResponse(res, "Invalid user ID");
