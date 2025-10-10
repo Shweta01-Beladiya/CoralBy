@@ -113,15 +113,10 @@ indexRouter.get("/getTrendingProducts", getTrendingProducts);
 indexRouter.get("/getSalesAnalytics", getSalesAnalytics);
 indexRouter.post("/addBadgeToProduct/:id", UserAuth, isAdmin, addBadgeToProduct);
 indexRouter.get("/getBestSellingProducts", getBestSellingProducts);
-<<<<<<< HEAD
 indexRouter.get("/discoverProduct", discoverProductController)
 
-=======
-// discover new product
-indexRouter.get("/discover/product", UserAuth, discoverProductController)
 //Yop May also Like
 indexRouter.get("/youMayAlsoLike/:cartId", youMayAlsoLike)
->>>>>>> 4f59a7cd292699f5f911b5e75a474360b2bb8a4b
 
 // Product
 indexRouter.post("/createProductVariant", sellerAuth, upload.fields([{ name: "images", maxCount: 10 }]), createProductVariant);
