@@ -90,7 +90,7 @@ export const SingleProduct = ({ product, onQuickView }) => {
 						<button
 							className="text-black w-1/2 text-[13px] font-semibold flex items-center justify-center gap-1 
 								hover:bg-[#111827] hover:text-white transition-all duration-300 ease-in-out"
-							onClick={() => onQuickView && onQuickView(currentVariant)}
+							onClick={() => onQuickView(product)}
 						>
 							<IoEyeOutline className="text-[18px]" /> QUICK VIEW
 						</button>
