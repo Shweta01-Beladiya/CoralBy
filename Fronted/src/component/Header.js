@@ -511,7 +511,7 @@ export default function Header() {
 
                                         <div className='flex-1 overflow-y-auto bg-[var(--cart-can-bg)]'>
 
-                                            <div className='bg-[var(--bg-white)] px-5'>
+                                            <div className='bg-[var(--bg-white)] px-5 py-2'>
 
                                                 {/* Gift */}
                                                 {giftAdd && (
@@ -757,7 +757,7 @@ export default function Header() {
 
                                                 <div className='text-lg font-semibold flex flex-col gap-2'>
                                                     <button className='bg-[var(--bg-orange)] w-full text-[var(--text-white)] rounded-md p-2'>Checkout</button>
-                                                    <button className='border border-[#6B7280] text-[#6B7280] rounded-md p-2'>View Cart</button>
+                                                    <button className='border border-[#6B7280] text-[#6B7280] rounded-md p-2' onClick={()=> {navigate('/addtocart'); setOpenCart(false)}}>View Cart</button>
                                                 </div>
 
                                             </div>

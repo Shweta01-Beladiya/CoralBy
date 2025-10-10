@@ -686,46 +686,37 @@ export default function Home() {
 	// const first = section2Offers[0];
 	// const second = section2Offers[1];
 
-	// *************** 3. Celebrate with Style & Savings Section ***************
-
+	
 	useEffect(() => {
 		dispatch(fetchCelebrateProduct());
+		dispatch(fetchTrendingItems())
+		dispatch(fetchDiscoverNew())
+		dispatch(fetchCustomerFav())
 	}, []);
+	
+	// *************** 3. Celebrate with Style & Savings Section ***************
 
 	const dataCelebrate = useSelector((state) => state.homeProduct.celebrateproducts);
 	const celebrateProducts = dataCelebrate;
-	console.log("celebrateProducts", celebrateProducts);
-
-
+	// console.log("celebrateProducts", celebrateProducts);
 
 	// ************ Trending Products *************
-	useEffect(() => {
-		dispatch(fetchTrendingItems())
-	}, [])
 
 	const dataTrending = useSelector((state) => state.homeProduct.trendingitems);
 	const trenDingItems = dataTrending;
-	console.log("Trending Items ::", trenDingItems)
-
-
+	// console.log("Trending Items ::", trenDingItems)
 
 	// ********* Discover What's New **********
-	useEffect(() => {
-		dispatch(fetchDiscoverNew())
-	}, [])
 
 	const discoverWhatsNew = useSelector((state) => state.homeProduct.discovernew)
 	const dataDiscover = discoverWhatsNew;
 	// console.log('Data Discover ::' , discoverWhatsNew)
 
 	// ******** Customer Faviourite Slider ********
-	useEffect(() => {
-		dispatch(fetchCustomerFav())
-	}, [])
 
 	const customerFavSlider = useSelector((state) => state.homeProduct.customerfav)
 	const dataClientFav = customerFavSlider;
-	console.log("Cusstomer fav ::", dataClientFav)
+	// console.log("Cusstomer fav ::", dataClientFav)
 
 
 
@@ -925,7 +916,7 @@ export default function Home() {
 									key={index}
 									className="flex flex-col text-center items-center mt-6"
 								>
-									<div className='w-full h-full'>
+									<div className='w-full h-full flex justify-center items-center'>
 										<img
 											src={card.img}
 											alt={card.heading}

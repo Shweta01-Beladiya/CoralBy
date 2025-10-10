@@ -15,7 +15,7 @@ export default function Wishlists() {
                             Home <FaChevronRight className="mx-1" size={12} />
                         </Link>
                         <span  className="text-[var(--profile-light-text)]">
-                            Shopping Cart 
+                            Wishlist
                         </span>
                     </div>
                 </div>

@@ -3,7 +3,7 @@ import Slider from "react-slick";
 // import products from "../pages/ProductList";
 import { SingleProduct } from "../component/Single_product_card";
 
-const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12, onQuickView, productData, }, ref ) => {
+const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12, onQuickView, productData, }, ref) => {
 
 	const sliderRef = useRef(null);
 
@@ -14,7 +14,7 @@ const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12
 	}));
 
 	// Extract products safely from productData.data
-	const products = Array.isArray(productData?.data) ? productData.data: [];
+	const products = Array.isArray(productData) ? productData : [];
 
 	// Debugging
 	// useEffect(() => {
@@ -34,17 +34,18 @@ const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12
 		nav: false,
 		infinite: true,
 		margin: slidePaddingPx,
-		speed: 500,
+		speed: 700,              
 		slidesToShow: 4,
-		slidesToScroll: 1,
+		slidesToScroll: 2,
 		arrows: false,
 		initialSlide: initialIndex === -1 ? 0 : initialIndex,
 		responsive: [
-			{ breakpoint: 1240, settings: { slidesToShow: 3 } },
-			{ breakpoint: 768, settings: { slidesToShow: 2 } },
-			{ breakpoint: 480, settings: { slidesToShow: 1 } },
+			{ breakpoint: 1240, settings: { slidesToShow: 3, slidesToScroll: 2 } },
+			{ breakpoint: 768, settings: { slidesToShow: 2, slidesToScroll: 2 } },
+			{ breakpoint: 480, settings: { slidesToShow: 1, slidesToScroll: 1 } },
 		],
 	};
+
 
 	return (
 		<div className="product_slider">
