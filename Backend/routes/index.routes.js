@@ -113,8 +113,7 @@ indexRouter.get("/getTrendingProducts", getTrendingProducts);
 indexRouter.get("/getSalesAnalytics", getSalesAnalytics);
 indexRouter.post("/addBadgeToProduct/:id", UserAuth, isAdmin, addBadgeToProduct);
 indexRouter.get("/getBestSellingProducts", getBestSellingProducts);
-// discover new product
-indexRouter.get("/discover/product", UserAuth, discoverProductController)
+indexRouter.get("/discoverProduct", discoverProductController)
 
 
 // Product
