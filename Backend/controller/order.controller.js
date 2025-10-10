@@ -714,14 +714,21 @@ export const verifyAUPostCodeController = async (req, res) => {
 
 export const getShippingEstimates = async (req, res) => {
   try {
-    const { postcode } = req.body;
+    const { postcode, state } = req.body;
 
     // Validate postcode
     if (!postcode || typeof postcode !== "string" || !/^\d{4}$/.test(postcode.trim())) {
       return sendBadRequestResponse(res, "Please provide a valid 4-digit 'postcode' in the request body.");
     }
 
+    // Validate state
+    if (!state || typeof state !== "string" || !state.trim()) {
+      return sendBadRequestResponse(res, "Please provide 'state' in the request body (e.g., NSW, VIC, NT).");
+    }
+
     const cleanedPostcode = postcode.trim();
+    const inputStateRaw = state.trim();
+    const inputStateUpper = inputStateRaw.toUpperCase();
     const API_KEY = "92944ac9-842b-46e1-b527-766ddaa48d20";
 
     const fromPostcode = "2000";
@@ -744,6 +751,30 @@ export const getShippingEstimates = async (req, res) => {
 
     if (!(data.postcode && Array.isArray(data.suburbs))) {
       return sendNotFoundResponse(res, "This postcode does not exist in Australia.");
+    }
+
+    // Normalize and validate state against lookup result
+    const apiStateUpper = String(data.state || "").trim().toUpperCase();
+
+    // Common full-name to abbreviation mapping for AU states/territories
+    const stateNameToCode = {
+      "NEW SOUTH WALES": "NSW",
+      "VICTORIA": "VIC",
+      "QUEENSLAND": "QLD",
+      "SOUTH AUSTRALIA": "SA",
+      "WESTERN AUSTRALIA": "WA",
+      "TASMANIA": "TAS",
+      "NORTHERN TERRITORY": "NT",
+      "AUSTRALIAN CAPITAL TERRITORY": "ACT"
+    };
+
+    const normalizedInputState = stateNameToCode[inputStateUpper] || inputStateUpper;
+
+    if (normalizedInputState !== apiStateUpper) {
+      return sendBadRequestResponse(
+        res,
+        `State does not match postcode. Provided: '${inputStateRaw}', Expected: '${data.state}'.`
+      );
     }
 
     // STEP 2: Fetch shipping estimate
@@ -769,6 +800,7 @@ export const getShippingEstimates = async (req, res) => {
         suburbs: data.suburbs,
         state: data.state,
         estimate: response.data.postage_result,
+        validated: true
       });
     } else {
       return sendErrorResponse(res, 502, "Unexpected response from Australia Post API", response.data);
