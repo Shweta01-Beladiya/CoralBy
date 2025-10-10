@@ -28,8 +28,6 @@ const QuickView = ({ product, onClose }) => {
     };
   }, []);
 
-  const [activeVariant, setActiveVariant] = useState(initialVariant);
-  const [activeSize, setActiveSize] = useState(8);
   const [activeVariant, setActiveVariant] = useState(safeVariants[0]);
   const [activeSize, setActiveSize] = useState(safeVariants[0]?.size || '');
   const [inWishlist, setInWishlist] = useState(false);
@@ -188,9 +186,6 @@ const QuickView = ({ product, onClose }) => {
                             v.images?.length > 0 ? v.images.slice(0, 2) : [v.image]
                           );
                         }}
-                        className={`w-12 h-12 sm:w-[60px] sm:h-[60px] object-cover rounded cursor-pointer border-2 ${
-                          v.color === activeVariant.color
-                            ? "border-[#44506A33] shadow-lg transform scale-[1.05]"
                         className={`w-12 h-12 sm:w-[60px] sm:h-[60px] object-cover rounded cursor-pointer border-2 ${v._id === activeVariant._id
                           ? "border-[#44506A33] shadow-lg transform scale-[1.05]"
                             : "border-gray-100"
