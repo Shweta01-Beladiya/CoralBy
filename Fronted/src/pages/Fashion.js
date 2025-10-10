@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import QuickView from "../component/QuickView";
 import { useSelector, useDispatch } from "react-redux";
 import { getProduct } from "../Store/Slices/categorySlice";
+import { getWishlist } from "../Store/Slices/wishlistSlice";
 
 const Fashion = () => {
 
@@ -222,6 +223,10 @@ const Fashion = () => {
 		});
 	};
 
+	useEffect(() => {
+		dispatch(getWishlist())
+	}, [dispatch])
+
 	return (
 		<>
 			<div className="fashion_page">
@@ -307,7 +312,7 @@ const Fashion = () => {
 						{/* Product grid */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 							{currentProducts.map((p) => (
-								<SingleProduct  key={p._id}  product={p} onQuickView={openQuickView} />))}
+								<SingleProduct key={p._id} product={p} onQuickView={openQuickView} />))}
 						</div>
 
 						{/* Pagination */}
