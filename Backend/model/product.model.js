@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { updateProductBadge } from "../cron/badgeUpdater.js";
+import  updateProductBadge  from "../cron/badgeUpdater.js";
 
 const productSchema = new mongoose.Schema({
   sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "seller", required: true },
