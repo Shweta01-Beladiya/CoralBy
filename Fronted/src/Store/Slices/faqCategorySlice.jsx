@@ -8,10 +8,10 @@ export const fetchFaqCategory = createAsyncThunk(
     "faqCategory/fetchAll",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${BaseUrl}/api/getAllfaqCategory`);
+            const response = await axios.get(`${BaseUrl}/api/getAllSimilarFaqCategory`);
             return response.data.result;
         } catch (error) {
-            console.log("Axios error:", error.response); // <--- debug
+            console.log("Axios error:", error.response); 
             return rejectWithValue(
                 error.response?.data?.message || "Something went wrong"
             );
@@ -24,10 +24,10 @@ export const fetchFaqQuestionsByCategory = createAsyncThunk(
     "faqCategory/fetchQuestionsByCategory",
     async (categoryId, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${BaseUrl}/api/getFAQQuestionsByCategory/${categoryId}`);
+            const response = await axios.get(`${BaseUrl}/api/getSimilarFAQQuestionsByCategory/${categoryId}`);
             return response.data.result;
         } catch (error) {
-            console.log("Axios error:", error.response); // <--- debug
+            console.log("Axios error:", error.response); 
             return rejectWithValue(
                 error.response?.data?.message || "Something went wrong"
             );

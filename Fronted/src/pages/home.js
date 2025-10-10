@@ -88,6 +88,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMainCategory } from '../Store/Slices/categorySlice';
 import { simplefetchOffers, specialOffers, simplestOffers, offers } from '../Store/Slices/offerSlice';
+import { fetchCelebrateProduct } from '../Store/Slices/homeProductSlice';
 
 
 
@@ -202,6 +203,20 @@ export default function Home() {
 		autoplaySpeed: 3000,
 		arrows: false
 	};
+
+
+	// *************** 3. Celebrate with Style & Savings Section ***************
+
+	useEffect(() => {
+		dispatch(fetchCelebrateProduct());
+	}, [dispatch]);
+
+	const celebrateproducts = useSelector((state) => state.homeProduct.celebrateproducts);
+	console.log("celebrateProducts", celebrateproducts);
+
+
+
+
 
 
 	// *************** 4. Save More, Shop More ***************
@@ -833,6 +848,7 @@ export default function Home() {
 						<div className='py-6'>
 							<Cmn_product_slider ref={productSliderRef1} initialSlideProductId={1} onQuickView={openQuickView} />
 						</div>
+
 					</section>
 				</div>
 
