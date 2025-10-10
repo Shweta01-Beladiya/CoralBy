@@ -14,7 +14,6 @@ import Wishlist from '../model/wishlist.model.js';
 import productvarientModel from "../model/productvarient.model.js";
 import paymentModel from "../model/payment.model.js";
 import OrderModel from "../model/order.model.js";
-import orderModel from "../model/order.model.js";
 
 // Assign badges: NEW, TRENDING, TOP RATED
 export const assignBadges = async () => {
@@ -884,6 +883,7 @@ export const getMostWishlistedProducts = async (req, res) => {
 export const getTrendingProducts = async (req, res) => {
     try {
         const pipeline = [
+            // Join with payments
             {
                 $lookup: {
                     from: "payments",
@@ -895,8 +895,10 @@ export const getTrendingProducts = async (req, res) => {
             { $unwind: "$payment" },
             { $match: { "payment.paymentStatus": "Paid" } },
 
+            // Unwind products array
             { $unwind: "$products" },
 
+            // Group by productId
             {
                 $group: {
                     _id: "$products.productId",
@@ -905,8 +907,10 @@ export const getTrendingProducts = async (req, res) => {
                 }
             },
 
+            // Sort by most sold
             { $sort: { totalQuantity: -1 } },
 
+            // Lookup full product data
             {
                 $lookup: {
                     from: "products",
@@ -917,6 +921,7 @@ export const getTrendingProducts = async (req, res) => {
             },
             { $unwind: "$product" },
 
+            // Lookup related references
             {
                 $lookup: {
                     from: "brands",
@@ -957,40 +962,32 @@ export const getTrendingProducts = async (req, res) => {
             },
             { $unwind: { path: "$subCategory", preserveNullAndEmptyArrays: true } },
 
+            // Lookup product variants
             {
                 $lookup: {
                     from: "productvariants",
                     localField: "product._id",
                     foreignField: "productId",
-                    as: "variants"
+                    as: "varientId"
                 }
             },
 
+            // Final structure like getMostWishlistedProducts
             {
                 $project: {
-                    _id: 0,
-                    productId: "$_id",
-                    totalQuantity: 1,
-                    orderCount: 1,
-                    product: {
-                        _id: "$product._id",
-                        title: "$product.title",
-                        description: "$product.description",
-                        badge: "$product.badge",
-                        view: "$product.view",
-                        sold: "$product.sold",
-                        rating: "$product.rating",
-                        productDetails: "$product.productDetails",
-                        shippingReturn: "$product.shippingReturn",
-                        warrantySupport: "$product.warrantySupport",
-                    },
+                    _id: "$product._id",
+                    sellerId: "$product.sellerId",
                     brand: "$brand",
+                    title: "$product.title",
                     mainCategory: "$mainCategory",
                     category: "$category",
                     subCategory: "$subCategory",
-                    variants: {
+                    description: "$product.description",
+                    badge: "$product.badge",
+                    love_about: "$product.love_about",
+                    varientId: {
                         $map: {
-                            input: "$variants",
+                            input: "$varientId",
                             as: "variant",
                             in: {
                                 _id: "$$variant._id",
@@ -999,12 +996,31 @@ export const getTrendingProducts = async (req, res) => {
                                 images: "$$variant.images",
                                 color: "$$variant.color",
                                 size: "$$variant.size",
+                                Occasion: "$$variant.Occasion",
+                                Outer_material: "$$variant.Outer_material",
+                                Model_name: "$$variant.Model_name",
+                                Ideal_for: "$$variant.Ideal_for",
+                                Type_For_Casual: "$$variant.Type_For_Casual",
+                                Euro_Size: "$$variant.Euro_Size",
+                                Heel_Height: "$$variant.Heel_Height",
                                 price: "$$variant.price",
                                 stock: "$$variant.stock",
                                 weight: "$$variant.weight"
                             }
                         }
-                    }
+                    },
+                    rating: "$product.rating",
+                    productDetails: "$product.productDetails",
+                    shippingReturn: "$product.shippingReturn",
+                    warrantySupport: "$product.warrantySupport",
+                    view: "$product.view",
+                    sold: "$product.sold",
+                    isActive: "$product.isActive",
+                    createdAt: "$product.createdAt",
+                    updatedAt: "$product.updatedAt",
+                    __v: "$product.__v",
+                    totalQuantity: 1,
+                    orderCount: 1
                 }
             },
 
