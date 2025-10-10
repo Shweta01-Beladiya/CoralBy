@@ -51,6 +51,24 @@
   left: 4px;
   transform: rotate(45deg);
 }
+.custom-scrollbar::-webkit-scrollbar {
+  height: 6px; 
+  width: 6px; 
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1; 
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #9b9b9b; 
+}
 @media (max-width: 768px) {
  .r_responsive{
     grid-column-start: 3 !important;
