@@ -693,31 +693,53 @@ export const getProductsByBrand = async (req, res) => {
 };
 
 export const discoverProductController = async (req, res) => {
-  try {
-    const products = await productModel.find({ isActive: true })
-      .sort({ createdAt: -1 }) // latest products first
-      .populate([
-        { path: "brand" },           // populate brand details
-        { path: "mainCategory" },    // main category
-        { path: "category" },        // category
-        { path: "subCategory" },     // sub-category
-        { path: "varientId" }        // populate all variants
-      ]);
+    try {
+        const products = await productModel.find({ isActive: true })
+            .sort({ createdAt: -1 })
+            .populate([
+                {
+                    path: "brand",
+                    model: "Brand",
+                    select: "-__v -createdAt -updatedAt",
+                },
+                {
+                    path: "mainCategory",
+                    model: "MainCategory",
+                    select: "-__v -createdAt -updatedAt"
+                },
+                {
+                    path: "category",
+                    model: "Category",
+                    select: "-__v -createdAt -updatedAt"
+                },
+                {
+                    path: "subCategory",
+                    model: "SubCategory",
+                    select: "-__v -createdAt -updatedAt"
+                },
+                {
+                    path: "varientId",
+                    model: "ProductVariant",
+                    select: "-__v -createdAt -updatedAt"
+                }
+            ]);
 
-    if (!products || products.length === 0) {
-      return sendNotFoundResponse(res, "No Products Found");
+        if (!products || products.length === 0) {
+            return sendNotFoundResponse(res, "No Products Found");
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "Trending products fetched successfully",
+            total: products.length,
+            result: products
+        });
+
+    } catch (error) {
+        console.error("Error while fetching discover products:", error);
+        return sendErrorResponse(res, 500, "Error while fetching discover products", error);
     }
-
-    return sendSuccessResponse(res, "Discover Products Fetched Successfully", {
-      total: products.length,
-      products: products
-    });
-
-  } catch (error) {
-    console.log(error);
-    return sendErrorResponse(res, 500, "Error whiile featching discover product ", error)
-  }
-}
+};
 
 export const getSimilarProducts = async (req, res) => {
   try {
@@ -814,89 +836,103 @@ export const getMostWishlistedProducts = async (req, res) => {
 
     const productIds = wishlistCounts.map((item) => item._id);
 
-    const products = await Product.find({
-      _id: { $in: productIds },
-      isActive: true,
-    })
-      .populate("brand", "name")
-      .populate("mainCategory", "name")
-      .populate("category", "name")
-      .populate("subCategory", "name")
-      .populate({
-        path: "varientId",
-        model: "ProductVariant",
-        match: { stock: { $gt: 0 } },
-        select:
-          "sku Artical_Number images color size Occasion Outer_material Model_name Ideal_for Type_For_Casual Euro_Size Heel_Height price stock weight",
-      });
+        const products = await Product.find({
+            _id: { $in: productIds },
+            isActive: true,
+        })
+            .populate({
+                path: "brand",
+                model: "Brand",
+                select: "-__v -createdAt -updatedAt",
+            })
+            .populate("mainCategory", "name")
+            .populate("category", "name")
+            .populate("subCategory", "name")
+            .populate({
+                path: "varientId",
+                model: "ProductVariant",
+                match: { stock: { $gt: 0 } },
+                select:
+                    "sku Artical_Number images color size Occasion Outer_material Model_name Ideal_for Type_For_Casual Euro_Size Heel_Height price stock weight",
+            });
 
-    const result = products.map((product) => {
-      const wishlistData = wishlistCounts.find(
-        (w) => w._id.toString() === product._id.toString()
-      );
-      return {
-        ...product.toObject(),
-        wishlistCount: wishlistData ? wishlistData.wishlistCount : 0,
-      };
-    });
+        // Step 3: Merge wishlist count data with product data
+        const result = products.map((product) => {
+            const wishlistData = wishlistCounts.find(
+                (w) => w._id.toString() === product._id.toString()
+            );
+            return {
+                ...product.toObject(),
+                wishlistCount: wishlistData ? wishlistData.wishlistCount : 0,
+            };
+        });
 
-    result.sort((a, b) => b.wishlistCount - a.wishlistCount);
+        // Step 4: Sort final result again by wishlist count (descending)
+        result.sort((a, b) => b.wishlistCount - a.wishlistCount);
 
-    return sendSuccessResponse(
-      res,
-      "Most wishlisted products fetched successfully",
-      { data: result }
-    );
-  } catch (error) {
-    console.error("Error in getMostWishlistedProducts:", error);
-    return ThrowError(res, 500, error.message);
-  }
+        return res.status(200).json({
+            success: true,
+            message: "Trending products fetched successfully",
+            total: products.length,
+            result: products
+        });
+    } catch (error) {
+        console.error("Error in getMostWishlistedProducts:", error);
+        return ThrowError(res, 500, error.message);
+    }
 };
 
 export const getTrendingProducts = async (req, res) => {
-  try {
-    const pipeline = [
-      {
-        $lookup: {
-          from: "payments",
-          localField: "_id",
-          foreignField: "orderId",
-          as: "payment"
-        }
-      },
-      { $unwind: "$payment" },
-      { $match: { "payment.paymentStatus": "Paid" } },
+    try {
+        const pipeline = [
+            // Join with payments
+            {
+                $lookup: {
+                    from: "payments",
+                    localField: "_id",
+                    foreignField: "orderId",
+                    as: "payment"
+                }
+            },
+            { $unwind: "$payment" },
+            { $match: { "payment.paymentStatus": "Paid" } },
 
-      { $unwind: "$products" },
+            // Unwind products array
+            { $unwind: "$products" },
 
-      {
-        $group: {
-          _id: "$products.productId",
-          totalQuantity: { $sum: "$products.quantity" },
-          orderCount: { $sum: 1 }
-        }
-      },
+            // Group by productId
+            {
+                $group: {
+                    _id: "$products.productId",
+                    totalQuantity: { $sum: "$products.quantity" },
+                    orderCount: { $sum: 1 }
+                }
+            },
 
-      { $sort: { totalQuantity: -1 } },
+            // Sort by most sold
+            { $sort: { totalQuantity: -1 } },
 
-      {
-        $lookup: {
-          from: "products",
-          localField: "_id",
-          foreignField: "_id",
-          as: "product"
-        }
-      },
-      { $unwind: "$product" },
+            // Lookup full product data
+            {
+                $lookup: {
+                    from: "products",
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "product"
+                }
+            },
+            { $unwind: "$product" },
 
-      {
-        $lookup: {
-          from: "productvariants",
-          localField: "product._id",
-          foreignField: "productId",
-          as: "variants"
-        }
-      },
+            // Lookup related references
+            {
+                $lookup: {
+                    from: "brands",
+                    localField: "product.brand",
+                    foreignField: "_id",
+                    as: "brand"
+                }
+            },
+            { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
       {
         $lookup: {
@@ -928,107 +964,86 @@ export const getTrendingProducts = async (req, res) => {
       },
       { $unwind: { path: "$subCategory", preserveNullAndEmptyArrays: true } },
 
-      {
-        $lookup: {
-          from: "insidesubcategories",
-          localField: "product.insideSubCategory",
-          foreignField: "_id",
-          as: "insideSubCategory"
-        }
-      },
-      { $unwind: { path: "$insideSubCategory", preserveNullAndEmptyArrays: true } },
+            // Lookup product variants
+            {
+                $lookup: {
+                    from: "productvariants",
+                    localField: "product._id",
+                    foreignField: "productId",
+                    as: "varientId"
+                }
+            },
 
-      {
-        $lookup: {
-          from: "brands",
-          localField: "product.brand",
-          foreignField: "_id",
-          as: "brand"
-        }
-      },
-      { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
+            // Final structure like getMostWishlistedProducts
+            {
+                $project: {
+                    _id: "$product._id",
+                    sellerId: "$product.sellerId",
+                    brand: "$brand",
+                    title: "$product.title",
+                    mainCategory: "$mainCategory",
+                    category: "$category",
+                    subCategory: "$subCategory",
+                    description: "$product.description",
+                    badge: "$product.badge",
+                    love_about: "$product.love_about",
+                    varientId: {
+                        $map: {
+                            input: "$varientId",
+                            as: "variant",
+                            in: {
+                                _id: "$$variant._id",
+                                sku: "$$variant.sku",
+                                Artical_Number: "$$variant.Artical_Number",
+                                images: "$$variant.images",
+                                color: "$$variant.color",
+                                size: "$$variant.size",
+                                Occasion: "$$variant.Occasion",
+                                Outer_material: "$$variant.Outer_material",
+                                Model_name: "$$variant.Model_name",
+                                Ideal_for: "$$variant.Ideal_for",
+                                Type_For_Casual: "$$variant.Type_For_Casual",
+                                Euro_Size: "$$variant.Euro_Size",
+                                Heel_Height: "$$variant.Heel_Height",
+                                price: "$$variant.price",
+                                stock: "$$variant.stock",
+                                weight: "$$variant.weight"
+                            }
+                        }
+                    },
+                    rating: "$product.rating",
+                    productDetails: "$product.productDetails",
+                    shippingReturn: "$product.shippingReturn",
+                    warrantySupport: "$product.warrantySupport",
+                    view: "$product.view",
+                    sold: "$product.sold",
+                    isActive: "$product.isActive",
+                    createdAt: "$product.createdAt",
+                    updatedAt: "$product.updatedAt",
+                    __v: "$product.__v",
+                    totalQuantity: 1,
+                    orderCount: 1
+                }
+            },
 
-      {
-        $project: {
-          _id: 0,
-          productId: "$_id",
-          totalQuantity: 1,
-          orderCount: 1,
-          product: {
-            _id: "$product._id",
-            title: "$product.title",
-            description: "$product.description",
-            badge: "$product.badge",
-            brand: {
-              $cond: [
-                { $ifNull: ["$brand._id", false] },
-                { _id: "$brand._id", name: "$brand.brandName" },
-                null
-              ]
-            }
-          },
-          mainCategory: {
-            $cond: [
-              { $ifNull: ["$mainCategory._id", false] },
-              { _id: "$mainCategory._id", name: "$mainCategory.mainCategoryName" },
-              null
-            ]
-          },
-          category: {
-            $cond: [
-              { $ifNull: ["$category._id", false] },
-              { _id: "$category._id", name: "$category.categoryName" },
-              null
-            ]
-          },
-          subCategory: {
-            $cond: [
-              { $ifNull: ["$subCategory._id", false] },
-              { _id: "$subCategory._id", name: "$subCategory.subCategoryName" },
-              null
-            ]
-          },
-          insideSubCategory: {
-            $cond: [
-              { $ifNull: ["$insideSubCategory._id", false] },
-              { _id: "$insideSubCategory._id", name: "$insideSubCategory.insideSubCategoryName" },
-              null
-            ]
-          },
-          variants: {
-            $map: {
-              input: "$variants",
-              as: "variant",
-              in: {
-                _id: "$$variant._id",
-                sku: "$$variant.sku",
-                images: "$$variant.images",
-                color: "$$variant.color",
-                size: "$$variant.size",
-                price: "$$variant.price",
-                stock: "$$variant.stock",
-                weight: "$$variant.weight"
-              }
-            }
-          }
-        }
-      }
-    ];
+            { $limit: 15 }
+        ];
 
     const results = await OrderModel.aggregate(pipeline);
 
-    return res.status(200).json({
-      success: true,
-      message: "Trending products fetched successfully",
-      result: results
-    });
-  } catch (error) {
-    console.error("Error fetching trending products:", error);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Server error"
-    });
-  }
+        return res.status(200).json({
+            success: true,
+            message: "Trending products fetched successfully",
+            total: results.length,
+            result: results
+        });
+    } catch (error) {
+        console.error("Error fetching trending products:", error);
+        return res.status(500).json({
+            success: false,
+            message: error.message || "Server error"
+        });
+    }
 };
 
 export const getSalesAnalytics = async (req, res) => {
