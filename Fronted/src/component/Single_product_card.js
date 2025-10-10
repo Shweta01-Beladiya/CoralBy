@@ -1,18 +1,49 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FaRegHeart, FaHeart } from "react-icons/fa";
 import { MdOutlineShoppingBag, MdStar } from "react-icons/md";
 import { IoEyeOutline } from "react-icons/io5";
+import { useDispatch, useSelector } from "react-redux";
+import { addToWishlist, getWishlist, removeWishlist } from "../Store/Slices/wishlistSlice";
+import { useNavigate } from "react-router-dom";
 
 export const SingleProduct = ({ product, onQuickView }) => {
+
 	const [activeVariant, setActiveVariant] = useState(0);
 	const [inCart, setInCart] = useState(false);
 	const [inWishlist, setInWishlist] = useState(false);
+	const dispatch = useDispatch()
+	const navigate = useNavigate();
+
+	const token = localStorage.getItem('token');
 
 	const variants = product.varientId || [];
 	const currentVariant = variants[activeVariant] || {};
 
+
+	// const authData = useSelector( (state) => state.authProfie.userData)
+	const wishData = useSelector((state) => state.wishlist.wishlistData)
+	// console.log('auth Data ::' , wishData)
+
+	// useEffect(() => {
+	// 	 dispatch(getWishlist())
+	// }, [dispatch])
+
+	// Add Wishlist
+	const handleWishlist = async (pid) => {
+		await dispatch(addToWishlist(pid))
+		await dispatch(getWishlist())
+	}
+
+	// Remove From Wishlist 
+	const delWishlist = async (pid) => {
+		await dispatch(removeWishlist(pid))
+		await dispatch(getWishlist())
+	}
+
+
+
 	return (
-		
+
 		<div className="product_card bg-[#F9FAFB] p-2 h-fit group rounded-xl shadow hover:shadow-lg transition-all duration-300">
 			<div className="flex flex-col">
 				{/* IMAGE PART */}
@@ -44,12 +75,16 @@ export const SingleProduct = ({ product, onQuickView }) => {
 					{/* Wishlist */}
 					<div
 						className="absolute top-0 right-0 p-3 text-[22px] cursor-pointer z-20"
-						onClick={() => setInWishlist(!inWishlist)}
+						onClick={() => { if(!token){ navigate('/login') } }}
 					>
-						{inWishlist ? (
-							<FaHeart className="text-[#F97316]" />
+
+						{(wishData || []).some((item) => item.productId._id === product._id) ? (
+							<FaHeart
+								className="text-[#F97316]"
+								onClick={() => delWishlist(product._id)}
+							/>
 						) : (
-							<FaRegHeart />
+							<FaRegHeart onClick={() => handleWishlist(product._id)} />
 						)}
 					</div>
 
@@ -61,11 +96,11 @@ export const SingleProduct = ({ product, onQuickView }) => {
 								onClick={() => setActiveVariant(i)}
 								className={`w-4 h-4 rounded-full cursor-pointer `}
 								style={{
-										backgroundColor: v.color,
-										outline:
-											activeVariant === i ? `2px solid ${v.color}` : "none",
-										outlineOffset: "2px",
-									}}
+									backgroundColor: v.color,
+									outline:
+										activeVariant === i ? `2px solid ${v.color}` : "none",
+									outlineOffset: "2px",
+								}}
 							></div>
 						))}
 					</div>
@@ -86,11 +121,11 @@ export const SingleProduct = ({ product, onQuickView }) => {
 							<MdOutlineShoppingBag className="text-[18px]" />
 							{inCart ? "ADDED" : "ADD TO CART"}
 						</button>
-						
+
 						<button
 							className="text-black w-1/2 text-[13px] font-semibold flex items-center justify-center gap-1 
 								hover:bg-[#111827] hover:text-white transition-all duration-300 ease-in-out"
-							onClick={() => onQuickView && onQuickView(currentVariant)}
+							onClick={() => onQuickView(product)}
 						>
 							<IoEyeOutline className="text-[18px]" /> QUICK VIEW
 						</button>

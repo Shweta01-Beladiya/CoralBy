@@ -164,14 +164,14 @@ export default function CareerPage() {
     //     },
     // ];
 
-    const dipatch = useDispatch();
+    const dispatch = useDispatch();
     const { data } = useSelector((state) => state.careerJob);
     // console.log("Career Job Data:", data);
 
 
     useEffect(() => {
-        dipatch(createCareerJob());
-    }, [dipatch]);
+        dispatch(createCareerJob());
+    }, [dispatch]);
 
 
     // Job Openings Modal State
@@ -179,7 +179,6 @@ export default function CareerPage() {
     const [selectedJobId, setSelectedJobId] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const dispatch = useDispatch();
 
     const initialValues = {
         firstName: "",

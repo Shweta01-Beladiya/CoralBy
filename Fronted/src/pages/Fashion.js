@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "../styles/h_style.css";
-import products from "../pages/ProductList";
+// import products from "../pages/ProductList";
 import { SingleProduct } from "../component/Single_product_card";
 import { LiaAngleRightSolid } from "react-icons/lia";
 import { MdOutlineFilterAlt } from "react-icons/md";
@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 import QuickView from "../component/QuickView";
 import { useSelector, useDispatch } from "react-redux";
 import { getProduct } from "../Store/Slices/categorySlice";
+import { getWishlist } from "../Store/Slices/wishlistSlice";
 
 const Fashion = () => {
 
@@ -37,8 +38,6 @@ const Fashion = () => {
 
 	// QuickView handlers
 	const openQuickView = (product) => {
-		console.log("product>>>>>>>",product);
-		
 		setQuickViewProduct(product);
 		setShowQuickView(true);
 	};
@@ -185,10 +184,6 @@ const Fashion = () => {
 
 
 	const product = useSelector((state) => state.category.product.data);
-	const productVarient = useSelector((state) => state.category.productVarient.data);
-	console.log("Product",product);
-	console.log("productVarient",productVarient);
-	
 
 	const filteredProducts = (product || []).filter((p) => {
 		return Object.keys(selectedFilters).every((section) => {
@@ -227,6 +222,10 @@ const Fashion = () => {
 			[section]: !expandedSections[section],
 		});
 	};
+
+	useEffect(() => {
+		dispatch(getWishlist())
+	}, [dispatch])
 
 	return (
 		<>
@@ -301,7 +300,7 @@ const Fashion = () => {
 								<span className="text-[16px] text-[#6B7280] font-medium">
 									Sort by :
 								</span>
-								<select className="px-2 py-2 text-[16px] font-medium text-[#111827] cursor-pointer">
+								<select className="px-2 py-2 text-[16px] font-medium text-[#111827] cursor-pointer" >
 									<option>Best selling</option>
 									<option>Price: Low to High</option>
 									<option>Price: High to Low</option>
@@ -313,7 +312,7 @@ const Fashion = () => {
 						{/* Product grid */}
 						<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
 							{currentProducts.map((p) => (
-								<SingleProduct  key={p._id}  product={p} onQuickView={openQuickView} />))}
+								<SingleProduct key={p._id} product={p} onQuickView={openQuickView} />))}
 						</div>
 
 						{/* Pagination */}

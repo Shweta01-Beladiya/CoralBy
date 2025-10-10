@@ -6,17 +6,20 @@ import SizeGuide from "./SizeGuide";
 import { IoIosShareAlt } from "react-icons/io";
 
 const QuickView = ({ product, onClose }) => {
-  console.log("product>>>>>>>>>", product);
+  console.log("productQuickView>>>>>>>>>", product);
 
   // safe defaults
-  const safeVariants = product?.variants || [];
-  const initialVariant = safeVariants[0] || {
-    images: [],
-    image: "",
-    color: "",
-    colorName: "",
-  };
-
+  const safeVariants = (product?.varientId || []).map((v) => ({
+    _id: v._id,
+    color: v.color || "Default",
+    colorName: v.color ? v.color.charAt(0).toUpperCase() + v.color.slice(1) : "Unknown",
+    image: v.images?.[0],
+    images: v.images || [],
+    price: v.price || {},
+    size: v.size,
+    sku: v.sku,
+    stock: v.stock,
+  }));
   // Lock background scroll
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -27,13 +30,15 @@ const QuickView = ({ product, onClose }) => {
 
   const [activeVariant, setActiveVariant] = useState(initialVariant);
   const [activeSize, setActiveSize] = useState(8);
+  const [activeVariant, setActiveVariant] = useState(safeVariants[0]);
+  const [activeSize, setActiveSize] = useState(safeVariants[0]?.size || '');
   const [inWishlist, setInWishlist] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
   const [mainImages, setMainImages] = useState(
-    initialVariant.images?.length > 0
-      ? initialVariant.images.slice(0, 2)
-      : [initialVariant.image, initialVariant.image]
+    safeVariants[0]?.images?.length > 0
+      ? safeVariants[0].images.slice(0, 2)
+      : [safeVariants[0]?.image]
   );
 
   // Quantity handlers
@@ -171,22 +176,23 @@ const QuickView = ({ product, onClose }) => {
                     Color: {activeVariant.colorName}
                   </p>
                   <div className="flex gap-2 flex-wrap">
-                    {safeVariants.map((v, i) => (
+                    {safeVariants.map((v) => (
                       <img
-                        key={i}
+                        key={v._id}
                         src={v.image}
-                        alt={v.colorName || `variant-${i}`}
+                        alt={v.colorName}
                         onClick={() => {
                           setActiveVariant(v);
+                          setActiveSize(v.size || "");
                           setMainImages(
-                            v.images?.length > 0
-                              ? v.images.slice(0, 2)
-                              : [v.image, v.image]
+                            v.images?.length > 0 ? v.images.slice(0, 2) : [v.image]
                           );
                         }}
                         className={`w-12 h-12 sm:w-[60px] sm:h-[60px] object-cover rounded cursor-pointer border-2 ${
                           v.color === activeVariant.color
                             ? "border-[#44506A33] shadow-lg transform scale-[1.05]"
+                        className={`w-12 h-12 sm:w-[60px] sm:h-[60px] object-cover rounded cursor-pointer border-2 ${v._id === activeVariant._id
+                          ? "border-[#44506A33] shadow-lg transform scale-[1.05]"
                             : "border-gray-100"
                         }`}
                       />
@@ -200,7 +206,7 @@ const QuickView = ({ product, onClose }) => {
                     Size: {activeSize}
                   </p>
                   <div className="flex gap-2 flex-wrap items-center">
-                    {[6, 7, 8, 9, 10, 11].map((size) => (
+                    {[...new Set(safeVariants.map((v) => v.size))].map((size) => (
                       <button
                         key={size}
                         onClick={() => setActiveSize(size)}
@@ -213,7 +219,7 @@ const QuickView = ({ product, onClose }) => {
                         {size}
                       </button>
                     ))}
-                    <span
+                     <span
                       className="text-[#44506A] text-[10px] sm:text-[12px] font-semibold underline uppercase cursor-pointer"
                       onClick={() => setIsSizeGuideOpen(true)}
                     >
@@ -223,7 +229,7 @@ const QuickView = ({ product, onClose }) => {
                 </div>
 
                 {/* Thumbnails */}
-                <div className="flex gap-2 mb-3 flex-wrap">
+                {/* <div className="flex gap-2 mb-3 flex-wrap">
                   {activeVariant.images?.map((img, i) => (
                     <img
                       key={i}
@@ -233,7 +239,7 @@ const QuickView = ({ product, onClose }) => {
                       className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded border border-[#E5E7EB] cursor-pointer hover:ring-2"
                     />
                   ))}
-                </div>
+                </div> */}
 
                 {/* Quantity + Buttons */}
                 <div className="flex items-stretch gap-2 sm:gap-3 mb-4 flex-wrap flex-row">

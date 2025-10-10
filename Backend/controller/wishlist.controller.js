@@ -51,7 +51,7 @@ export const getWishlist = async (req, res) => {
             .lean();
 
         if (!wishlist || wishlist.items.length === 0) {
-            return sendNotFoundResponse(res, "Your wishlist is empty!");
+            return sendSuccessResponse(res, "Your wishlist is empty!");
         }
 
         return sendSuccessResponse(res, "✅ Wishlist fetched successfully!", wishlist);

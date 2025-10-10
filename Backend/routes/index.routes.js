@@ -5,7 +5,7 @@ import { createCategory, deleteCategoryById, getAllCategory, getCategoriesByMain
 import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdateController, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
-import { addBadgeToProduct, createProduct, deleteProduct, discoverProductController, getAllProduct, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
+import { addBadgeToProduct, createProduct, deleteProduct, discoverProductController, getAllProduct, getBestSellingProducts, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
 import { getMyCartController, addToCartController, removeCartController } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
@@ -14,7 +14,7 @@ import { createSubCategory, deleteSubCategoryById, getAllSubCategory, getSubCate
 import { createBrand, deleteBrand, getAllBrand, getBrandById, getBrandByMainCategory, getSellerBrands, updateBrand, brandFilterController } from '../controller/brand.controller.js';
 import { addToWishlist, getWishlist, removeFromWishlist } from '../controller/wishlist.controller.js';
 import { applyCouponController, createCoupon, deleteCoupon, getAllCoupon, getCouponById, removeCouponController, updateCoupon } from '../controller/coupon.controller.js';
-import { addOrderInstructionsController, cancelMyOrderController, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, selectUserAddressController, selectUserBillingAddressController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
+import { addOrderInstructionsController, cancelMyOrderController, getOrderByStatusController, getOrderSellerByStatus, getSellerAllOrdersController, getShippingEstimates, myHistoryOrderController, myOrderController, newOrderController, orderSummeryController, selectUserAddressController, selectUserBillingAddressController, updateOrderStatusController, verifyAUPostCodeController } from '../controller/order.controller.js';
 import { createReview, deleteReview, dislikeReview, getProductReviews, likeReview, updateReview } from '../controller/review.controller.js';
 import { addProductBannerController, deleteProductBannerController, getProductBannerController, updateProductBannerController } from '../controller/product.banner.controller.js';
 import { applyJobController, currentJobController, deleteJobApplicationController, getCurrentJobByIdController, getMyJobapplicationsController } from '../controller/job.application.controller.js';
@@ -112,16 +112,16 @@ indexRouter.get("/getMostWishlistedProducts", getMostWishlistedProducts);
 indexRouter.get("/getTrendingProducts", getTrendingProducts);
 indexRouter.get("/getSalesAnalytics", getSalesAnalytics);
 indexRouter.post("/addBadgeToProduct/:id", UserAuth, isAdmin, addBadgeToProduct);
-
+indexRouter.get("/getBestSellingProducts", getBestSellingProducts);
 // discover new product
 indexRouter.get("/discover/product", UserAuth, discoverProductController)
 
 
 // Product
-indexRouter.post("/createProductVariant", sellerAuth, upload.fields([{ name: "images", maxCount: 1 }]), createProductVariant);
+indexRouter.post("/createProductVariant", sellerAuth, upload.fields([{ name: "images", maxCount: 10 }]), createProductVariant);
 indexRouter.get("/getAllProductVariant", getAllProductVariant);
 indexRouter.get("/getProductVarientById/:id", getProductVarientById);
-indexRouter.patch("/updateProductVariant/:variantId", sellerAuth, upload.fields([{ name: "images", maxCount: 1 }]), updateProductVariant);
+indexRouter.patch("/updateProductVariant/:variantId", sellerAuth, upload.fields([{ name: "images", maxCount: 10 }]), updateProductVariant);
 indexRouter.delete("/deleteProductVariant/:variantId", sellerAuth, deleteProductVariant);
 indexRouter.get("/getProductWiseProductVarientdata/:productId", getProductWiseProductVarientdata);
 
@@ -207,6 +207,8 @@ indexRouter.get("/getSeller", sellerAuth, getSeller)
 indexRouter.post("/new/order", UserAuth, newOrderController);
 indexRouter.get("/my/current/order", UserAuth, myOrderController);
 indexRouter.get("/my/history/order", UserAuth, myHistoryOrderController);
+indexRouter.get("/user/order", UserAuth, getOrderByStatusController);
+indexRouter.get("/seller/getOrderByStatus", sellerAuth, getOrderSellerByStatus)
 indexRouter.get("/seller/orders", sellerAuth, getSellerAllOrdersController);
 indexRouter.patch("/order/status/:orderId", sellerAuth, updateOrderStatusController);
 indexRouter.post("/cancel/my/order/:orderId", UserAuth, cancelMyOrderController);

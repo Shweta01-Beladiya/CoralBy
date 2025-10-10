@@ -37,6 +37,7 @@ import { IoMdClose } from "react-icons/io";
 import { useDispatch, useSelector } from 'react-redux';
 import { getMainCategory, getCategory, getSubCategory, getInsideSubCategory } from '../Store/Slices/categorySlice';
 import { getAuthData } from '../Store/Slices/authProfileSlice';
+import { getWishlist } from '../Store/Slices/wishlistSlice';
 
 
 export default function Header() {
@@ -63,17 +64,17 @@ export default function Header() {
     const dispatch = useDispatch();
 
 
-    const authData = useSelector( (state) => state.authProfie.userData)
+    const authData = useSelector((state) => state.authProfie.userData)
 
     const token = localStorage.getItem('token');
     // console.log('Token ::' , token)
 
-    useEffect(()=>{
-        if(token){
+    useEffect(() => {
+        if (token) {
             dispatch(getAuthData())
         }
-    },[token])
-    
+    }, [token])
+
     // console.log("Auth Data Header :::" , authData)
 
 
@@ -247,6 +248,16 @@ export default function Header() {
     const handleToggleAccordion = (id) => {
         setOpenIndex(openIndex === id ? null : id);
     };
+
+    
+
+    useEffect(()=>{
+        dispatch(getWishlist())
+    },[])
+
+    // Wishlist
+    const wishData = useSelector((state) => state.wishlist.wishlistData)
+    const wishBadge = wishData?.length;
 
 
 
@@ -424,7 +435,7 @@ export default function Header() {
                                                         </li>
                                                         <li>
                                                             <Link
-                                                                onClick={() => {setShowUserDropdown(false); navigate('/'); localStorage.removeItem('token');  }}
+                                                                onClick={() => { setShowUserDropdown(false); navigate('/'); localStorage.removeItem('token'); }}
                                                                 to="/"
                                                                 className="block px-3 py-2 hover:bg-[var(--dropdown-hover)] text-[var(--text-red)] "
                                                             >
@@ -439,8 +450,8 @@ export default function Header() {
                                                     <div>
                                                         {/* Login - Not LogInUser */}
                                                         <div className='z-10 relative p-2 text-base'>
-                                                            <button className='bg-[var(--bg-orange)] w-full rounded-md p-2 text-[var(--text-white)] font-semibold' onClick={()=> navigate('/login')}>LOGIN</button>
-                                                            <p className='mt-2 text-[var(--dropdown-text-color)] font-medium text-[15px] flex justify-between'>New Customer? <span className='text-[var(--dropdown-dark-text)] font-semibold cursor-pointer' onClick={()=> navigate('/login', { state: { signup: true } }) } >Sign Up</span> </p>
+                                                            <button className='bg-[var(--bg-orange)] w-full rounded-md p-2 text-[var(--text-white)] font-semibold' onClick={() => navigate('/login')}>LOGIN</button>
+                                                            <p className='mt-2 text-[var(--dropdown-text-color)] font-medium text-[15px] flex justify-between'>New Customer? <span className='text-[var(--dropdown-dark-text)] font-semibold cursor-pointer' onClick={() => navigate('/login', { state: { signup: true } })} >Sign Up</span> </p>
                                                         </div>
                                                     </div>
                                                 )}
@@ -458,11 +469,13 @@ export default function Header() {
 
 
                             {/* Wishlist */}
-                            <div className="relative" onClick={() => navigate('/wishlist')}   >
+                            <div className="relative" onClick={() => { if (!token) { navigate('/login') } else { navigate('/wishlist') } }}   >
                                 <FaRegHeart className="cursor-pointer" />
-                                <span className="absolute -top-2.5 -right-3 bg-[var(--bg-black)] text-[var(--text-white)] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                                    99
-                                </span>
+                                { (token && wishBadge > 0 ) && (
+                                    <span className="absolute -top-2.5 -right-3 bg-[var(--bg-black)] text-[var(--text-white)] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                                        {wishBadge}
+                                    </span>
+                                )}
                             </div>
 
                             {/* Cart */}

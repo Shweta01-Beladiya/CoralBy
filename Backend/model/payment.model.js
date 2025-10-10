@@ -20,33 +20,40 @@ const paymentSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ["credit_card", "debit_card", "paypal", "bank_transfer", "cash_on_delivery"],
+        enum: ["COD", "Card", "UPI", "PayPal", "Bank"],
         required: true,
-        default: "cash_on_delivery",
     },
     paymentStatus: {
         type: String,
-        enum: ["pending", "completed", "failed", "refunded"],
+        enum: ["Pending", "Paid", "Failed", "Refunded"],
         required: true,
-        default: "pending",
+        default: "Pending",
         index: true,
     },
     transactionId: {
         type: String,
         unique: true,
-        sparse: true, // allows multiple null values
+        sparse: true,
     },
     paymentDate: {
         type: Date,
         default: Date.now,
     },
+    sellerIds: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "seller",
+        }
+    ],
     cardDetails: {
         cardHolderName: String,
         cardLast4Digits: String,
-        cardType: String, // e.g., Visa, MasterCard
+        cardType: String,
         expiryMonth: Number,
         expiryYear: Number,
-        billingAddress: String,
+    },
+    upiDetails: {
+        upiId: String,
     },
     paypalDetails: {
         paypalId: String,
@@ -55,7 +62,6 @@ const paymentSchema = new mongoose.Schema({
     bankTransferDetails: {
         bankName: String,
         accountNumber: String,
-        routingNumber: String,
         transactionReference: String,
     },
 }, { timestamps: true });
