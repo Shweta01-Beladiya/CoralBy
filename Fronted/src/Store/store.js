@@ -26,7 +26,7 @@ export const store = configureStore({
         faqCategory: faqCategoryReducer,
         helpSupport: helpSupportReducer,
         coupen : couepnReducer,
-        wishlist : wishlistReducer
+        wishlist : wishlistReducer,
         coupen: couepnReducer,
         homeProduct: homeProductReducer,
     },

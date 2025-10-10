@@ -88,7 +88,7 @@ import { Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { getMainCategory } from '../Store/Slices/categorySlice';
 import { simplefetchOffers, specialOffers, simplestOffers, offers } from '../Store/Slices/offerSlice';
-import { fetchCelebrateProduct } from '../Store/Slices/homeProductSlice';
+import { fetchCelebrateProduct, fetchCustomerFav, fetchDiscoverNew, fetchTrendingItems } from '../Store/Slices/homeProductSlice';
 
 
 
@@ -205,14 +205,6 @@ export default function Home() {
 	};
 
 
-	// *************** 3. Celebrate with Style & Savings Section ***************
-
-	useEffect(() => {
-		dispatch(fetchCelebrateProduct());
-	}, [dispatch]);
-
-	const celebrateproducts = useSelector((state) => state.homeProduct.celebrateproducts);
-	console.log("celebrateProducts", celebrateproducts);
 
 
 
@@ -365,12 +357,12 @@ export default function Home() {
 	const [time, setTime] = useState(6 * 3600 + 36 * 60 + 44); // in seconds
 
 	// Update timer every second
-	useEffect(() => {
-		const timer = setInterval(() => {
-			setTime((prev) => (prev > 0 ? prev - 1 : 0));
-		}, 1000);
-		return () => clearInterval(timer);
-	}, []);
+	// useEffect(() => {
+	// 	const timer = setInterval(() => {
+	// 		setTime((prev) => (prev > 0 ? prev - 1 : 0));
+	// 	}, 1000);
+	// 	return () => clearInterval(timer);
+	// }, []);
 
 	// Format time as HH : MM : SS
 	const formatTime = (secs) => {
@@ -694,6 +686,49 @@ export default function Home() {
 	// const first = section2Offers[0];
 	// const second = section2Offers[1];
 
+	// *************** 3. Celebrate with Style & Savings Section ***************
+
+	useEffect(() => {
+		dispatch(fetchCelebrateProduct());
+	}, []);
+
+	const dataCelebrate = useSelector((state) => state.homeProduct.celebrateproducts);
+	const celebrateProducts = dataCelebrate;
+	console.log("celebrateProducts", celebrateProducts);
+
+
+
+	// ************ Trending Products *************
+	useEffect(() => {
+		dispatch(fetchTrendingItems())
+	}, [])
+
+	const dataTrending = useSelector((state) => state.homeProduct.trendingitems);
+	const trenDingItems = dataTrending;
+	console.log("Trending Items ::", trenDingItems)
+
+
+
+	// ********* Discover What's New **********
+	useEffect(() => {
+		dispatch(fetchDiscoverNew())
+	}, [])
+
+	const discoverWhatsNew = useSelector((state) => state.homeProduct.discovernew)
+	const dataDiscover = discoverWhatsNew;
+	// console.log('Data Discover ::' , discoverWhatsNew)
+
+	// ******** Customer Faviourite Slider ********
+	useEffect(() => {
+		dispatch(fetchCustomerFav())
+	}, [])
+
+	const customerFavSlider = useSelector((state) => state.homeProduct.customerfav)
+	const dataClientFav = customerFavSlider;
+	console.log("Cusstomer fav ::", dataClientFav)
+
+
+
 	return (
 		<>
 			<div className=''>
@@ -846,7 +881,7 @@ export default function Home() {
 
 						{/* image */}
 						<div className='py-6'>
-							<Cmn_product_slider ref={productSliderRef1} initialSlideProductId={1} onQuickView={openQuickView} />
+							<Cmn_product_slider productData={celebrateProducts} ref={productSliderRef1} initialSlideProductId={1} onQuickView={openQuickView} />
 						</div>
 
 					</section>
@@ -1036,7 +1071,7 @@ export default function Home() {
 
 						{/* image */}
 						<div className='mt-6'>
-							<Cmn_product_slider ref={productSliderRef2} initialSlideProductId={5} onQuickView={openQuickView} />
+							<Cmn_product_slider productData={trenDingItems} ref={productSliderRef2} initialSlideProductId={5} onQuickView={openQuickView} />
 						</div>
 					</div>
 				</section>
@@ -1279,7 +1314,7 @@ export default function Home() {
 
 						{/* image */}
 						<div className='mt-6'>
-							<Cmn_product_slider ref={productSliderRef3} initialSlideProductId={9} onQuickView={openQuickView} />
+							<Cmn_product_slider productData={dataDiscover} ref={productSliderRef3} initialSlideProductId={9} onQuickView={openQuickView} />
 						</div>
 					</div>
 				</section>
@@ -1364,7 +1399,7 @@ export default function Home() {
 
 						{/* image */}
 						<div className='mt-6'>
-							<Cmn_product_slider ref={productSliderRef4} initialSlideProductId={13} onQuickView={openQuickView} />
+							<Cmn_product_slider productData={dataClientFav} ref={productSliderRef4} initialSlideProductId={13} onQuickView={openQuickView} />
 						</div>
 					</div>
 				</section>
