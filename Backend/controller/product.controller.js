@@ -694,13 +694,33 @@ export const getProductsByBrand = async (req, res) => {
 export const discoverProductController = async (req, res) => {
     try {
         const products = await productModel.find({ isActive: true })
-            .sort({ createdAt: -1 }) // latest products first
+            .sort({ createdAt: -1 })
             .populate([
-                { path: "brand" },           // populate brand details
-                { path: "mainCategory" },    // main category
-                { path: "category" },        // category
-                { path: "subCategory" },     // sub-category
-                { path: "varientId" }        // populate all variants
+                {
+                    path: "brand",
+                    model: "Brand",
+                    select: "-__v -createdAt -updatedAt",
+                },
+                {
+                    path: "mainCategory",
+                    model: "MainCategory",
+                    select: "-__v -createdAt -updatedAt"
+                },
+                {
+                    path: "category",
+                    model: "Category",
+                    select: "-__v -createdAt -updatedAt"
+                },
+                {
+                    path: "subCategory",
+                    model: "SubCategory",
+                    select: "-__v -createdAt -updatedAt"
+                },
+                {
+                    path: "varientId",
+                    model: "ProductVariant",
+                    select: "-__v -createdAt -updatedAt"
+                }
             ]);
 
         if (!products || products.length === 0) {
@@ -713,10 +733,10 @@ export const discoverProductController = async (req, res) => {
         });
 
     } catch (error) {
-        console.log(error);
-        return sendErrorResponse(res, 500, "Error whiile featching discover product ", error)
+        console.error("Error while fetching discover products:", error);
+        return sendErrorResponse(res, 500, "Error while fetching discover products", error);
     }
-}
+};
 
 export const getSimilarProducts = async (req, res) => {
     try {
@@ -817,7 +837,11 @@ export const getMostWishlistedProducts = async (req, res) => {
             _id: { $in: productIds },
             isActive: true,
         })
-            .populate("brand", "name")
+            .populate({
+                path: "brand",
+                model: "Brand",
+                select: "-__v -createdAt -updatedAt",
+            })
             .populate("mainCategory", "name")
             .populate("category", "name")
             .populate("subCategory", "name")
@@ -829,6 +853,7 @@ export const getMostWishlistedProducts = async (req, res) => {
                     "sku Artical_Number images color size Occasion Outer_material Model_name Ideal_for Type_For_Casual Euro_Size Heel_Height price stock weight",
             });
 
+        // Step 3: Merge wishlist count data with product data
         const result = products.map((product) => {
             const wishlistData = wishlistCounts.find(
                 (w) => w._id.toString() === product._id.toString()
@@ -839,8 +864,10 @@ export const getMostWishlistedProducts = async (req, res) => {
             };
         });
 
+        // Step 4: Sort final result again by wishlist count (descending)
         result.sort((a, b) => b.wishlistCount - a.wishlistCount);
 
+        // Step 5: Send response
         return sendSuccessResponse(
             res,
             "Most wishlisted products fetched successfully",
@@ -890,12 +917,13 @@ export const getTrendingProducts = async (req, res) => {
 
             {
                 $lookup: {
-                    from: "productvariants",
-                    localField: "product._id",
-                    foreignField: "productId",
-                    as: "variants"
+                    from: "brands",
+                    localField: "product.brand",
+                    foreignField: "_id",
+                    as: "brand"
                 }
             },
+            { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
             {
                 $lookup: {
@@ -929,23 +957,12 @@ export const getTrendingProducts = async (req, res) => {
 
             {
                 $lookup: {
-                    from: "insidesubcategories",
-                    localField: "product.insideSubCategory",
-                    foreignField: "_id",
-                    as: "insideSubCategory"
+                    from: "productvariants",
+                    localField: "product._id",
+                    foreignField: "productId",
+                    as: "variants"
                 }
             },
-            { $unwind: { path: "$insideSubCategory", preserveNullAndEmptyArrays: true } },
-
-            {
-                $lookup: {
-                    from: "brands",
-                    localField: "product.brand",
-                    foreignField: "_id",
-                    as: "brand"
-                }
-            },
-            { $unwind: { path: "$brand", preserveNullAndEmptyArrays: true } },
 
             {
                 $project: {
@@ -958,42 +975,17 @@ export const getTrendingProducts = async (req, res) => {
                         title: "$product.title",
                         description: "$product.description",
                         badge: "$product.badge",
-                        brand: {
-                            $cond: [
-                                { $ifNull: ["$brand._id", false] },
-                                { _id: "$brand._id", name: "$brand.brandName" },
-                                null
-                            ]
-                        }
+                        view: "$product.view",
+                        sold: "$product.sold",
+                        rating: "$product.rating",
+                        productDetails: "$product.productDetails",
+                        shippingReturn: "$product.shippingReturn",
+                        warrantySupport: "$product.warrantySupport",
                     },
-                    mainCategory: {
-                        $cond: [
-                            { $ifNull: ["$mainCategory._id", false] },
-                            { _id: "$mainCategory._id", name: "$mainCategory.mainCategoryName" },
-                            null
-                        ]
-                    },
-                    category: {
-                        $cond: [
-                            { $ifNull: ["$category._id", false] },
-                            { _id: "$category._id", name: "$category.categoryName" },
-                            null
-                        ]
-                    },
-                    subCategory: {
-                        $cond: [
-                            { $ifNull: ["$subCategory._id", false] },
-                            { _id: "$subCategory._id", name: "$subCategory.subCategoryName" },
-                            null
-                        ]
-                    },
-                    insideSubCategory: {
-                        $cond: [
-                            { $ifNull: ["$insideSubCategory._id", false] },
-                            { _id: "$insideSubCategory._id", name: "$insideSubCategory.insideSubCategoryName" },
-                            null
-                        ]
-                    },
+                    brand: "$brand",
+                    mainCategory: "$mainCategory",
+                    category: "$category",
+                    subCategory: "$subCategory",
                     variants: {
                         $map: {
                             input: "$variants",
@@ -1001,6 +993,7 @@ export const getTrendingProducts = async (req, res) => {
                             in: {
                                 _id: "$$variant._id",
                                 sku: "$$variant.sku",
+                                Artical_Number: "$$variant.Artical_Number",
                                 images: "$$variant.images",
                                 color: "$$variant.color",
                                 size: "$$variant.size",
@@ -1011,7 +1004,9 @@ export const getTrendingProducts = async (req, res) => {
                         }
                     }
                 }
-            }
+            },
+
+            { $limit: 15 }
         ];
 
         const results = await OrderModel.aggregate(pipeline);
@@ -1019,6 +1014,7 @@ export const getTrendingProducts = async (req, res) => {
         return res.status(200).json({
             success: true,
             message: "Trending products fetched successfully",
+            total: results.length,
             result: results
         });
     } catch (error) {
