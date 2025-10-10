@@ -14,6 +14,7 @@ import Wishlist from '../model/wishlist.model.js';
 import productvarientModel from "../model/productvarient.model.js";
 import paymentModel from "../model/payment.model.js";
 import OrderModel from "../model/order.model.js";
+import orderModel from "../model/order.model.js";
 
 // Assign badges: NEW, TRENDING, TOP RATED
 export const assignBadges = async () => {
@@ -692,17 +693,24 @@ export const getProductsByBrand = async (req, res) => {
 
 export const discoverProductController = async (req, res) => {
     try {
-        const products = await productvarientModel.find({}).sort({ createdAt: -1 }).populate({
-            path: "productId",
-            select: "productDetails brand title rating"
-        });
-        if (!products) {
-            return sendNotFoundResponse(res, "Not Product Found")
+        const products = await productModel.find({ isActive: true })
+            .sort({ createdAt: -1 }) // latest products first
+            .populate([
+                { path: "brand" },           // populate brand details
+                { path: "mainCategory" },    // main category
+                { path: "category" },        // category
+                { path: "subCategory" },     // sub-category
+                { path: "varientId" }        // populate all variants
+            ]);
+
+        if (!products || products.length === 0) {
+            return sendNotFoundResponse(res, "No Products Found");
         }
-        return sendSuccessResponse(res, "Discover Product Featched Successfully", {
+
+        return sendSuccessResponse(res, "Discover Products Fetched Successfully", {
             total: products.length,
             products: products
-        })
+        });
 
     } catch (error) {
         console.log(error);
@@ -791,51 +799,55 @@ export const getSimilarProducts = async (req, res) => {
 
 export const getMostWishlistedProducts = async (req, res) => {
     try {
-        // First, get wishlist counts
         const wishlistCounts = await Wishlist.aggregate([
-            {
-                $unwind: '$items'
-            },
+            { $unwind: "$items" },
             {
                 $group: {
-                    _id: '$items.productId',
-                    wishlistCount: { $sum: 1 }
-                }
+                    _id: "$items.productId",
+                    wishlistCount: { $sum: 1 },
+                },
             },
-            {
-                $sort: { wishlistCount: -1 }
-            },
-            {
-                $limit: 50
-            }
+            { $sort: { wishlistCount: -1 } },
+            { $limit: 50 },
         ]);
 
-        // Extract product IDs
-        const productIds = wishlistCounts.map(item => item._id);
+        const productIds = wishlistCounts.map((item) => item._id);
 
-        // Get product details
         const products = await Product.find({
             _id: { $in: productIds },
-            isActive: true
-        }).populate('brand mainCategory category subCategory');
+            isActive: true,
+        })
+            .populate("brand", "name")
+            .populate("mainCategory", "name")
+            .populate("category", "name")
+            .populate("subCategory", "name")
+            .populate({
+                path: "varientId",
+                model: "ProductVariant",
+                match: { stock: { $gt: 0 } },
+                select:
+                    "sku Artical_Number images color size Occasion Outer_material Model_name Ideal_for Type_For_Casual Euro_Size Heel_Height price stock weight",
+            });
 
-        // Combine wishlist counts with product details
-        const result = products.map(product => {
-            const wishlistData = wishlistCounts.find(w => w._id.toString() === product._id.toString());
+        const result = products.map((product) => {
+            const wishlistData = wishlistCounts.find(
+                (w) => w._id.toString() === product._id.toString()
+            );
             return {
                 ...product.toObject(),
-                wishlistCount: wishlistData ? wishlistData.wishlistCount : 0
+                wishlistCount: wishlistData ? wishlistData.wishlistCount : 0,
             };
         });
 
-        // Sort by wishlist count (since find doesn't maintain aggregation order)
         result.sort((a, b) => b.wishlistCount - a.wishlistCount);
 
-        return sendSuccessResponse(res, "Most wishlisted products fetched successfully", {
-            data: result
-        });
-
+        return sendSuccessResponse(
+            res,
+            "Most wishlisted products fetched successfully",
+            { data: result }
+        );
     } catch (error) {
+        console.error("Error in getMostWishlistedProducts:", error);
         return ThrowError(res, 500, error.message);
     }
 };
@@ -852,7 +864,7 @@ export const getTrendingProducts = async (req, res) => {
                 }
             },
             { $unwind: "$payment" },
-            { $match: { "payment.paymentStatus": "completed" } },
+            { $match: { "payment.paymentStatus": "Paid" } },
 
             { $unwind: "$products" },
 
@@ -1114,3 +1126,42 @@ export const addBadgeToProduct = async (req, res) => {
         return res.status(500).json({ success: false, message: "Internal server error" });
     }
 };
+
+export const getBestSellingProducts = async (req, res) => {
+    try {
+        // Fetch top-selling active products
+        const bestSellingProducts = await Product.find({ isActive: true })
+            .sort({ sold: -1 })
+            .limit(15)
+            .populate([
+                { path: "brand" },
+                { path: "mainCategory" },
+                { path: "category" },
+                { path: "subCategory" },
+                { path: "varientId" },
+            ]);
+
+        if (!bestSellingProducts || bestSellingProducts.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "No best-selling products found",
+                data: [],
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Best-selling products fetched successfully",
+            total: bestSellingProducts.length,
+            data: bestSellingProducts,
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+
+};
+

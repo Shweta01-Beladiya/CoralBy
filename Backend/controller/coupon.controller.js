@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import CouponModel from "../model/coupon.model.js";
 import { ThrowError } from "../utils/Error.utils.js";
-import { sendBadRequestResponse, sendNotFoundResponse, sendSuccessResponse,sendErrorResponse } from "../utils/Response.utils.js";
+import { sendBadRequestResponse, sendNotFoundResponse, sendSuccessResponse, sendErrorResponse } from "../utils/Response.utils.js";
 import cartModel from "../model/cart.model.js";
 // import OrderModel from "../model/order.model.js";
 
@@ -302,9 +302,9 @@ export const applyCouponController = async (req, res) => {
         });
 
         // Find and validate coupon
-        const coupon = await CouponModel.findOne({ 
-            code: code.toUpperCase(), 
-            isActive: true 
+        const coupon = await CouponModel.findOne({
+            code: code.toUpperCase(),
+            isActive: true
         });
 
         if (!coupon) {
@@ -344,7 +344,8 @@ export const applyCouponController = async (req, res) => {
             couponId: coupon._id,
             discount: discount,
             discountType: coupon.discountType,
-            discountValue: coupon.discountType === "flat" ? coupon.flatValue : coupon.percentageValue,
+            percentageValue: coupon.percentageValue, // Store percentageValue
+            flatValue: coupon.flatValue, // Store flatValue
             originalAmount: cartTotal,
             finalAmount: finalAmount
         };
@@ -360,7 +361,8 @@ export const applyCouponController = async (req, res) => {
             discount,
             finalAmount,
             discountType: coupon.discountType,
-            discountValue: coupon.discountType === "flat" ? coupon.flatValue : coupon.percentageValue,
+            percentageValue: coupon.percentageValue,
+            flatValue: coupon.flatValue,
             minOrderValue: coupon.minOrderValue,
             expiryDate: coupon.expiryDate
         });

@@ -36,7 +36,10 @@ const CartSchema = new mongoose.Schema(
             },
             discount: Number,
             discountType: String,
-            discountValue: Number
+            percentageValue: Number,
+            flatValue: Number,
+            originalAmount: Number,
+            finalAmount: Number
         }
     },
     { timestamps: true }

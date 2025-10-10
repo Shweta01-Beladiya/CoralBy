@@ -11,6 +11,7 @@ import faqCategoryReducer from '../Store/Slices/faqCategorySlice';
 import helpSupportReducer from '../Store/Slices/helpsupportSlice';
 import couepnReducer from '../Store/Slices/coupenSlice';
 import wishlistReducer from '../Store/Slices/wishlistSlice';
+import homeProductReducer from '../Store/Slices/homeProductSlice';
 
 export const store = configureStore({
     reducer: {
@@ -26,6 +27,8 @@ export const store = configureStore({
         helpSupport: helpSupportReducer,
         coupen : couepnReducer,
         wishlist : wishlistReducer
+        coupen: couepnReducer,
+        homeProduct: homeProductReducer,
     },
 });
 

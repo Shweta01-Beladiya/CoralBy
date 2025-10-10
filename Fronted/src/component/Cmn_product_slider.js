@@ -53,7 +53,7 @@ const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12
 			<Slider ref={sliderRef} {...settings}>
 				{products.map((product) => (
 					<div key={product.id} className="py-2 px-2">
-						<SingleProduct product={product} onQuickView={onQuickView} />
+						<SingleProduct product={product} onQuickView={onQuickView}  />
 					</div>
 				))}
 			</Slider>

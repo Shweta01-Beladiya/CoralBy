@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 import cartModel from "../model/cart.model.js";
 import productModel from "../model/product.model.js";
 import ProductVariant from "../model/productvarient.model.js";
+import CouponModel from "../model/coupon.model.js"; // Added CouponModel import
 import { sendSuccessResponse, sendErrorResponse, sendBadRequestResponse, sendNotFoundResponse } from "../utils/Response.utils.js";
-
 
 export const addToCartController = async (req, res) => {
     try {
@@ -29,6 +29,9 @@ export const addToCartController = async (req, res) => {
         if (!cart) {
             cart = new cartModel({ userId, items: [] });
         }
+
+        // Remove applied coupon when cart items change
+        cart.appliedCoupon = undefined;
 
         // === Check if item already exists ===
         const itemIndex = cart.items.findIndex(
@@ -236,6 +239,10 @@ export const removeCartController = async (req, res) => {
 
         // === Remove item ===
         cart.items.splice(itemIndex, 1);
+        
+        // Remove applied coupon when cart items change
+        cart.appliedCoupon = undefined;
+        
         await cart.save();
 
         await cart.populate([
@@ -268,7 +275,10 @@ export const removeCartController = async (req, res) => {
 
         return sendSuccessResponse(res, "Product removed from cart successfully", {
             items: cart.items,
-            totalAmount,
+            originalAmount: totalAmount,
+            discount: 0,
+            finalAmount: totalAmount,
+            appliedCoupon: null
         });
 
     } catch (error) {
