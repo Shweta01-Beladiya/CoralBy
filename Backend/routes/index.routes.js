@@ -5,7 +5,7 @@ import { createCategory, deleteCategoryById, getAllCategory, getCategoriesByMain
 import { isAdmin, isUser, sellerAuth, UserAuth } from '../middleware/auth.middleware.js';
 import { upload } from '../middleware/imageupload.js';
 import { getProfileController, getSellerProfileController, getUserAddressController, getUserBillingAddressController, userAddressAddController, userAddressDeleteController, userAddressUpdateController, userBillingAddressAddController, userBillingAddressDeleteController, userBillingAddressUpdatecontroller, userPasswordChangeController, userProfileUpdateController, userRemoveAccountController } from '../controller/profile.controller.js';
-import { addBadgeToProduct, createProduct, deleteProduct, discoverProductController, getAllProduct, getBestSellingProducts, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct } from '../controller/product.controller.js';
+import { addBadgeToProduct, createProduct, deleteProduct, discoverProductController, getAllProduct, getBestSellingProducts, getCategoryHierarchy, getMostWishlistedProducts, getProductById, getProductBySubCategory, getProductsByBrand, getSalesAnalytics, getSimilarProducts, getTrendingProducts, updateLoveAboutPoints, updateProduct, youMayAlsoLike } from '../controller/product.controller.js';
 import { getMyCartController, addToCartController, removeCartController } from '../controller/cart.controller.js';
 import { ListObjectsV2Command, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { S3Client } from "@aws-sdk/client-s3";
@@ -115,7 +115,8 @@ indexRouter.post("/addBadgeToProduct/:id", UserAuth, isAdmin, addBadgeToProduct)
 indexRouter.get("/getBestSellingProducts", getBestSellingProducts);
 // discover new product
 indexRouter.get("/discover/product", UserAuth, discoverProductController)
-
+//Yop May also Like
+indexRouter.get("/youMayAlsoLike/:cartId", youMayAlsoLike)
 
 // Product
 indexRouter.post("/createProductVariant", sellerAuth, upload.fields([{ name: "images", maxCount: 10 }]), createProductVariant);
@@ -330,76 +331,76 @@ indexRouter.delete("/deleteSubcribeById/:id", deleteSubcribeById);
 
 // austrials states data
 const australiaData = {
-    country: "Australia",
-    total: 8,
-    states: [
-        { name: "New South Wales", abbreviation: "NSW" },
-        { name: "Victoria", abbreviation: "VIC" },
-        { name: "Queensland", abbreviation: "QLD" },
-        { name: "South Australia", abbreviation: "SA" },
-        { name: "Western Australia", abbreviation: "WA" },
-        { name: "Tasmania", abbreviation: "TAS" },
-        { name: "Northern Territory", abbreviation: "NT" },
-        { name: "Australian Capital Territory", abbreviation: "ACT" },
-    ],
+  country: "Australia",
+  total: 8,
+  states: [
+    { name: "New South Wales", abbreviation: "NSW" },
+    { name: "Victoria", abbreviation: "VIC" },
+    { name: "Queensland", abbreviation: "QLD" },
+    { name: "South Australia", abbreviation: "SA" },
+    { name: "Western Australia", abbreviation: "WA" },
+    { name: "Tasmania", abbreviation: "TAS" },
+    { name: "Northern Territory", abbreviation: "NT" },
+    { name: "Australian Capital Territory", abbreviation: "ACT" },
+  ],
 };
 
 indexRouter.get("/au/states", async (req, res) => {
-    try {
-        return sendSuccessResponse(res, "All Austraila States fetched", australiaData)
-    } catch (error) {
-        console.log(error.message);
-        return sendErrorResponse(res, 500, "Error During Featch all au states", error);
-    }
+  try {
+    return sendSuccessResponse(res, "All Austraila States fetched", australiaData)
+  } catch (error) {
+    console.log(error.message);
+    return sendErrorResponse(res, 500, "Error During Featch all au states", error);
+  }
 })
 
 
 
 const s3Client = new S3Client({
-    region: process.env.S3_REGION,
-    credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY,
-        secretAccessKey: process.env.S3_SECRET_KEY,
-    },
+  region: process.env.S3_REGION,
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY,
+    secretAccessKey: process.env.S3_SECRET_KEY,
+  },
 });
 
 // List all files in bucket
 indexRouter.get("/listBucket", async (req, res) => {
-    try {
-        const command = new ListObjectsV2Command({ Bucket: process.env.S3_BUCKET_NAME });
-        const response = await s3Client.send(command);
+  try {
+    const command = new ListObjectsV2Command({ Bucket: process.env.S3_BUCKET_NAME });
+    const response = await s3Client.send(command);
 
-        const files = (response.Contents || []).map(file => ({
-            Key: file.Key,
-            Size: file.Size,
-            LastModified: file.LastModified,
-            ETag: file.ETag,
-            StorageClass: file.StorageClass,
-        }));
+    const files = (response.Contents || []).map(file => ({
+      Key: file.Key,
+      Size: file.Size,
+      LastModified: file.LastModified,
+      ETag: file.ETag,
+      StorageClass: file.StorageClass,
+    }));
 
-        return res.json({ success: true, files });
-    } catch (err) {
-        console.error("Error listing bucket:", err);
-        return res.status(500).json({ success: false, message: err.message });
-    }
+    return res.json({ success: true, files });
+  } catch (err) {
+    console.error("Error listing bucket:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 // Delete a file from bucket
 indexRouter.delete("/deleteBucketFile", async (req, res) => {
-    try {
-        const { key } = req.body; // example: "images/1757483363902-9.jfif"
-        if (!key) return res.status(400).json({ success: false, message: "File key is required" });
+  try {
+    const { key } = req.body; // example: "images/1757483363902-9.jfif"
+    if (!key) return res.status(400).json({ success: false, message: "File key is required" });
 
-        await s3Client.send(new DeleteObjectCommand({
-            Bucket: process.env.S3_BUCKET_NAME,
-            Key: key,
-        }));
+    await s3Client.send(new DeleteObjectCommand({
+      Bucket: process.env.S3_BUCKET_NAME,
+      Key: key,
+    }));
 
-        return res.json({ success: true, message: `File deleted successfully: ${key}` });
-    } catch (err) {
-        console.error("Error deleting file:", err);
-        return res.status(500).json({ success: false, message: err.message });
-    }
+    return res.json({ success: true, message: `File deleted successfully: ${key}` });
+  } catch (err) {
+    console.error("Error deleting file:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
 });
 
 export default indexRouter;
