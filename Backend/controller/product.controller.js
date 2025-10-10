@@ -727,9 +727,11 @@ export const discoverProductController = async (req, res) => {
             return sendNotFoundResponse(res, "No Products Found");
         }
 
-        return sendSuccessResponse(res, "Discover Products Fetched Successfully", {
+        return res.status(200).json({
+            success: true,
+            message: "Trending products fetched successfully",
             total: products.length,
-            products: products
+            result: products
         });
 
     } catch (error) {
@@ -867,12 +869,12 @@ export const getMostWishlistedProducts = async (req, res) => {
         // Step 4: Sort final result again by wishlist count (descending)
         result.sort((a, b) => b.wishlistCount - a.wishlistCount);
 
-        // Step 5: Send response
-        return sendSuccessResponse(
-            res,
-            "Most wishlisted products fetched successfully",
-            { data: result }
-        );
+        return res.status(200).json({
+            success: true,
+            message: "Trending products fetched successfully",
+            total: products.length,
+            result: products
+        });
     } catch (error) {
         console.error("Error in getMostWishlistedProducts:", error);
         return ThrowError(res, 500, error.message);
@@ -1149,7 +1151,7 @@ export const getBestSellingProducts = async (req, res) => {
             success: true,
             message: "Best-selling products fetched successfully",
             total: bestSellingProducts.length,
-            data: bestSellingProducts,
+            result: bestSellingProducts,
         });
 
     } catch (error) {
