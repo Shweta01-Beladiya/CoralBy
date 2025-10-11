@@ -6,7 +6,7 @@ import SizeGuide from "./SizeGuide";
 import { IoIosShareAlt } from "react-icons/io";
 
 const QuickView = ({ product, onClose }) => {
-  console.log("productQuickView>>>>>>>>>", product);
+  // console.log("productQuickView>>>>>>>>>", product);
 
   // safe defaults
   const safeVariants = (product?.varientId || []).map((v) => ({

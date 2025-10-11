@@ -29,6 +29,10 @@ export const getProduct = createAsyncThunk('category/fetchProduct', async () => 
     return response.data.result;
 })
 
+export const getProductById = createAsyncThunk(`category/getProductById`, async (id) => {
+    const response = await axios.get(`${BaseUrl}/api/getProductById/${id}`);
+    return response.data.result;
+})
 // export const getProductVarient = createAsyncThunk('category/fetchProductVariant', async () => {
 //     const response = await axios.get(`${BaseUrl}/api/getAllProductVariant`);
 //     return response.data.result;
@@ -42,6 +46,7 @@ const categorySlice = createSlice({
         subCategory: { isLoading: false, data: [], isError: false },
         inSubCategory: { isLoading: false, data: [], isError: false },
         product: { isLoading: false, data: [], isError: false },
+        productId: { isLoading: false, data: [], isError: false }
         // productVarient: { isLoading: false, data: [], isError: false }
     },
     reducers: {},
@@ -118,18 +123,18 @@ const categorySlice = createSlice({
                 state.product.isError = true;
             })
 
-            //Product Varient
-            // .addCase(getProductVarient.pending, (state) => {
-            //     state.productVarient.isLoading = true;
-            // })
-            // .addCase(getProductVarient.fulfilled, (state, action) => {
-            //     state.productVarient.isLoading = false;
-            //     state.productVarient.data = action.payload;
-            // })
-            // .addCase(getProductVarient.rejected, (state) => {
-            //     state.productVarient.isLoading = false;
-            //     state.productVarient.isError = true;
-            // })
+            //Product by id
+            .addCase(getProductById.pending, (state) => {
+                state.productId.isLoading = true;
+            })
+            .addCase(getProductById.fulfilled, (state, action) => {
+                state.productId.isLoading = false;
+                state.productId.data = action.payload;
+            })
+            .addCase(getProductById.rejected, (state) => {
+                state.productId.isLoading = false;
+                state.productId.isError = true;
+            })
     },
 });
 
