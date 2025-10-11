@@ -114,9 +114,8 @@ indexRouter.get("/getSalesAnalytics", getSalesAnalytics);
 indexRouter.post("/addBadgeToProduct/:id", UserAuth, isAdmin, addBadgeToProduct);
 indexRouter.get("/getBestSellingProducts", getBestSellingProducts);
 indexRouter.get("/discoverProduct", discoverProductController)
-
-//Yop May also Like
 indexRouter.get("/youMayAlsoLike/:cartId", youMayAlsoLike)
+
 
 // Product
 indexRouter.post("/createProductVariant", sellerAuth, upload.fields([{ name: "images", maxCount: 10 }]), createProductVariant);

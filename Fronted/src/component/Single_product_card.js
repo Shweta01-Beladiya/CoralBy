@@ -85,6 +85,7 @@ export const SingleProduct = ({ product, onQuickView }) => {
 					{/* Wishlist */}
 					<div
 						className="absolute top-0 right-0 p-3 text-[22px] cursor-pointer z-20"
+						onClick={() => { if (!token) { navigate('/login') } }}
 					>
 						{!token ? (
 							
@@ -128,12 +129,14 @@ export const SingleProduct = ({ product, onQuickView }) => {
 						flex justify-center divide-x divide-[#D1D5DB]"
 					>
 						<button
-							onClick={() => setInCart(true)}
+							onClick={() => {
+								setInCart(true); alert(`Product ID: ${product._id}`);
+							}}
 							className="text-black w-1/2 text-[13px] font-semibold flex items-center justify-center gap-1 
 								hover:bg-[#111827] hover:text-white transition-all duration-300 ease-in-out"
 						>
 							<MdOutlineShoppingBag className="text-[18px]" />
-							{inCart ? "ADDED" : "ADD TO CART"}
+							ADD TO CART
 						</button>
 
 						<button
