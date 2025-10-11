@@ -14,8 +14,6 @@ import Wishlist from '../model/wishlist.model.js';
 import productvarientModel from "../model/productvarient.model.js";
 import paymentModel from "../model/payment.model.js";
 import OrderModel from "../model/order.model.js";
-import orderModel from "../model/order.model.js";
-import cartModel from "../model/cart.model.js";
 
 // Assign badges: NEW, TRENDING, TOP RATED
 export const assignBadges = async () => {

@@ -24,7 +24,7 @@ const productSchema = new mongoose.Schema({
     careInstructions: { type: String },
     origin: { type: String },
     additionalFeatures: [{ type: String }],
-  },
+  }, 
   shippingReturn: {
     freeShipping: { type: String },
     returnPolicy: { type: String },

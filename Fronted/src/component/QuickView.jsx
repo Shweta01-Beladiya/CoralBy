@@ -52,7 +52,21 @@ const QuickView = ({ product, onClose }) => {
     ]);
   };
 
+
+  // Badge Colors
+	const badgeNameColors = {
+		"BEST SELLER": "bg-[#1E40AF]",
+		"TRENDING": "bg-[#16A34A]",
+		"NEW": "bg-[#2563EB]",
+		"BEST DEAL": "bg-[#F59E0B]",
+		"TOP RATED": "bg-[#DC2626]",
+		"CORALBAY CHOICE": "bg-[#F97316]",
+	};
+	const badgeBg = badgeNameColors[product?.badge];
+
   if (!product) return null;
+
+
 
   return (
     <>
@@ -105,17 +119,18 @@ const QuickView = ({ product, onClose }) => {
                     {/* Badge */}
                     {product.badge && (
                       <div
-                        className="max-w-fit text-white text-[10px] sm:text-[12px] font-semibold px-2 sm:px-3 py-1 mb-[6px] rounded shadow-md"
-                        style={{
-                          backgroundColor: product.badgeColor || "#DC2626",
-                        }}
+                        className={`max-w-fit text-white text-[10px] sm:text-[12px] font-semibold px-2 sm:px-3 py-1 mb-[6px] rounded shadow-md ${badgeBg} `}
                       >
                         {product.badge}
                       </div>
                     )}
 
                     <p className="text-[#6B7280] text-[14px] sm:text-[16px] font-medium">
+<<<<<<< HEAD
+                      {product?.brand?.brandName || 'No BrandName'}
+=======
                       {product.brand?.brandName || "No Brand"}
+>>>>>>> 4f59a7cd292699f5f911b5e75a474360b2bb8a4b
                     </p>
                   </div>
                   <div className="border border-[#E5E7EB] text-[18px] sm:text-[20px] text-[#6B7280] rounded-full p-2 flex-shrink-0">

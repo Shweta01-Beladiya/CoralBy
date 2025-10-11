@@ -40,7 +40,18 @@ export const SingleProduct = ({ product, onQuickView }) => {
 		await dispatch(getWishlist())
 	}
 
+	// Badge Colors
+	const badgeNameColors = {
+		"BEST SELLER": "bg-[#1E40AF]",
+		"TRENDING": "bg-[#16A34A]",
+		"NEW": "bg-[#2563EB]",
+		"BEST DEAL": "bg-[#F59E0B]",
+		"TOP RATED": "bg-[#DC2626]",
+		"CORALBAY CHOICE": "bg-[#F97316]",
+	};
+	const badgeBg = badgeNameColors[product?.badge];
 
+	
 
 	return (
 
@@ -51,8 +62,7 @@ export const SingleProduct = ({ product, onQuickView }) => {
 					{/* Badge */}
 					{(product.badge || product.badgeImage) && (
 						<div
-							className="absolute top-3 left-3 text-white text-[12px] font-semibold px-3 py-1 rounded shadow-md flex items-center justify-center z-20"
-							style={{ backgroundColor: product.badgeColor || "#DC2626" }}
+							className={`absolute top-3 left-3 text-white text-[12px]  font-semibold px-3 py-1 rounded shadow-md flex items-center justify-center z-20 ${badgeBg}`}
 						>
 							{product.badge ? (
 								product.badge
@@ -77,16 +87,21 @@ export const SingleProduct = ({ product, onQuickView }) => {
 						className="absolute top-0 right-0 p-3 text-[22px] cursor-pointer z-20"
 						onClick={() => { if (!token) { navigate('/login') } }}
 					>
-
-						{(wishData || []).some((item) => item.productId._id === product._id) ? (
+						{!token ? (
+							
+							<FaRegHeart onClick={() => navigate("/login")} />
+						) : (wishData || []).some((item) => item.productId._id === product._id) ? (
+							
 							<FaHeart
 								className="text-[#F97316]"
 								onClick={() => delWishlist(product._id)}
 							/>
 						) : (
+							
 							<FaRegHeart onClick={() => handleWishlist(product._id)} />
 						)}
 					</div>
+
 
 					{/* Variant Colors */}
 					<div className="product-color flex gap-2 absolute bottom-3 left-1/2 -translate-x-1/2 z-10 group-hover:bottom-[60px] transition-all duration-500">
