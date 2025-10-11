@@ -10,6 +10,7 @@ import CouponModel from "../model/coupon.model.js";
 import axios from "axios";
 import cartModel from "../model/cart.model.js";
 
+const roundToTwo = (num) => Math.round(num * 100) / 100;
 
 export const selectUserAddressController = async (req, res) => {
   try {
