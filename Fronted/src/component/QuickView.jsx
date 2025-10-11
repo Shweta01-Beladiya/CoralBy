@@ -126,11 +126,7 @@ const QuickView = ({ product, onClose }) => {
                     )}
 
                     <p className="text-[#6B7280] text-[14px] sm:text-[16px] font-medium">
-<<<<<<< HEAD
                       {product?.brand?.brandName || 'No BrandName'}
-=======
-                      {product.brand?.brandName || "No Brand"}
->>>>>>> 4f59a7cd292699f5f911b5e75a474360b2bb8a4b
                     </p>
                   </div>
                   <div className="border border-[#E5E7EB] text-[18px] sm:text-[20px] text-[#6B7280] rounded-full p-2 flex-shrink-0">

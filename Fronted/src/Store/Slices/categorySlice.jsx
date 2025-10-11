@@ -33,6 +33,11 @@ export const getProductById = createAsyncThunk(`category/getProductById`, async 
     const response = await axios.get(`${BaseUrl}/api/getProductById/${id}`);
     return response.data.result;
 })
+
+export const getProductByReviews = createAsyncThunk(`category/fetchProductReviews`, async (id) => {
+    const response = await axios.get(`${BaseUrl}/api/getProductReviews/${id}`);
+    return response.data.result;
+})
 // export const getProductVarient = createAsyncThunk('category/fetchProductVariant', async () => {
 //     const response = await axios.get(`${BaseUrl}/api/getAllProductVariant`);
 //     return response.data.result;
@@ -46,7 +51,8 @@ const categorySlice = createSlice({
         subCategory: { isLoading: false, data: [], isError: false },
         inSubCategory: { isLoading: false, data: [], isError: false },
         product: { isLoading: false, data: [], isError: false },
-        productId: { isLoading: false, data: [], isError: false }
+        productId: { isLoading: false, data: [], isError: false },
+        productReviews: { isLoading: false, data: [], isError: false }
         // productVarient: { isLoading: false, data: [], isError: false }
     },
     reducers: {},
@@ -134,6 +140,19 @@ const categorySlice = createSlice({
             .addCase(getProductById.rejected, (state) => {
                 state.productId.isLoading = false;
                 state.productId.isError = true;
+            })
+
+            //Product Reviews
+            .addCase(getProductByReviews.pending, (state) => {
+                state.productReviews.isLoading = true;
+            })
+            .addCase(getProductByReviews.fulfilled, (state, action) => {
+                state.productReviews.isLoading = false;
+                state.productReviews.data = action.payload;
+            })
+            .addCase(getProductByReviews.rejected, (state) => {
+                state.productReviews.isLoading = false;
+                state.productReviews.isError = true;
             })
     },
 });

@@ -1,40 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { FaStar, FaRegStar, FaEye, FaRegHeart, FaChevronDown, FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import thumb1 from '../images/thumb1.png';
-import thumb2 from '../images/thumb2.png';
-import thumb3 from '../images/thumb3.png';
-import thumb4 from '../images/thumb4.png';
-import thumb5 from '../images/thunb5.png';
-
-// Brown 
-import bshoes1 from '../images/bs1.png';
-import bshoes2 from '../images/bs2.png';
-import bshoes3 from '../images/bs3.png';
-import bshoes4 from '../images/bs4.png';
-import bshoes5 from '../images/bs5.png';
-import bshoes6 from '../images/bs6.png';
-
-//white
-import wshoes1 from '../images/ss1.png';
-import wshoes2 from '../images/ss2.png';
-import wshoes3 from '../images/ss3.png';
-import wshoes4 from '../images/ss4.png';
-import wshoes5 from '../images/ss5.png';
-import wshoes6 from '../images/ss6.png';
-
-//Green
-import gshoes1 from '../images/gs1.png';
-import gshoes2 from '../images/gs2.png';
-import gshoes3 from '../images/gs3.png';
-
-//Navy blue
-import nshoes1 from '../images/ns1.png';
-import nshoes2 from '../images/ns1.png';
-
-//Orange
-import oshoes1 from '../images/os1.png';
-import oshoes2 from '../images/os2.png';
-
 import TopBrands from '../images/workspace_premium.png'
 import Delivery from '../images/local_shipping.png'
 import Secure from '../images/local_police.png'
@@ -54,38 +19,18 @@ const ProductDetails = () => {
     const { id } = useParams();
     const dispatch = useDispatch();
 
-
     const [selectedColor, setSelectedColor] = useState("brown");
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedSize, setSelectedSize] = useState(8);
     const [quantity, setQuantity] = useState(1);
     const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
-
-
-    const colorImages = {
-        brown: [bshoes6, bshoes5, bshoes4, bshoes3, bshoes2, bshoes1],
-        white: [wshoes6, wshoes5, wshoes4, wshoes3, wshoes2, wshoes1],
-        green: [gshoes3, gshoes2, gshoes1],
-        navy: [nshoes2, nshoes1],
-        orange: [oshoes2, oshoes1],
-    };
-
-    const colors = [
-        { id: "brown", name: "Brown", image: thumb2 },
-        { id: "navy", name: "Navy", image: thumb1 },
-        { id: "orange", name: "Orange", image: thumb3 },
-        { id: "green", name: "Green", image: thumb4 },
-        { id: "white", name: "White", image: thumb5 },
-    ];
-
-    const sizes = [6, 7, 8, 9, 10, 11, 12];
+    const [selectedVariant, setSelectedVariant] = useState(null);
     const [isProductOpen, setIsProductOpen] = useState(false);
     const [isShippingOpen, setIsShippingOpen] = useState(false);
     const [isWarrantyOpen, setIsWarrantyOpen] = useState(false);
 
     const productSliderRef1 = useRef(null);
     const productSliderRef2 = useRef(null);
-    const productSliderRef3 = useRef(null);
 
 
     useEffect(() => {
@@ -114,7 +59,37 @@ const ProductDetails = () => {
                 return "var(--bg-gray)";
         }
     };
+    useEffect(() => {
+        if (product?.varients?.length > 0) {
+            setSelectedVariant(product.varients[0]);
+            setSelectedImage(product.varients[0].images?.[0]);
+        }
+    }, [product]);
 
+    if (!product) return null;
+
+    // Extract unique color and size options
+    const uniqueColors = [
+        ...new Set(product?.varients?.map((v) => v.color).filter(Boolean)),
+    ];
+    const uniqueSizes = [
+        ...new Set(product?.varients?.map((v) => v.size).filter(Boolean)),
+    ];
+
+    // Helper to get variant by color/size
+    const getVariant = (color, size) => {
+        return product.varients.find(
+            (v) => v.color === color && (!size || v.size === size)
+        );
+    };
+
+    // Add to cart mock
+    const handleAddToCart = () => {
+        if (selectedVariant) {
+            console.log("Add to cart:", selectedVariant);
+            alert(`Added SKU: ${selectedVariant.sku} to cart`);
+        }
+    };
     return (
         <>
             <div className="main_container">
@@ -122,13 +97,14 @@ const ProductDetails = () => {
                     {/* Grid layout */}
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
                         {/* Left side - images */}
-                        <div className="grid grid-cols-2 gap-3">
-                            {colorImages[selectedColor].map((img, i) => (
+                        <div className="grid xl:grid-cols-2 md:grid-cols-4 grid-cols-2  gap-3">
+                            {selectedVariant?.images?.map((img, i) => (
                                 <img
                                     key={i}
                                     src={img}
-                                    alt={`thumb-${i}`}
-                                    className="w-full h-auto rounded-lg cursor-pointer object-cover"
+                                    alt={`variant-${i}`}
+                                    className={`w-full h-auto rounded-lg cursor-pointer object-cover ${selectedImage === img ? "ring-2 ring-black" : ""
+                                        }`}
                                     onClick={() => setSelectedImage(img)}
                                 />
                             ))}
@@ -139,7 +115,7 @@ const ProductDetails = () => {
                             <div>
                                 <span className="text-[var(--text-white)] text-xs font-bold px-2 py-1 rounded " style={{ backgroundColor: getBadgeColor(product.badge) }}>{product.badge}</span>
                                 <h2 className="text-md text-[var(--text-gray)] font-semibold  mt-1">
-                                    {product.brand || 'No barnd'}
+                                    {product.brand?.brandName || 'No barnd'}
                                 </h2>
                             </div>
                             <h1 className="text-2xl font-bold mt-2">
@@ -185,19 +161,35 @@ const ProductDetails = () => {
                                     </span>
                                 </p>
                                 <div className="flex space-x-3 mt-2">
-                                    {colors.map((c) => (
-                                        <button
-                                            key={c.id}
-                                            onClick={() => {
-                                                setSelectedColor(c.id);
-                                                setSelectedImage(null); // reset main image
-                                            }}
-                                            className={`w-16 h-16 rounded border-2 overflow-hidden 
-                    ${selectedColor === c.id ? "ring-2 ring-black" : "border-gray-300"}`}
-                                        >
-                                            <img src={c.image} alt={c.name} className="w-full h-full object-cover" />
-                                        </button>
-                                    ))}
+                                    {uniqueColors.length > 0 && (
+                                        <div className="mt-6">
+                                            <h3 className="font-medium text-gray-800 mb-2">Color</h3>
+                                            <div className="flex space-x-3">
+                                                {uniqueColors.map((color, i) => {
+                                                    const variant = getVariant(color);
+                                                    return (
+                                                        <button
+                                                            key={i}
+                                                            onClick={() => {
+                                                                setSelectedVariant(variant);
+                                                                setSelectedImage(variant.images?.[0]);
+                                                            }}
+                                                            className={`w-16 h-16 rounded border-2 overflow-hidden ${selectedVariant?.color === color
+                                                                ? "ring-2 ring-black"
+                                                                : "border-gray-300"
+                                                                }`}
+                                                        >
+                                                            <img
+                                                                src={variant?.images?.[0]}
+                                                                alt={color}
+                                                                className="w-full h-full object-cover"
+                                                            />
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             {/* Size selection */}
@@ -206,30 +198,37 @@ const ProductDetails = () => {
                                     Size: <span className="text-[var(--text-gray)]">{selectedSize}</span>
                                 </p>
                                 <div className="flex flex-wrap md:flex-nowrap  space-x-2 mt-2">
-                                    {sizes.map((s) => {
-                                        const isDisabled = s === 12; // Disable size 12
+                                    {uniqueSizes.length > 0 && (
+                                        <div className="mt-6">
+                                            <h3 className="font-medium text-gray-800 mb-2">Size</h3>
+                                            <div className="flex flex-wrap gap-2">
+                                                {uniqueSizes.map((size, i) => {
+                                                    const variant = getVariant(selectedVariant?.color, size);
+                                                    const isDisabled = !variant;
 
-                                        return (
-                                            <button
-                                                key={s}
-                                                onClick={() => !isDisabled && setSelectedSize(s)}
-                                                disabled={isDisabled}
-                                                className={`px-3 py-1 border rounded-md relative
-                                         ${isDisabled
-                                                        ? "text-gray-400 border-gray-200 cursor-not-allowed bg-gray-50"
-                                                        : selectedSize === s
-                                                            ? "bg-black text-white"
-                                                            : "border-gray-300"
-                                                    }`}
-                                            >
-                                                {s}
-                                                {/* Draw cross line if disabled */}
-                                                {isDisabled && (
-                                                    <span className="absolute left-0 top-1/2 w-full h-[2px] bg-gray-400 rotate-[-20deg]"></span>
-                                                )}
-                                            </button>
-                                        );
-                                    })}
+                                                    return (
+                                                        <button
+                                                            key={i}
+                                                            disabled={isDisabled}
+                                                            onClick={() =>
+                                                                !isDisabled &&
+                                                                (setSelectedVariant(variant),
+                                                                    setSelectedImage(variant.images?.[0]))
+                                                            }
+                                                            className={`px-3 py-1 border rounded-md text-sm ${isDisabled
+                                                                ? "text-gray-400 border-gray-200 cursor-not-allowed"
+                                                                : selectedVariant?.size === size
+                                                                    ? "bg-black text-white"
+                                                                    : "border-gray-300 text-gray-800 hover:bg-gray-100"
+                                                                }`}
+                                                        >
+                                                            {size}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                     <button onClick={() => setIsSizeGuideOpen(true)} className="ml-3 underline text-gray-600 text-sm">
                                         SIZE GUIDE
                                     </button>
@@ -394,9 +393,9 @@ const ProductDetails = () => {
                                             <div className="flex items-center text-lg">{product?.warrantySupport?.customerSupport?.available}</div>
                                         </div>
                                         <div className="mb-5"><p className="text-[var(--bg-blue)] underline ">FAQs:</p>
-                                            <p className="text-sm">Runs true to size.</p>
-                                            <p className="text-sm">Can be paired with formal or casual wear.</p>
-                                            <p className="text-sm">Easy returns within 30 days.</p>
+                                            {product?.warrantySupport?.faqs?.map((f, i) => (
+                                                <p key={i} className="text-sm">• {f}</p>
+                                            ))}
                                         </div>
                                     </div>}
                                 </div>
@@ -475,81 +474,95 @@ const ProductDetails = () => {
                 <div className=" mx-auto bg-white">
                     <h2 className="text-xl font-bold mb-6 text-[var(--bg-dark)]">Product Description</h2>
 
-                    <div className="mb-7">
-                        <h3 className="text-base font-semibold mb-4 text-[var(--bg-dark)]">Composition</h3>
+                    {selectedVariant && (
+                        <>
+                            <div className="mb-7">
+                                <h3 className="text-base font-semibold mb-4 text-[var(--bg-dark)]">Composition</h3>
 
-                        {/* Table-like layout */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                            {/* Left Column */}
-                            <div className="space-y-2">
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Brand:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">Polo Ralph Lauren</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Brand Color:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">BROWN/BLACK–PSYCHIC BROWNE–BLACK</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Color:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">Brown</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Occasion:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">Casual</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Size:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">8 AU/UK Size</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Article Number:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">CD5010-401</span>
+                                {/* Table-like layout */}
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                                    {/* Left Column */}
+                                    <div className="space-y-2">
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Brand:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {product?.brand?.brandName || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Color:</span>
+                                            <span className="text-sm text-[var(--bg-gray)] capitalize">
+                                                {selectedVariant?.color || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Occasion:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.Occasion || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Size:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.size || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Article Number:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.Artical_Number || "N/A"}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    {/* Right Column */}
+                                    <div className="space-y-2 lg:border-s border-0 lg:ps-2 ps-0">
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Outer Material:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.Outer_material || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Model Name:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.Model_name || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Ideal For:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.Ideal_for || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Type For Casual:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.Type_For_Casual || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Euro Size:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.Euro_Size || "N/A"}
+                                            </span>
+                                        </div>
+                                        <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
+                                            <span className="text-sm font-bold text-[var(--bg-dark)]">Heel Height:</span>
+                                            <span className="text-sm text-[var(--bg-gray)]">
+                                                {selectedVariant?.Heel_Height || "N/A"}
+                                            </span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Right Column */}
-                            <div className="space-y-2 lg:border-s border-0 lg:ps-2 ps-0 ">
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Outer material:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">Suede</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Model name:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">SB Heritage Vulc</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Ideal for:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">Men</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Type For Casual:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">Sneakers</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Euro Size:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">42 EU</span>
-                                </div>
-                                <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
-                                    <span className="text-sm font-bold text-[var(--bg-dark)]">Heel Height:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">1.5 C.M.</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p className="text-sm text-[var(--bg-gray)] mb-3">Step up your footwear game with the Urban Runner Sneakers. Designed for people who never stop moving, these sneakers blend sleek style with unmatched comfort and functionality. The breathable mesh upper keeps your feet cool while the cushioned insole supports every step you take.</p>
-                        <p className="text-sm text-[var(--bg-gray)] mb-3">
-                            Whether you're running errands, hitting the gym, or exploring the city streets, these lightweight sneakers are built to keep you comfortable all day long. The lace-up design paired with an elastic comfort strap ensures the perfect fit without hassle. Choose from four versatile colors to complement any outfit effortlessly.
-                        </p>
-                        <p className="text-sm text-[var(--bg-gray)] mb-3">
-                            The synthetic sole offers high traction and stability, ensuring you can confidently move through urban and outdoor environments alike. Caring for your sneakers is simple   wipe clean with a cloth and air dry.
-                        </p>
-                        <p className="text-sm text-[var(--bg-gray)] mb-3">
-                            With a 1-year warranty and eco-friendly packaging, these sneakers not only support your lifestyle but also the planet. Experience comfort, style, and peace of mind with the Urban Runner Sneakers — where performance meets fashion.
-                        </p>
-                    </div>
+                            {/* Optional description */}
+                            <p className="text-sm text-[var(--bg-gray)] mb-3">
+                                {product?.description}
+                            </p>
+                        </>
+                    )}
                 </div>
 
                 {/* About the Product  */}
@@ -569,19 +582,19 @@ const ProductDetails = () => {
                             <div className="space-y-2">
                                 <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
                                     <span className="text-sm font-bold text-[var(--bg-dark)]">Supplier Name:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">Polo Ralph Lauren</span>
+                                    <span className="text-sm text-[var(--bg-gray)]">{product?.sellerId?.name || 'No Name'}</span>
                                 </div>
                                 <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
                                     <span className="text-sm font-bold text-[var(--bg-dark)]">Location:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">Melbourne, Australia</span>
-                                </div>
+                                    <span className="text-sm text-[var(--bg-gray)]">{product.sellerId?.location || 'No location'}</span>
+                                </div>                             
                                 <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
                                     <span className="text-sm font-bold text-[var(--bg-dark)]">Contact:</span>
-                                    <span className="text-sm text-[var(--bg-gray)] truncate">support@poloralphlauren.com</span>
+                                    <span className="text-sm text-[var(--bg-gray)] truncate">{product.sellerId?.email || 'No email'}</span>
                                 </div>
                                 <div className="grid grid-cols-[120px_1fr] gap-4 py-1">
                                     <span className="text-sm font-bold text-[var(--bg-dark)]">Phone:</span>
-                                    <span className="text-sm text-[var(--bg-gray)]">+61 3 9000 0000</span>
+                                    <span className="text-sm text-[var(--bg-gray)]">+91 {product.sellerId?.mobileNo || 'No email'}</span>
                                 </div>
                             </div>
                         </div>
@@ -595,7 +608,6 @@ const ProductDetails = () => {
 
                 {/* Recently View */}
                 <section className="bg-[#FFFFFF] w-full py-5">
-
                     {/* Title */}
                     <div className="flex items-center justify-between mt-8 mb-5">
                         <h1 className="text-2xl md:text-3xl font-semibold  text-[#0A0E17]">
