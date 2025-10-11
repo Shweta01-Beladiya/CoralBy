@@ -45,8 +45,16 @@ import { MdOutlineEmail, MdOutlineLocalPhone, MdOutlineShoppingBag } from "react
 import SizeGuide from "../component/SizeGuide";
 import Cmn_product_slider from "../component/Cmn_product_slider";
 import StarRating from "../component/StarRating";
+import { useParams } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { getProductById } from "../Store/Slices/categorySlice";
 
 const ProductDetails = () => {
+
+    const { id } = useParams();
+    const dispatch = useDispatch();
+
+
     const [selectedColor, setSelectedColor] = useState("brown");
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedSize, setSelectedSize] = useState(8);
@@ -79,6 +87,34 @@ const ProductDetails = () => {
     const productSliderRef2 = useRef(null);
     const productSliderRef3 = useRef(null);
 
+
+    useEffect(() => {
+        dispatch(getProductById(id));
+    }, [id]);
+
+    const product = useSelector((state) => state.category.productId.data);
+    console.log("product>>>>>>", product);
+
+
+    const getBadgeColor = (badge) => {
+        switch (badge?.toUpperCase()) {
+            case "TOP RATED":
+                return "var(--bg-red)";
+            case "BEST DEAL":
+                return "var(--bg-yellow)";
+            case "CORALBAY CHOICE":
+                return "var(--bg-orange)";
+            case "BEST SELLER":
+                return "var(--bg-dark-blue)";
+            case "NEW":
+                return "var(--bg-blue)";
+            case "TRENDING":
+                return "var(--text-green)";
+            default:
+                return "var(--bg-gray)";
+        }
+    };
+
     return (
         <>
             <div className="main_container">
@@ -101,13 +137,13 @@ const ProductDetails = () => {
                         {/* Right side - product details */}
                         <div>
                             <div>
-                                <span className="text-[var(--text-white)] text-xs font-bold px-2 py-1 rounded  bg-[var(--bg-blue)]">New</span>
+                                <span className="text-[var(--text-white)] text-xs font-bold px-2 py-1 rounded " style={{ backgroundColor: getBadgeColor(product.badge) }}>{product.badge}</span>
                                 <h2 className="text-md text-[var(--text-gray)] font-semibold  mt-1">
-                                    Polo Ralph Lauren
+                                    {product.brand || 'No barnd'}
                                 </h2>
                             </div>
                             <h1 className="text-2xl font-bold mt-2">
-                                Premium Tasselled Leather Loafers – Formal Men’s Footwear
+                                {product.title}
                             </h1>
 
                             {/* Rating */}
@@ -116,8 +152,14 @@ const ProductDetails = () => {
                                     <b>SKU:</b> <span>CB-650490</span>
                                 </div>
                                 <div className="flex items-center space-x-1 text-yellow-500">
-                                    <FaStar /> <FaStar /> <FaStar /> <FaStar /> <FaRegStar />
-                                    <span className="ml-2 text-gray-600 text-sm font-semibold">(06) & Review (02)</span>
+                                    {[...Array(5)].map((_, i) => (
+                                        i < Math.round(product?.rating?.average || 0) ?
+                                            <FaStar key={i} /> :
+                                            <FaRegStar key={i} />
+                                    ))}
+                                    <span className="ml-2 text-gray-600 text-sm font-semibold">
+                                        ({product?.rating?.average || 0}) Reviews ({product?.rating?.totalReviews || 0})
+                                    </span>
                                 </div>
                             </div>
 
@@ -130,9 +172,9 @@ const ProductDetails = () => {
                                 <span className="text-[var(--text-gray)] text-sm ml-2">(Include IST)</span>
                             </div>
 
-                            <div className="mt-2 flex items-center font-semibold text-[var(--text-gray)]"><FaEye className="me-1" />145 People are viewing this right now.</div>
+                            <div className="mt-2 flex items-center font-semibold text-[var(--text-gray)]"><FaEye className="me-1" />{product.view} People are viewing this right now.</div>
                             {/* Stock info */}
-                            <div className="text-[var(--text-green)] bg-[var(--bg-light-green)] flex items-center px-2 py-3 font-semibold rounded mt-2"><PiCodesandboxLogoFill className="text-xl me-2" />53 Products sold in last 12 hours</div>
+                            <div className="text-[var(--text-green)] bg-[var(--bg-light-green)] flex items-center px-2 py-3 font-semibold rounded mt-2"><PiCodesandboxLogoFill className="text-xl me-2" />{product.last12HoursSold} Products sold in last 12 hours</div>
 
                             {/* Color selection */}
                             <div className="mt-5">
@@ -272,28 +314,28 @@ const ProductDetails = () => {
                                         />
                                     </button>
                                     {isProductOpen && <div className="pb-4 text-gray-600">
-                                        <div className="mb-5"><b>Material:</b>
-                                            <p className="text-sm">Breathable mesh upper with synthetic sole for lightweight and durable wear.</p>
+                                        <div className="mb-4"><b>Material:</b>
+                                            <p className="text-sm">{product?.productDetails?.material}</p>
                                         </div>
-                                        <div className="mb-5"><b>Fit:</b>
-                                            <p className="text-sm">True to size with cushioned insole for arch support and all-day comfort.</p>
+                                        <div className="mb-4"><b>Fit:</b>
+                                            <p className="text-sm">{product?.productDetails?.fit}</p>
                                         </div>
-                                        <div className="mb-5"><b>Closure:</b>
-                                            <p className="text-sm">Lace-up design with elastic comfort strap for easy adjustment.</p>
+                                        <div className="mb-4"><b>Closure:</b>
+                                            <p className="text-sm">{product?.productDetails?.closure}</p>
                                         </div>
-                                        <div className="mb-5"><b>Weight:</b>
-                                            <p className="text-sm">300g per shoe for effortless movement.</p>
+                                        <div className="mb-4"><b>Weight:</b>
+                                            <p className="text-sm">{product?.productDetails?.weight}</p>
                                         </div>
-                                        <div className="mb-5"><b>Care Instructions:</b>
-                                            <p className="text-sm">Wipe with a damp cloth and air dry. Avoid machine wash.</p>
+                                        <div className="mb-4"><b>Care Instructions:</b>
+                                            <p className="text-sm">{product?.productDetails?.careInstructions}</p>
                                         </div>
-                                        <div className="mb-5"><b>Origin:</b>
-                                            <p className="text-sm">Made in Australia using premium Shipping & Returns and sustainable processes.</p>
+                                        <div className="mb-4"><b>Origin:</b>
+                                            <p className="text-sm">{product?.productDetails?.origin}</p>
                                         </div>
-                                        <div className="mb-5"><b>Additional Features:</b>
-                                            <p className="text-sm">High-traction sole for slip-resistant grip</p>
-                                            <p className="text-sm">Shock absorption for comfort</p>
-                                            <p className="text-sm">Eco-friendly packaging</p>
+                                        <div className="mb-4"><b>Additional Features:</b>
+                                            {product?.productDetails?.additionalFeatures?.map((feature, i) => (
+                                                <p key={i} className="text-sm">• {feature}</p>
+                                            ))}
                                         </div>
                                     </div>}
                                 </div>
@@ -309,22 +351,22 @@ const ProductDetails = () => {
                                     </button>
                                     {isShippingOpen && <div className="pb-4 text-gray-600">
                                         <div className="mb-5"><b>Free Shipping:</b>
-                                            <p className="text-sm">On orders above AU$500, express delivery in 2–3 business days within Australia.</p>
+                                            <p className="text-sm">{product?.shippingReturn?.freeShipping}</p>
                                         </div>
                                         <div className="mb-5"><b>Return Policy:</b>
-                                            <p className="text-sm">30-day return window for unused products with original packaging and tags.</p>
+                                            <p className="text-sm">{product?.shippingReturn?.returnPolicy}</p>
                                         </div>
                                         <div className="mb-5"><b>International Shipping:</b>
-                                            <p>Available with surcharge depending on destination.</p>
+                                            <p>{product?.shippingReturn?.internationalShipping}</p>
                                         </div>
                                         <div className="mb-5"><b>Packaging:</b>
-                                            <p className="text-sm">Recyclable and biodegradable packaging to support the environment.</p>
+                                            <p className="text-sm">{product?.shippingReturn?.packaging}</p>
                                         </div>
                                         <div className="mb-5"><b>Delivery Tracking:</b>
                                             <p className="text-sm">Real-time updates via email and SMS from dispatch to doorstep.</p>
                                         </div>
                                         <div className="mb-5"><b>Order Processing:</b>
-                                            <p className="text-sm">Ships within 24 hours excluding holidays and weekends.</p>
+                                            <p className="text-sm">{product?.shippingReturn?.orderProcessing}</p>
                                         </div>
                                     </div>}
                                 </div>
@@ -340,15 +382,16 @@ const ProductDetails = () => {
                                     </button>
                                     {isWarrantyOpen && <div className="pb-4 text-gray-600">
                                         <div className="mb-5"><b>Warranty:</b>
-                                            <p className="text-sm">1-year manufacturer warranty for defects in Shipping & Returns or workmanship.</p>
+                                            <p className="text-sm">{product?.warrantySupport?.warranty || ""}</p>
                                         </div>
                                         <div className="mb-5"><b>Care Tips:</b>
-                                            <p className="text-sm">Avoid excess moisture and heat; clean with soft cloth; air dry.</p>
+                                            <p className="text-sm">{product?.warrantySupport?.careTips || ""}</p>
                                         </div>
                                         <div className="mb-5"><p className="text-[var(--bg-blue)] underline ">Customer Support:</p>
                                             <p className="text-sm mb-2">24/7 assistance available through:</p>
-                                            <div className="flex items-center text-lg"><MdOutlineEmail className="me-2" /><p className="underline">support@poloralphlauren.com</p></div>
-                                            <div className="flex items-center text-lg"><MdOutlineLocalPhone className="me-2" /><p className="underline">+61 3 9000 0000</p></div>
+                                            <div className="flex items-center text-lg"><MdOutlineEmail className="me-2" /><p className="underline">{product?.warrantySupport?.customerSupport?.email}</p></div>
+                                            <div className="flex items-center text-lg"><MdOutlineLocalPhone className="me-2" /><p className="underline"> {product?.warrantySupport?.customerSupport?.phone}</p></div>
+                                            <div className="flex items-center text-lg">{product?.warrantySupport?.customerSupport?.available}</div>
                                         </div>
                                         <div className="mb-5"><p className="text-[var(--bg-blue)] underline ">FAQs:</p>
                                             <p className="text-sm">Runs true to size.</p>
@@ -556,7 +599,7 @@ const ProductDetails = () => {
                     {/* Title */}
                     <div className="flex items-center justify-between mt-8 mb-5">
                         <h1 className="text-2xl md:text-3xl font-semibold  text-[#0A0E17]">
-                           Recently View
+                            Recently View
                         </h1>
 
                         {/* Navigation Arrows */}
@@ -587,7 +630,7 @@ const ProductDetails = () => {
                     {/* Title */}
                     <div className="flex items-center justify-between mt-8 mb-5">
                         <h1 className="text-2xl md:text-3xl font-semibold  text-[#0A0E17]">
-                          Cusomer also Liked
+                            Cusomer also Liked
                         </h1>
 
                         {/* Navigation Arrows */}

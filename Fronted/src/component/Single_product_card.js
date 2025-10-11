@@ -40,6 +40,28 @@ export const SingleProduct = ({ product, onQuickView }) => {
 		await dispatch(getWishlist())
 	}
 
+	const handleNavigate = (id) => {
+		navigate(`/prodctDetails/${id}`);
+	}
+
+	const getBadgeColor = (badge) => {
+		switch (badge?.toUpperCase()) {
+			case "TOP RATED":
+				return "var(--bg-red)" ; 
+			case "BEST DEAL":
+				return "var(--bg-yellow)" ;
+			case "CORALBAY CHOICE":
+				return "var(--bg-orange)" ;
+			case "BEST SELLER":
+				return "var(--bg-dark-blue)" ;
+			case "NEW":
+				return "var(--bg-blue)" ;
+			case "TRENDING":
+				return "var(--text-green)" ;
+			default:
+				return "var(--bg-gray)" ;
+		}
+	};
 	// Badge Colors
 	const badgeNameColors = {
 		"BEST SELLER": "bg-[#1E40AF]",
@@ -52,16 +74,17 @@ export const SingleProduct = ({ product, onQuickView }) => {
 	const badgeBg = badgeNameColors[product?.badge];
 
 	
-
 	return (
 
-		<div className="product_card bg-[#F9FAFB] p-2 h-fit group rounded-xl shadow hover:shadow-lg transition-all duration-300">
+		<div className="product_card bg-[#F9FAFB] p-2 h-fit group rounded-xl shadow hover:shadow-lg transition-all duration-300" >
 			<div className="flex flex-col">
 				{/* IMAGE PART */}
 				<div className="relative rounded overflow-hidden bg-[#E5E7EB]">
 					{/* Badge */}
 					{(product.badge || product.badgeImage) && (
 						<div
+							className="absolute top-3 left-3 text-white text-[12px] font-semibold px-3 py-1 rounded shadow-md flex items-center justify-center z-20"
+							style={{ backgroundColor: getBadgeColor(product.badge) }}
 							className={`absolute top-3 left-3 text-white text-[12px]  font-semibold px-3 py-1 rounded shadow-md flex items-center justify-center z-20 ${badgeBg}`}
 						>
 							{product.badge ? (
@@ -150,7 +173,7 @@ export const SingleProduct = ({ product, onQuickView }) => {
 				</div>
 
 				{/* INFO PART */}
-				<div className="mt-2 px-3 pb-2">
+				<div className="mt-2 px-3 pb-2" onClick={() => handleNavigate(product._id)}>
 					<p className="text-[#6B7280] text-[16px] font-medium">
 						{product.brand?.brandName || "No Brand"}
 					</p>
