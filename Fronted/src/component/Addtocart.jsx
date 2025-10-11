@@ -15,17 +15,17 @@ import '../styles/r_style.css';
 import cart from '../images/cart.jpg';
 import fram from '../images/Frame.jpg';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchAddToCartData } from '../Store/Slices/addToCartSlice';
+import { fetchAddToCartData, fetchRemoveFromCart } from '../Store/Slices/addToCartSlice';
 
 
 function Addtocart() {
 
     const dispatch = useDispatch();
 
-    const cartData = useSelector((state) => state.addToCart);
-    console.log("Cart Data from Redux:", cartData);
-    const [cartItems, setCartItems] = useState([]);
+    const { cartData } = useSelector((state) => state.addToCart);
+    // console.log("Cart Data from Redux:", cartData);
 
+    const [cartItems, setCartItems] = useState([]);
 
     useEffect(() => {
         dispatch(fetchAddToCartData());
@@ -42,12 +42,12 @@ function Addtocart() {
                 size: item.productVarientId?.size || "N/A",
                 price: item.productVarientId?.price?.discounted || 0,
                 quantity: item.quantity || 1,
+                productId: item.productId?._id || null,
+                productVarientId: item.productVarientId?._id || null,
             }));
             setCartItems(mappedItems);
         }
     }, [cartData]);
-
-
 
 
     const [viewState, setViewState] = useState('add-first');
@@ -203,18 +203,29 @@ function Addtocart() {
     const [zipCode, setZipCode] = useState("");
 
     const updateQuantity = (id, change) => {
-        setCartItems(items =>
-            items.map(item =>
+        setCartItems((items) =>
+            items.map((item) =>
                 item.id === id
-                    ? { ...item, quantity: Math.max(0, item.quantity + change) }
+                    ? { ...item, quantity: Math.max(1, item.quantity + change) }
                     : item
-            ).filter(item => item.quantity > 0)
+            )
         );
     };
 
-    const removeItem = (id) => {
-        setCartItems(items => items.filter(item => item.id !== id));
-    }
+    const removeItem = (productId, productVarientId) => {
+        dispatch(fetchRemoveFromCart({ productId, productVarientId }))
+            .unwrap()
+            .then(() => {
+                setCartItems((items) =>
+                    items.filter(
+                        (item) =>
+                            item.productId !== productId ||
+                            item.productVarientId !== productVarientId
+                    )
+                );
+            })
+            .catch((err) => console.error("Remove failed:", err));
+    };
 
     // Address form state
     const [addressForm, setAddressForm] = useState({
@@ -440,7 +451,7 @@ function Addtocart() {
                                         </td>
                                         <td className="px-4 py-3 text-center">
                                             <button
-                                                onClick={() => removeItem(item.id)}
+                                                onClick={() => removeItem(item.productId, item.productVarientId)}
                                                 className="text-gray-400 hover:text-red-500"
                                             >
                                                 <Trash2 className="w-5 h-5" />
