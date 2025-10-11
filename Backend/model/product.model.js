@@ -1,4 +1,6 @@
 import mongoose from "mongoose";
+import  updateProductBadge  from "../cron/badgeUpdater.js";
+
 const productSchema = new mongoose.Schema({
   sellerId: { type: mongoose.Schema.Types.ObjectId, ref: "seller", required: true },
   brand: { type: mongoose.Schema.Types.ObjectId, ref: "Brand", required: true },
@@ -11,7 +13,7 @@ const productSchema = new mongoose.Schema({
   badge: {
     type: String,
     enum: ["NEW", "TRENDING", "BEST SELLER", "BEST DEAL", "TOP RATED", "CORALBAY CHOICE", null],
-    default: null
+    default: "NEW"
   },
   rating: { average: { type: Number, default: 0 }, totalReviews: { type: Number, default: 0 } },
   productDetails: {
@@ -22,7 +24,7 @@ const productSchema = new mongoose.Schema({
     careInstructions: { type: String },
     origin: { type: String },
     additionalFeatures: [{ type: String }],
-  },
+  }, 
   shippingReturn: {
     freeShipping: { type: String },
     returnPolicy: { type: String },
@@ -59,5 +61,10 @@ const productSchema = new mongoose.Schema({
   sold: { type: Number, default: 0 },
   isActive: { type: Boolean, default: true }
 }, { timestamps: true });
+
+
+productSchema.post("save", async function (doc) {
+  await updateProductBadge(doc._id);
+});
 
 export default mongoose.model("Product", productSchema);

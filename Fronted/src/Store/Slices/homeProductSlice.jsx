@@ -9,7 +9,7 @@ export const fetchCelebrateProduct = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get(`${BaseUrl}/api/getBestSellingProducts`);
-            return response.data;
+            return response?.data?.result;
         } catch (error) {
             console.log("Axios error:", error.response);
             return rejectWithValue(
@@ -25,7 +25,7 @@ export const fetchTrendingItems = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get(`${BaseUrl}/api/getTrendingProducts`);
-            return response.data;
+            return response?.data?.result;
         } catch (error) {
             console.log("Axios error:", error.response);
             return rejectWithValue(
@@ -40,8 +40,8 @@ export const fetchDiscoverNew = createAsyncThunk(
     "homeProduct/fetchDiscover",
     async (_, { rejectWithValue }) => {
         try {
-            const response = await axios.get(`${BaseUrl}/api/discover/product`);
-            return response.data;
+            const response = await axios.get(`${BaseUrl}/api/discoverProduct`);
+            return response?.data?.result;
         } catch (error) {
             console.log("Axios error:", error.response);
             return rejectWithValue(
@@ -57,7 +57,7 @@ export const fetchCustomerFav = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get(`${BaseUrl}/api/getMostWishlistedProducts`);
-            return response.data;
+            return response?.data?.result;
         } catch (error) {
             console.log("Axios error:", error.response);
             return rejectWithValue(

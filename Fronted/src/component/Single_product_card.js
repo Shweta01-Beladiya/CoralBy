@@ -62,6 +62,18 @@ export const SingleProduct = ({ product, onQuickView }) => {
 				return "var(--bg-gray)" ;
 		}
 	};
+	// Badge Colors
+	const badgeNameColors = {
+		"BEST SELLER": "bg-[#1E40AF]",
+		"TRENDING": "bg-[#16A34A]",
+		"NEW": "bg-[#2563EB]",
+		"BEST DEAL": "bg-[#F59E0B]",
+		"TOP RATED": "bg-[#DC2626]",
+		"CORALBAY CHOICE": "bg-[#F97316]",
+	};
+	const badgeBg = badgeNameColors[product?.badge];
+
+	
 	return (
 
 		<div className="product_card bg-[#F9FAFB] p-2 h-fit group rounded-xl shadow hover:shadow-lg transition-all duration-300" >
@@ -73,6 +85,7 @@ export const SingleProduct = ({ product, onQuickView }) => {
 						<div
 							className="absolute top-3 left-3 text-white text-[12px] font-semibold px-3 py-1 rounded shadow-md flex items-center justify-center z-20"
 							style={{ backgroundColor: getBadgeColor(product.badge) }}
+							className={`absolute top-3 left-3 text-white text-[12px]  font-semibold px-3 py-1 rounded shadow-md flex items-center justify-center z-20 ${badgeBg}`}
 						>
 							{product.badge ? (
 								product.badge
@@ -97,16 +110,21 @@ export const SingleProduct = ({ product, onQuickView }) => {
 						className="absolute top-0 right-0 p-3 text-[22px] cursor-pointer z-20"
 						onClick={() => { if (!token) { navigate('/login') } }}
 					>
-
-						{(wishData || []).some((item) => item.productId._id === product._id) ? (
+						{!token ? (
+							
+							<FaRegHeart onClick={() => navigate("/login")} />
+						) : (wishData || []).some((item) => item.productId._id === product._id) ? (
+							
 							<FaHeart
 								className="text-[#F97316]"
 								onClick={() => delWishlist(product._id)}
 							/>
 						) : (
+							
 							<FaRegHeart onClick={() => handleWishlist(product._id)} />
 						)}
 					</div>
+
 
 					{/* Variant Colors */}
 					<div className="product-color flex gap-2 absolute bottom-3 left-1/2 -translate-x-1/2 z-10 group-hover:bottom-[60px] transition-all duration-500">
@@ -134,12 +152,14 @@ export const SingleProduct = ({ product, onQuickView }) => {
 						flex justify-center divide-x divide-[#D1D5DB]"
 					>
 						<button
-							onClick={() => setInCart(true)}
+							onClick={() => {
+								setInCart(true); alert(`Product ID: ${product._id}`);
+							}}
 							className="text-black w-1/2 text-[13px] font-semibold flex items-center justify-center gap-1 
 								hover:bg-[#111827] hover:text-white transition-all duration-300 ease-in-out"
 						>
 							<MdOutlineShoppingBag className="text-[18px]" />
-							{inCart ? "ADDED" : "ADD TO CART"}
+							ADD TO CART
 						</button>
 
 						<button

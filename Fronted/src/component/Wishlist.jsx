@@ -53,6 +53,16 @@ export default function Wishlist({ viewType }) {
         await dispatch(removeWishlist(pid))
         await dispatch(getWishlist())
     }
+
+    // Badge Colors
+	const badgeNameColors = {
+		"BEST SELLER": "bg-[#1E40AF]",
+		"TRENDING": "bg-[#16A34A]",
+		"NEW": "bg-[#2563EB]",
+		"BEST DEAL": "bg-[#F59E0B]",
+		"TOP RATED": "bg-[#DC2626]",
+		"CORALBAY CHOICE": "bg-[#F97316]",
+	};
     
 
 
@@ -65,6 +75,7 @@ export default function Wishlist({ viewType }) {
                     wishProducts.map((product) => {
                         const variantIndex = activeVariants[product._id] || 0;
                         const currentVariant = product.varientId?.[variantIndex];
+	                    const badgeBg = badgeNameColors[product?.badge];
 
 
                         return (
@@ -75,8 +86,8 @@ export default function Wishlist({ viewType }) {
                                 {/* Badge */}
                                 { product.badge && (
                                     <div
-                                        className="absolute top-3 left-3 text-white text-[12px] font-semibold px-3 py-1 rounded shadow-md flex items-center justify-center z-20"
-                                        style={{ backgroundColor: product.badgeColor || "#DC2626" }}
+                                        className={`absolute top-3 left-3 text-white text-[12px] font-semibold px-3 py-1 rounded shadow-md flex items-center justify-center z-20 ${badgeBg}`}
+                                        // style={{ backgroundColor: product.badgeColor || "#DC2626" }}
                                     >
                                         {product.badge}
                                     </div>
