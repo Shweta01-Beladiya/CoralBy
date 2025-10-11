@@ -1,4 +1,5 @@
 import cron from "node-cron";
+import mongoose from "mongoose";
 import Product from "../model/product.model.js";
 import Order from "../model/order.model.js";
 import ProductVariant from "../model/productvarient.model.js";
@@ -12,13 +13,17 @@ import ProductVariant from "../model/productvarient.model.js";
  * 4️⃣ BEST DEAL    (≥ 30% discount)
  * 5️⃣ NEW (default)
  */
-const updateProductBadge = async (product) => {
+const updateProductBadge = async (productId) => {
   try {
     const now = new Date();
     const twelveHoursAgo = new Date(now - 12 * 60 * 60 * 1000); // last 12 hours
     const sevenDaysAgo = new Date(now - 7 * 24 * 60 * 60 * 1000); // last 7 days
 
-    let badge = "NEW"; // default badge
+    // Fetch product as full document
+    const product = await Product.findById(productId);
+    if (!product) return;
+
+    let badge = "NEW"; // default
 
     // 🥇 1️⃣ BEST SELLER
     const bestSeller = await Order.aggregate([
@@ -38,7 +43,7 @@ const updateProductBadge = async (product) => {
       badge = "TOP RATED";
     }
 
-    // ⚡ 3️⃣ TRENDING (10+ paid orders in last 7 days)
+    // ⚡ 3️⃣ TRENDING
     else {
       const trendingOrders = await Order.countDocuments({
         "products.productId": product._id,
@@ -49,15 +54,13 @@ const updateProductBadge = async (product) => {
       if (trendingOrders >= 10) badge = "TRENDING";
     }
 
-    // 💸 4️⃣ BEST DEAL (≥ 30% discount)
+    // 💸 4️⃣ BEST DEAL
     if (badge === "NEW") {
       const variants = await ProductVariant.find({ productId: product._id });
-
       const hasBigDiscount = variants.some((v) => {
         if (v.price?.original && v.price?.discounted) {
-          const discountPercentage =
-            ((v.price.original - v.price.discounted) / v.price.original) * 100;
-          return discountPercentage >= 30;
+          const discountPercent = ((v.price.original - v.price.discounted) / v.price.original) * 100;
+          return discountPercent >= 30;
         }
         return false;
       });
@@ -65,27 +68,23 @@ const updateProductBadge = async (product) => {
       if (hasBigDiscount) badge = "BEST DEAL";
     }
 
-    // 🧠 5️⃣ CORALBAY CHOICE stays manual (not auto-assigned)
-
     // ✅ Update only if badge has changed
     if (product.badge !== badge) {
-      product.badge = badge;
-      await product.save();
+      await Product.updateOne({ _id: product._id }, { $set: { badge } });
       console.log(`🏷️ Badge updated → ${product.title}: ${badge}`);
     }
-
   } catch (err) {
     console.error("❌ Error updating badge:", err);
   }
 };
 
-// ⏱️ Run cron job every 10 seconds
-cron.schedule("*/10 * * * * *", async () => {
+// ⏱️ Run cron every 10 seconds
+cron.schedule("*/10 * * * *", async () => {
   console.log("🔁 Running automatic product badge updater...");
   try {
-    const products = await Product.find({ isActive: true });
+    const products = await Product.find({ isActive: true }).select("_id"); // only fetch IDs
     for (const product of products) {
-      await updateProductBadge(product);
+      await updateProductBadge(product._id);
     }
     console.log("✅ Product badges updated successfully!\n");
   } catch (err) {

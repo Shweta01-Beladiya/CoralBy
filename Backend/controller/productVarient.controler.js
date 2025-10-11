@@ -28,12 +28,12 @@ const generateArticalNumber = () => {
 // === Create Product Variant ===
 export const createProductVariant = async (req, res) => {
     try {
-        const { 
-            productId, 
-            sku, 
-            Artical_Number, 
-            color, 
-            size, 
+        const {
+            productId,
+            sku,
+            Artical_Number,
+            color,
+            size,
             Occasion,
             Outer_material,
             Model_name,
@@ -41,9 +41,9 @@ export const createProductVariant = async (req, res) => {
             Type_For_Casual,
             Euro_Size,
             Heel_Height,
-            price, 
-            stock, 
-            weight 
+            price,
+            stock,
+            weight
         } = req.body;
         const sellerId = req.user?._id;
 
@@ -154,6 +154,21 @@ export const createProductVariant = async (req, res) => {
 export const getAllProductVariant = async (req, res) => {
     try {
         const productVarient = await ProductVariant.find({})
+            .populate({
+                path: "productId",
+                populate: [
+                    { path: "brand", select: "brandName brandImage" },
+                    {
+                        path: "sellerId",
+                        model: "seller",
+                        populate: {
+                            path: "brandId",
+                            model: "Brand",
+                            select: "name logo description",
+                        },
+                    },
+                ],
+            });
 
         if (!productVarient || productVarient.length == 0) {
             return sendNotFoundResponse(res, "No any ProductVarient found...")
@@ -175,6 +190,22 @@ export const getProductVarientById = async (req, res) => {
         }
 
         const exitsProductVarient = await ProductVariant.findById(id)
+            .populate({
+                path: "productId",
+                populate: [
+                    { path: "brand", select: "name logo description" },
+                    {
+                        path: "sellerId",
+                        model: "seller",
+                        populate: {
+                            path: "brandId",
+                            model: "Brand",
+                            select: "name logo description",
+                        },
+                    },
+                ],
+            });
+
         if (!exitsProductVarient) {
             return sendNotFoundResponse(res, "ProductVarient Not Found...")
         }
