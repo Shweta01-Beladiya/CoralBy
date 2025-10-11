@@ -9,7 +9,7 @@ export const fetchCelebrateProduct = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const response = await axios.get(`${BaseUrl}/api/getBestSellingProducts`);
-            return response?.data?.result;
+            return response?.data;
         } catch (error) {
             console.log("Axios error:", error.response);
             return rejectWithValue(

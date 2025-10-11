@@ -40,7 +40,7 @@ export default function Wishlist({ viewType }) {
 
    
     const wishProducts = products.filter((product) =>
-        (wishData || []).some((wishItem) => wishItem.productId._id === product._id)
+        (wishData || []).some((wishItem) => wishItem.productId?._id === product?._id)
     );
 
     const handleVariantClick = (productId, variantIndex) => {

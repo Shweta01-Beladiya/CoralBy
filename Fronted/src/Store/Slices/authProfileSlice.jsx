@@ -257,7 +257,7 @@ const authProfile = createSlice({
       })
       .addCase(getAuthData.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload || "Faild to Fetch Auth Data";
+        state.error = action.payload || "Failed to Fetch Auth Data";
       })
 
       // Update Auth Data 
@@ -271,7 +271,7 @@ const authProfile = createSlice({
       })
       .addCase(updateProfile.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload || "Faild to Update Auth Data";
+        state.error = action.payload || "Failed to Update Auth Data";
       })
 
       // add New Address
@@ -285,7 +285,7 @@ const authProfile = createSlice({
       })
       .addCase(addNewAddress.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload || "Faild to add New Add";
+        state.error = action.payload || "Failed to add New Add";
       })
 
 
@@ -300,7 +300,7 @@ const authProfile = createSlice({
       })
       .addCase(addBillingAddress.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload || "Faild to add Billing Add";
+        state.error = action.payload || "Failed to add Billing Add";
       })
 
       // Remove Address
@@ -314,7 +314,7 @@ const authProfile = createSlice({
       })
       .addCase(removeAddress.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload || "Faild to Remove Add";
+        state.error = action.payload || "Failed to Remove Add";
       })
 
       // Remove Billing Address
@@ -328,7 +328,7 @@ const authProfile = createSlice({
       })
       .addCase(removeBillingAddress.rejected, (state, action) => {
         state.isLoading = false;
-        state.error = action.payload || "Faild to Remove removeBillingAddress";
+        state.error = action.payload || "Failed to Remove removeBillingAddress";
       })
 
       // Update New Address 

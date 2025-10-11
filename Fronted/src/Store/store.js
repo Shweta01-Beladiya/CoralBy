@@ -13,6 +13,7 @@ import couepnReducer from '../Store/Slices/coupenSlice';
 import wishlistReducer from '../Store/Slices/wishlistSlice';
 import homeProductReducer from '../Store/Slices/homeProductSlice';
 import addToCartReducer from '../Store/Slices/addToCartSlice';
+import cartReducer from '../Store/Slices/cartSlice';
 
 export const store = configureStore({
     reducer: {
@@ -31,6 +32,7 @@ export const store = configureStore({
         coupen: couepnReducer,
         homeProduct: homeProductReducer,
         addToCart: addToCartReducer,
+        Cart: cartReducer
     },
 });
 

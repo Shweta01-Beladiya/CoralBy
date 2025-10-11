@@ -42,12 +42,12 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/header" element={<Header />} />
-          {/* <Route path="/login" element={<Login />} /> */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/addtocart" element={<Addtocart />} />
 
           <Route path="/" element={<Layout />}>
             <Route index element={<Home />} />
             <Route path="/ShopAllBrands" element={<ShopAllBrands />} />
-            <Route path="/addtocart" element={<Addtocart />} />
             <Route path='/profile/:tab' element={<Profile />} />
             <Route path='/prodctDetails/:id' element={<ProductDetails />} />
             <Route path="/fashion" element={<Fashion />} />
@@ -66,7 +66,7 @@ function App() {
             <Route path='/ourBrandPage' element={<OurBrandPage />} />
             <Route path='/careerPage' element={<CareerPage />} />
             <Route path='/trackOrder' element={<TrackOrder />} />
-            <Route path="/login" element={<Login />} />
+
             <Route path="/wishlist" element={<Wishlists />} />
           </Route>
         </Routes>

@@ -697,7 +697,7 @@ export default function Home() {
 	// *************** 3. Celebrate with Style & Savings Section ***************
 
 	const dataCelebrate = useSelector((state) => state.homeProduct.celebrateproducts);
-	const celebrateProducts = dataCelebrate;
+	const celebrateProducts = dataCelebrate.data;
 	// console.log("celebrateProducts", celebrateProducts);
 
 	// ************ Trending Products *************

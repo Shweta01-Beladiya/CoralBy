@@ -482,7 +482,8 @@ export default function Header() {
                             <div className="relative">
                                 <HiOutlineShoppingCart
                                     className="cursor-pointer"
-                                    onClick={() => setOpenCart(true)}
+                                    onClick={()=> navigate('addToCart')}
+                                    // onClick={() => setOpenCart(true)}
                                 />
                                 <span className="absolute -top-2.5 -right-2 bg-[var(--bg-black)] text-[var(--text-white)] text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
                                     6

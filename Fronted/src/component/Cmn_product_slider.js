@@ -48,7 +48,7 @@ const ProductCard = forwardRef(({ initialSlideProductId = 1, slidePaddingPx = 12
 
 
 	return (
-		<div className="product_slider">
+		<div className="product_slider ">
 
 			<Slider ref={sliderRef} {...settings}>
 				{products.map((product) => (
